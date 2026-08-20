@@ -18,6 +18,7 @@ Load `00-core.md` first. This file details the backend rules, transposed from Ma
 ### Value Objects (`Domain/ValueObject/`)
 - `final` class, **`private` constructor**, **`readonly` properties** (immutable).
 - `static create(...)` = **validates** and throws a typed exception on invalid input. `static from(...)` = **hydration, no validation** (only where rebuilt from trusted storage).
+- **Intent-revealing factory names are preferred over generic `create`/`from`** when they read better: `Distance::fromMeters()`, `Elevation::ofMeters()`, `Pace::fromDistanceAndDuration()`. The hydration (no-validation) factory is named **`fromStorage()`** by convention. The rule that matters: exactly one validating path and one hydration path per VO — the verb may fit the concept.
 - Expose `value()` / typed getters; implement `equals(self $o): bool`.
 - **Identity VOs** (`ActivityId`, `CycleId`) wrap an ordered UUID: `generate(IdGenerator)` + `fromString(string)`.
 - No randomness/time inside a VO — inject or pass in.

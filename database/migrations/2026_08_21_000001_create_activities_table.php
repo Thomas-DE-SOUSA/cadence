@@ -28,6 +28,9 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->index('tenant_id');
+            // Dedupes imported activities per (tenant, source, external_id). Manual
+            // activities have a NULL external_id and are intentionally NOT deduped
+            // (NULLs are distinct in a unique index).
             $table->unique(['tenant_id', 'source', 'external_id']);
         });
     }

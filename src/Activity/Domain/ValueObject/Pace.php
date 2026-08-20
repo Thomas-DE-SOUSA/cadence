@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Cadence\Activity\Domain\ValueObject;
 
+use Cadence\Activity\Domain\Exception\ActivityErrorCode;
+use Cadence\Activity\Domain\Exception\InvalidActivity;
+
 /** Running pace, stored as seconds per kilometre. Always derived, never entered. */
 final class Pace
 {
@@ -13,6 +16,13 @@ final class Pace
 
     public static function fromDistanceAndDuration(Distance $distance, Duration $duration): self
     {
+        if ($distance->meters <= 0) {
+            throw new InvalidActivity(
+                ActivityErrorCode::DISTANCE_MUST_BE_POSITIVE,
+                'Cannot derive a pace from a non-positive distance.',
+            );
+        }
+
         return new self($duration->seconds / $distance->kilometers());
     }
 

@@ -11,12 +11,14 @@ use Cadence\Activity\Domain\Event\ActivityRecorded;
 use Cadence\Activity\Domain\Exception\ActivityErrorCode;
 use Cadence\Activity\Domain\Exception\InvalidActivity;
 use Cadence\Activity\Domain\ValueObject\ActivityId;
+use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Domain\TenantId;
 use Tests\Support\Fakes\FixedClock;
 use Tests\Support\Fakes\FixedIdGenerator;
 use Tests\Support\Fakes\InMemoryActivityRepository;
 use Tests\Support\Fakes\RecordingAuditTrail;
 use Tests\Support\Fakes\RecordingEventPublisher;
+use Tests\Support\Fakes\ThrowingEventPublisher;
 
 const TENANT = 'tenant-thomas';
 const ACTIVITY_UUID = '01900000-0000-7000-8000-0000000000aa';
@@ -25,6 +27,7 @@ beforeEach(function (): void {
     $this->repository = new InMemoryActivityRepository();
     $this->publisher = new RecordingEventPublisher();
     $this->audit = new RecordingAuditTrail();
+    $this->context = new ExecutionContext(TenantId::fromString(TENANT));
     $this->useCase = new RecordActivityUseCase(
         $this->repository,
         new FixedIdGenerator([ACTIVITY_UUID]),
@@ -46,7 +49,6 @@ function tenKilometreRun(array $overrides = []): RecordActivityInput
     );
 
     return new RecordActivityInput(
-        tenantId: $overrides['tenantId'] ?? TENANT,
         occurredAt: '2026-08-19T18:00:00+00:00',
         source: $overrides['source'] ?? ActivitySource::MANUAL->value,
         distanceMeters: $overrides['distanceMeters'] ?? 10010,
@@ -63,7 +65,7 @@ function tenKilometreRun(array $overrides = []): RecordActivityInput
 
 describe('Feature: Recording an activity', function (): void {
     it('records a run with its splits and derives the average pace', function (): void {
-        $output = $this->useCase->execute(tenKilometreRun());
+        $output = $this->useCase->execute(tenKilometreRun(), $this->context);
 
         expect($output->activityId)->toBe(ACTIVITY_UUID)
             ->and($output->averagePaceSecondsPerKm)->toEqualWithDelta(255.24, 0.1);
@@ -77,7 +79,7 @@ describe('Feature: Recording an activity', function (): void {
     });
 
     it('writes the activity.recorded event to the outbox in the same save', function (): void {
-        $this->useCase->execute(tenKilometreRun());
+        $this->useCase->execute(tenKilometreRun(), $this->context);
 
         expect($this->repository->outbox)->toHaveCount(1)
             ->and($this->repository->outbox[0])->toBeInstanceOf(ActivityRecorded::class)
@@ -85,7 +87,7 @@ describe('Feature: Recording an activity', function (): void {
     });
 
     it('publishes the recorded event and writes an audit entry', function (): void {
-        $this->useCase->execute(tenKilometreRun());
+        $this->useCase->execute(tenKilometreRun(), $this->context);
 
         expect($this->publisher->published)->toHaveCount(1)
             ->and($this->audit->entries)->toHaveCount(1)
@@ -93,8 +95,31 @@ describe('Feature: Recording an activity', function (): void {
             ->and($this->audit->entries[0]['tenant'])->toBe(TENANT);
     });
 
+    it('keeps the activity saved even when publishing fails', function (): void {
+        $useCase = new RecordActivityUseCase(
+            $this->repository,
+            new FixedIdGenerator([ACTIVITY_UUID]),
+            FixedClock::at('2026-08-21T09:00:00+00:00'),
+            new ThrowingEventPublisher(),
+            $this->audit,
+        );
+
+        try {
+            $useCase->execute(tenKilometreRun(), $this->context);
+        } catch (RuntimeException) {
+            // publishing threw — the save must already have happened
+        }
+
+        $stored = $this->repository->ofId(
+            ActivityId::fromString(ACTIVITY_UUID),
+            TenantId::fromString(TENANT),
+        );
+        expect($stored)->not->toBeNull()
+            ->and($this->repository->outbox)->toHaveCount(1);
+    });
+
     it('rejects a run with zero distance', function (): void {
-        $call = fn () => $this->useCase->execute(tenKilometreRun(['distanceMeters' => 0, 'splits' => []]));
+        $call = fn () => $this->useCase->execute(tenKilometreRun(['distanceMeters' => 0, 'splits' => []]), $this->context);
 
         expect($call)->toThrow(InvalidActivity::class);
 
@@ -106,7 +131,7 @@ describe('Feature: Recording an activity', function (): void {
     });
 
     it('rejects a run with zero moving time', function (): void {
-        $call = fn () => $this->useCase->execute(tenKilometreRun(['movingSeconds' => 0, 'splits' => []]));
+        $call = fn () => $this->useCase->execute(tenKilometreRun(['movingSeconds' => 0, 'splits' => []]), $this->context);
 
         expect($call)->toThrow(InvalidActivity::class);
 
@@ -120,7 +145,7 @@ describe('Feature: Recording an activity', function (): void {
     it('rejects splits that do not cover the activity distance', function (): void {
         $call = fn () => $this->useCase->execute(tenKilometreRun([
             'splits' => [new SplitInput(1, 2500, 600, 0), new SplitInput(2, 2500, 600, 0)],
-        ]));
+        ]), $this->context);
 
         expect($call)->toThrow(InvalidActivity::class);
 
@@ -132,7 +157,7 @@ describe('Feature: Recording an activity', function (): void {
     });
 
     it('is isolated per tenant: another tenant cannot read the activity', function (): void {
-        $this->useCase->execute(tenKilometreRun());
+        $this->useCase->execute(tenKilometreRun(), $this->context);
 
         $seenByOther = $this->repository->ofId(
             ActivityId::fromString(ACTIVITY_UUID),

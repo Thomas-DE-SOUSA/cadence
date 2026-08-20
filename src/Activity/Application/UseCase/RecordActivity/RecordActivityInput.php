@@ -11,7 +11,6 @@ final readonly class RecordActivityInput
      * @param list<BestEffortInput> $bestEfforts
      */
     public function __construct(
-        public string $tenantId,
         public string $occurredAt,
         public string $source,
         public int $distanceMeters,

@@ -23,19 +23,27 @@ arch('the clock and identifier ports stay framework-agnostic')
     ->expect(['Cadence\Shared\Clock\Clock', 'Cadence\Shared\Identifier\IdGenerator'])
     ->not->toUse('Illuminate');
 
-/*
- * Per-bounded-context boundaries — uncomment each as the context lands:
- *
- * arch('Training domain is pure')
- *     ->expect('Cadence\Training\Domain')
- *     ->not->toUse(['Illuminate', 'Cadence\Training\Application', 'Cadence\Training\Infrastructure']);
- *
- * arch('Training application never touches Eloquent')
- *     ->expect('Cadence\Training\Application')
- *     ->not->toUse('Illuminate\Database\Eloquent');
- *
- * arch('Training use cases are final and suffixed')
- *     ->expect('Cadence\Training\Application\UseCase')
- *     ->toBeFinal()
- *     ->toHaveSuffix('UseCase');
- */
+// Every context's domain stays framework-free; every application layer avoids Eloquent.
+arch('domain layers never depend on the framework')
+    ->expect('Cadence\*\Domain')
+    ->not->toUse('Illuminate');
+
+arch('application layers never touch Eloquent')
+    ->expect('Cadence\*\Application')
+    ->not->toUse('Illuminate\Database\Eloquent');
+
+// Activity context — explicit inward-only boundaries.
+arch('the Activity domain depends on nothing outward')
+    ->expect('Cadence\Activity\Domain')
+    ->not->toUse([
+        'Illuminate',
+        'Cadence\Activity\Application',
+        'Cadence\Activity\Infrastructure',
+    ]);
+
+arch('the Activity application never reaches into infrastructure')
+    ->expect('Cadence\Activity\Application')
+    ->not->toUse([
+        'Illuminate\Database\Eloquent',
+        'Cadence\Activity\Infrastructure',
+    ]);

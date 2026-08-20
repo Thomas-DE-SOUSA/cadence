@@ -16,8 +16,8 @@ use Cadence\Activity\Domain\ValueObject\Duration;
 use Cadence\Activity\Domain\ValueObject\Elevation;
 use Cadence\Shared\Application\AuditTrail;
 use Cadence\Shared\Application\EventPublisher;
+use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Clock\Clock;
-use Cadence\Shared\Domain\TenantId;
 use Cadence\Shared\Identifier\IdGenerator;
 use DateTimeImmutable;
 
@@ -36,9 +36,9 @@ final readonly class RecordActivityUseCase
     ) {
     }
 
-    public function execute(RecordActivityInput $input): RecordActivityOutput
+    public function execute(RecordActivityInput $input, ExecutionContext $context): RecordActivityOutput
     {
-        $tenant = TenantId::fromString($input->tenantId);
+        $tenant = $context->tenant;
         $id = ActivityId::generate($this->ids);
 
         $activity = Activity::record(
@@ -73,6 +73,8 @@ final readonly class RecordActivityUseCase
 
         $events = $activity->releaseEvents();
         $this->activities->save($activity, $events);
+        // Durability is the outbox row written inside save(); this inline publish is
+        // an interim best-effort delivery until the PublishOutboxJob drain lands.
         $this->eventPublisher->publish($events);
         $this->auditTrail->record(
             ActivityRecorded::NAME,

@@ -9,19 +9,26 @@ use Cadence\Activity\Domain\Port\ActivityRepository;
 use Cadence\Activity\Domain\ValueObject\ActivityId;
 use Cadence\Shared\Domain\TenantId;
 use Cadence\Shared\Infrastructure\Outbox\OutboxEventModel;
+use Cadence\Shared\Infrastructure\Persistence\PersistenceFailure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Psr\Log\LoggerInterface;
+use Throwable;
 
 final class EloquentActivityRepository implements ActivityRepository
 {
+    public function __construct(private readonly LoggerInterface $logger)
+    {
+    }
+
     public function save(Activity $activity, array $events): void
     {
         $snapshot = $activity->toSnapshot();
 
-        DB::transaction(function () use ($snapshot, $events): void {
-            ActivityModel::query()->updateOrCreate(
-                ['id' => $snapshot['id']],
-                [
+        try {
+            DB::transaction(function () use ($snapshot, $events): void {
+                ActivityModel::query()->create([
+                    'id' => $snapshot['id'],
                     'tenant_id' => $snapshot['tenant_id'],
                     'occurred_at' => $snapshot['occurred_at'],
                     'source' => $snapshot['source'],
@@ -33,23 +40,33 @@ final class EloquentActivityRepository implements ActivityRepository
                     'splits' => $snapshot['splits'],
                     'best_efforts' => $snapshot['best_efforts'],
                     'version' => $snapshot['version'],
-                ],
-            );
-
-            foreach ($events as $event) {
-                OutboxEventModel::query()->create([
-                    'id' => (string) Str::orderedUuid(),
-                    'aggregate_id' => $event->aggregateId,
-                    'aggregate_type' => 'activity',
-                    'tenant_id' => $snapshot['tenant_id'],
-                    'event_name' => $event->name(),
-                    'payload' => $event->payload(),
-                    'version' => $snapshot['version'],
-                    'occurred_at' => $event->occurredAt->format(DATE_ATOM),
-                    'published' => false,
                 ]);
-            }
-        });
+
+                $ordinal = 0;
+                foreach ($events as $event) {
+                    OutboxEventModel::query()->create([
+                        'id' => (string) Str::orderedUuid(),
+                        'aggregate_id' => $event->aggregateId,
+                        'aggregate_type' => 'activity',
+                        'tenant_id' => $snapshot['tenant_id'],
+                        'event_name' => $event->name(),
+                        'payload' => $event->payload(),
+                        'version' => $snapshot['version'] + $ordinal,
+                        'occurred_at' => $event->occurredAt->format(DATE_ATOM),
+                        'published' => false,
+                    ]);
+                    $ordinal++;
+                }
+            });
+        } catch (Throwable $e) {
+            $this->logger->error('Failed to persist activity', [
+                'aggregate_id' => $snapshot['id'],
+                'tenant_id' => $snapshot['tenant_id'],
+                'exception' => $e->getMessage(),
+            ]);
+
+            throw new PersistenceFailure('Could not persist the activity.', 0, $e);
+        }
     }
 
     public function ofId(ActivityId $id, TenantId $tenant): ?Activity

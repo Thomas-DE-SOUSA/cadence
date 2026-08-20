@@ -20,7 +20,20 @@ final class OutboxEventModel extends Model
 
     public $timestamps = false;
 
-    protected $guarded = [];
+    /** @var list<string> */
+    protected $fillable = [
+        'id',
+        'aggregate_id',
+        'aggregate_type',
+        'tenant_id',
+        'event_name',
+        'payload',
+        'user_id',
+        'version',
+        'occurred_at',
+        'published',
+        'published_at',
+    ];
 
     /** @var array<string, string> */
     protected $casts = [

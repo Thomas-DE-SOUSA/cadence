@@ -25,7 +25,22 @@ final class ActivityModel extends Model
 
     protected $keyType = 'string';
 
-    protected $guarded = [];
+    /** @var list<string> */
+    protected $fillable = [
+        'id',
+        'tenant_id',
+        'occurred_at',
+        'source',
+        'distance_meters',
+        'moving_seconds',
+        'elapsed_seconds',
+        'elevation_gain_meters',
+        'average_pace_seconds_per_km',
+        'splits',
+        'best_efforts',
+        'external_id',
+        'version',
+    ];
 
     /** @var array<string, string> */
     protected $casts = [

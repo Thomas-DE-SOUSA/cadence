@@ -9,7 +9,6 @@ uses(RefreshDatabase::class);
 function activityPayload(): array
 {
     return [
-        'tenant_id' => 'tenant-thomas',
         'occurred_at' => '2026-08-19T18:00:00+00:00',
         'source' => 'MANUAL',
         'distance_meters' => 10010,
@@ -43,15 +42,26 @@ describe('Feature: Record activity endpoint', function (): void {
             ->assertJsonStructure(['activity_id', 'average_pace_seconds_per_km']);
 
         $this->assertDatabaseCount('activities', 1);
+        $this->assertDatabaseHas('activities', ['tenant_id' => 'tenant-thomas', 'version' => 1]);
         $this->assertDatabaseHas('outbox_events', [
             'event_name' => 'activity.recorded',
             'aggregate_type' => 'activity',
             'published' => false,
+            'version' => 1,
         ]);
     });
 
+    it('records under the server-side tenant, never a client-supplied one', function (): void {
+        $this->postJson('/api/activities', [...activityPayload(), 'tenant_id' => 'tenant-attacker'])
+            ->assertStatus(201);
+
+        // The forged tenant_id is ignored; the row belongs to the server tenant.
+        $this->assertDatabaseHas('activities', ['tenant_id' => 'tenant-thomas']);
+        $this->assertDatabaseMissing('activities', ['tenant_id' => 'tenant-attacker']);
+    });
+
     it('rejects an invalid payload with 422', function (): void {
-        $this->postJson('/api/activities', ['tenant_id' => 'tenant-thomas'])
+        $this->postJson('/api/activities', ['source' => 'INVALID'])
             ->assertStatus(422);
     });
 });

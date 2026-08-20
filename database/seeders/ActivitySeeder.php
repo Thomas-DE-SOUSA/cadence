@@ -10,6 +10,8 @@ use Cadence\Activity\Application\UseCase\RecordActivity\RecordActivityUseCase;
 use Cadence\Activity\Application\UseCase\RecordActivity\SplitInput;
 use Cadence\Activity\Domain\Enum\ActivitySource;
 use Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel;
+use Cadence\Shared\Application\ExecutionContext;
+use Cadence\Shared\Domain\TenantId;
 use Illuminate\Database\Seeder;
 
 /**
@@ -38,7 +40,6 @@ final class ActivitySeeder extends Seeder
         );
 
         $input = new RecordActivityInput(
-            tenantId: self::TENANT,
             occurredAt: '2026-08-19T18:00:00+00:00',
             source: ActivitySource::MANUAL->value,
             distanceMeters: 10010,
@@ -53,6 +54,9 @@ final class ActivitySeeder extends Seeder
             ],
         );
 
-        app(RecordActivityUseCase::class)->execute($input);
+        app(RecordActivityUseCase::class)->execute(
+            $input,
+            new ExecutionContext(TenantId::fromString(self::TENANT)),
+        );
     }
 }

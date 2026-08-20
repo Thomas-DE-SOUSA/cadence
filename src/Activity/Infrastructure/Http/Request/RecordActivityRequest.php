@@ -22,7 +22,7 @@ final class RecordActivityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tenant_id' => ['required', 'string', 'max:64'],
+            // tenant_id is intentionally NOT accepted here — tenancy is server-authoritative.
             'occurred_at' => ['required', 'date'],
             'source' => ['required', Rule::enum(ActivitySource::class)],
             'distance_meters' => ['required', 'integer', 'min:1'],
@@ -50,7 +50,6 @@ final class RecordActivityRequest extends FormRequest
         $bestEfforts = $this->validated('best_efforts') ?? [];
 
         return new RecordActivityInput(
-            tenantId: (string) $this->validated('tenant_id'),
             occurredAt: (string) $this->validated('occurred_at'),
             source: (string) $this->validated('source'),
             distanceMeters: (int) $this->validated('distance_meters'),
