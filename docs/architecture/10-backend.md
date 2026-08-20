@@ -124,4 +124,4 @@ Rules:
 - [ ] Every query tenant-scoped; optimistic locking on updates.
 - [ ] Events written in the same transaction; publish is best-effort.
 - [ ] Typed exceptions with `ErrorCode`; no HTTP status in domain.
-- [ ] Larastan max level green; Pest + arch tests green.
+- [ ] Larastan level 8 (strict) green; Pest + arch tests green.

@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Cadence\Activity\Infrastructure;
+
+use Cadence\Activity\Domain\Port\ActivityRepository;
+use Cadence\Activity\Infrastructure\Http\Controller\RecordActivityController;
+use Cadence\Activity\Infrastructure\Persistence\Eloquent\EloquentActivityRepository;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
+
+final class ActivityServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->app->bind(ActivityRepository::class, EloquentActivityRepository::class);
+    }
+
+    public function boot(): void
+    {
+        // JSON endpoints under /api — no web/session/CSRF middleware.
+        Route::prefix('api')->group(function (): void {
+            Route::post('/activities', RecordActivityController::class)->name('activities.store');
+        });
+    }
+}

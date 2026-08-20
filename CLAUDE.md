@@ -54,7 +54,7 @@ Gate every step: `composer stan && composer test:arch && composer test`.
 ## Commands
 
 ```bash
-composer stan        # Larastan/PHPStan (max level)
+composer stan        # Larastan/PHPStan (level 8, strict)
 composer test        # Pest unit + feature
 composer test:arch   # Pest architecture tests (layer boundaries)
 ./vendor/bin/sail up # local dev via OrbStack

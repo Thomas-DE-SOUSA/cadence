@@ -106,7 +106,7 @@ If a use-case or domain test can't assert an exact value, a raw static call leak
 
 Every change passes, in order:
 
-1. `composer stan` — **Larastan/PHPStan** (max level) — the "does it type-check" gate.
+1. `composer stan` — **Larastan/PHPStan** (level 8, strict) — the "does it type-check" gate.
 2. `composer test:arch` — **Pest architecture tests** — enforce layer boundaries (Domain imports no framework, Infrastructure never imported by Domain, etc.).
 3. `composer test` — **Pest** unit (use-case level) + feature/E2E.
 
