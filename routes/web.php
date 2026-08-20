@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Cadence\Activity\Infrastructure\Http\Controller\ImportActivityFromTextController;
 use Cadence\Activity\Infrastructure\Http\Controller\ShowActivityController;
 use Cadence\Activity\Infrastructure\Http\Controller\ShowDashboardController;
 use Cadence\Activity\Infrastructure\Http\Controller\ShowHistoryController;
@@ -15,6 +16,7 @@ Route::get('/', ShowDashboardController::class)->name('dashboard');
 Route::get('/historique', ShowHistoryController::class)->name('history');
 Route::get('/activites/nouvelle', fn () => Inertia::render('ActivityForm'))->name('activities.create');
 Route::post('/activites', StoreActivityController::class)->name('activities.store');
+Route::post('/activites/importer-texte', ImportActivityFromTextController::class)->name('activities.import-text');
 Route::get('/activites/{id}', ShowActivityController::class)->name('activities.show');
 
 // Section shells — filled in as each bounded context lands (see ROADMAP.md).

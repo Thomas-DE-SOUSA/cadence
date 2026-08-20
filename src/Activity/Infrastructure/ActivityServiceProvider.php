@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Cadence\Activity\Infrastructure;
 
+use Cadence\Activity\Application\Port\StravaTextParser;
 use Cadence\Activity\Domain\Port\ActivityRepository;
+use Cadence\Activity\Infrastructure\Ai\ClaudeStravaTextParser;
 use Cadence\Activity\Infrastructure\Http\Controller\RecordActivityController;
 use Cadence\Activity\Infrastructure\Persistence\Eloquent\EloquentActivityRepository;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +17,12 @@ final class ActivityServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(ActivityRepository::class, EloquentActivityRepository::class);
+        $this->app->bind(
+            StravaTextParser::class,
+            fn (): ClaudeStravaTextParser => new ClaudeStravaTextParser(
+                (string) config('services.anthropic.key', ''),
+            ),
+        );
     }
 
     public function boot(): void

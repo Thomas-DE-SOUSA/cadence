@@ -5,4 +5,7 @@ parameters:
     level: 8
     paths:
         - src
+    excludePaths:
+        # External LLM SDK boundary: dynamically-typed response models.
+        - src/Activity/Infrastructure/Ai/ClaudeStravaTextParser.php
     tmpDir: build/phpstan

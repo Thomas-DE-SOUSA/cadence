@@ -31,6 +31,13 @@ export default function ActivityForm() {
         source: 'MANUAL',
     });
 
+    const pasteForm = useForm({ text: '' });
+
+    function submitPaste(event: FormEvent) {
+        event.preventDefault();
+        pasteForm.post('/activites/importer-texte');
+    }
+
     function submit(event: FormEvent) {
         event.preventDefault();
         form
@@ -58,7 +65,34 @@ export default function ActivityForm() {
             </Link>
             <h1 className="mb-6 text-xl font-bold tracking-tight">Nouvelle activité</h1>
 
-            <Card>
+            <div className="mb-6">
+                <Card title="Coller depuis Strava (IA)">
+                    {pasteForm.errors.text && (
+                        <p className="mb-2 text-sm text-red-300">{pasteForm.errors.text}</p>
+                    )}
+                    <form onSubmit={submitPaste} className="space-y-3">
+                        <textarea
+                            value={pasteForm.data.text}
+                            onChange={(e) => pasteForm.setData('text', e.target.value)}
+                            rows={6}
+                            placeholder="Colle ici le résumé de ta sortie Strava (distance, temps, splits km, meilleurs efforts)…"
+                            className={inputClass}
+                        />
+                        <button
+                            type="submit"
+                            disabled={pasteForm.processing}
+                            className="w-full rounded-lg bg-lime-400 px-4 py-2.5 font-medium text-neutral-950 transition-colors hover:bg-lime-300 disabled:opacity-50"
+                        >
+                            {pasteForm.processing ? 'Analyse en cours…' : "Importer avec l'IA"}
+                        </button>
+                    </form>
+                    <p className="mt-2 text-xs text-neutral-500">
+                        Claude lit le texte et remplit automatiquement distance, temps, splits et meilleurs efforts.
+                    </p>
+                </Card>
+            </div>
+
+            <Card title="Ou saisie manuelle">
                 {errors.length > 0 && (
                     <ul className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
                         {errors.map((message) => (
