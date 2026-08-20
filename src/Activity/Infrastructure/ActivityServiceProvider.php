@@ -21,7 +21,7 @@ final class ActivityServiceProvider extends ServiceProvider
     {
         // JSON endpoints under /api — no web/session/CSRF middleware.
         Route::prefix('api')->group(function (): void {
-            Route::post('/activities', RecordActivityController::class)->name('activities.store');
+            Route::post('/activities', RecordActivityController::class)->name('api.activities.store');
         });
     }
 }

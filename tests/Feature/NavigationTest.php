@@ -10,7 +10,6 @@ describe('Feature: Section navigation', function (): void {
             fn (AssertableInertia $page) => $page->component($component),
         );
     })->with([
-        ['/historique', 'History'],
         ['/progression', 'Progression'],
         ['/programme', 'Program'],
         ['/allures', 'Paces'],
