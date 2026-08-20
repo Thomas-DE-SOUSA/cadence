@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *
  * @property string $id
  * @property string $tenant_id
+ * @property string|null $external_id
  */
 final class ActivityModel extends Model
 {

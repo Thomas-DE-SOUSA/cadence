@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cadence\Activity\Domain\Model;
 
 use Cadence\Activity\Domain\Enum\ActivitySource;
+use Cadence\Activity\Domain\Event\ActivityImported;
 use Cadence\Activity\Domain\Event\ActivityRecorded;
 use Cadence\Activity\Domain\Exception\ActivityErrorCode;
 use Cadence\Activity\Domain\Exception\InvalidActivity;
@@ -20,7 +21,7 @@ use DateTimeImmutable;
 /**
  * @phpstan-type SplitRow array{index:int,distance_meters:int,duration_seconds:int,elevation_meters:int}
  * @phpstan-type BestEffortRow array{label:string,distance_meters:int,duration_seconds:int,is_personal_record:bool}
- * @phpstan-type ActivitySnapshot array{id:string,tenant_id:string,occurred_at:string,source:string,distance_meters:int,moving_seconds:int,elapsed_seconds:int,elevation_gain_meters:int,average_pace_seconds_per_km:float,splits:list<SplitRow>,best_efforts:list<BestEffortRow>,version:int}
+ * @phpstan-type ActivitySnapshot array{id:string,tenant_id:string,occurred_at:string,source:string,external_id:string|null,distance_meters:int,moving_seconds:int,elapsed_seconds:int,elevation_gain_meters:int,average_pace_seconds_per_km:float,splits:list<SplitRow>,best_efforts:list<BestEffortRow>,version:int}
  */
 final class Activity extends AggregateRoot
 {
@@ -36,6 +37,7 @@ final class Activity extends AggregateRoot
         private readonly TenantId $tenant,
         private readonly DateTimeImmutable $occurredAt,
         private readonly ActivitySource $source,
+        private readonly ?string $externalId,
         private readonly Distance $distance,
         private readonly Duration $movingTime,
         private readonly Duration $elapsedTime,
@@ -47,6 +49,8 @@ final class Activity extends AggregateRoot
     }
 
     /**
+     * Records a manually-entered run.
+     *
      * @param list<Split> $splits
      * @param list<BestEffort> $bestEfforts
      */
@@ -63,20 +67,9 @@ final class Activity extends AggregateRoot
         array $bestEfforts,
         DateTimeImmutable $recordedAt,
     ): self {
-        self::guardSplitsCoverDistance($distance, $splits);
-
-        $activity = new self(
-            $id,
-            $tenant,
-            $occurredAt,
-            $source,
-            $distance,
-            $movingTime,
-            $elapsedTime,
-            $elevationGain,
-            $splits,
-            $bestEfforts,
-            version: 1,
+        $activity = self::assemble(
+            $id, $tenant, $occurredAt, $source, null,
+            $distance, $movingTime, $elapsedTime, $elevationGain, $splits, $bestEfforts,
         );
 
         $activity->recordEvent(new ActivityRecorded(
@@ -90,6 +83,71 @@ final class Activity extends AggregateRoot
         ));
 
         return $activity;
+    }
+
+    /**
+     * Imports a run from an external provider (e.g. Strava), identified by its external id.
+     *
+     * @param list<Split> $splits
+     * @param list<BestEffort> $bestEfforts
+     */
+    public static function import(
+        ActivityId $id,
+        TenantId $tenant,
+        DateTimeImmutable $occurredAt,
+        ActivitySource $source,
+        string $externalId,
+        Distance $distance,
+        Duration $movingTime,
+        Duration $elapsedTime,
+        Elevation $elevationGain,
+        array $splits,
+        array $bestEfforts,
+        DateTimeImmutable $recordedAt,
+    ): self {
+        $activity = self::assemble(
+            $id, $tenant, $occurredAt, $source, $externalId,
+            $distance, $movingTime, $elapsedTime, $elevationGain, $splits, $bestEfforts,
+        );
+
+        $activity->recordEvent(new ActivityImported(
+            $id->value,
+            $recordedAt,
+            $tenant->value,
+            $distance->meters,
+            $movingTime->seconds,
+            $activity->averagePace()->secondsPerKm,
+            $source->value,
+            $externalId,
+        ));
+
+        return $activity;
+    }
+
+    /**
+     * @param list<Split> $splits
+     * @param list<BestEffort> $bestEfforts
+     */
+    private static function assemble(
+        ActivityId $id,
+        TenantId $tenant,
+        DateTimeImmutable $occurredAt,
+        ActivitySource $source,
+        ?string $externalId,
+        Distance $distance,
+        Duration $movingTime,
+        Duration $elapsedTime,
+        Elevation $elevationGain,
+        array $splits,
+        array $bestEfforts,
+    ): self {
+        self::guardSplitsCoverDistance($distance, $splits);
+
+        return new self(
+            $id, $tenant, $occurredAt, $source, $externalId,
+            $distance, $movingTime, $elapsedTime, $elevationGain, $splits, $bestEfforts,
+            version: 1,
+        );
     }
 
     /** @param list<Split> $splits */
@@ -138,6 +196,7 @@ final class Activity extends AggregateRoot
             'tenant_id' => $this->tenant->value,
             'occurred_at' => $this->occurredAt->format(DATE_ATOM),
             'source' => $this->source->value,
+            'external_id' => $this->externalId,
             'distance_meters' => $this->distance->meters,
             'moving_seconds' => $this->movingTime->seconds,
             'elapsed_seconds' => $this->elapsedTime->seconds,
@@ -157,6 +216,7 @@ final class Activity extends AggregateRoot
             TenantId::fromString($s['tenant_id']),
             new DateTimeImmutable($s['occurred_at']),
             ActivitySource::from($s['source']),
+            $s['external_id'],
             Distance::fromStorage($s['distance_meters']),
             Duration::fromStorage($s['moving_seconds']),
             Duration::fromStorage($s['elapsed_seconds']),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support\Fakes;
 
+use Cadence\Activity\Domain\Enum\ActivitySource;
 use Cadence\Activity\Domain\Model\Activity;
 use Cadence\Activity\Domain\Port\ActivityRepository;
 use Cadence\Activity\Domain\ValueObject\ActivityId;
@@ -35,6 +36,22 @@ final class InMemoryActivityRepository implements ActivityRepository
     public function ofId(ActivityId $id, TenantId $tenant): ?Activity
     {
         return $this->store[$this->key($tenant->value, $id->value)] ?? null;
+    }
+
+    public function existsForExternalId(TenantId $tenant, ActivitySource $source, string $externalId): bool
+    {
+        foreach ($this->store as $activity) {
+            $snapshot = $activity->toSnapshot();
+            if (
+                $snapshot['tenant_id'] === $tenant->value
+                && $snapshot['source'] === $source->value
+                && $snapshot['external_id'] === $externalId
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function key(string $tenant, string $id): string

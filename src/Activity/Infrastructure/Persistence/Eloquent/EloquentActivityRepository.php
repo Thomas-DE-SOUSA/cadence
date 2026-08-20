@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cadence\Activity\Infrastructure\Persistence\Eloquent;
 
+use Cadence\Activity\Domain\Enum\ActivitySource;
 use Cadence\Activity\Domain\Model\Activity;
 use Cadence\Activity\Domain\Port\ActivityRepository;
 use Cadence\Activity\Domain\ValueObject\ActivityId;
@@ -32,6 +33,7 @@ final class EloquentActivityRepository implements ActivityRepository
                     'tenant_id' => $snapshot['tenant_id'],
                     'occurred_at' => $snapshot['occurred_at'],
                     'source' => $snapshot['source'],
+                    'external_id' => $snapshot['external_id'],
                     'distance_meters' => $snapshot['distance_meters'],
                     'moving_seconds' => $snapshot['moving_seconds'],
                     'elapsed_seconds' => $snapshot['elapsed_seconds'],
@@ -83,8 +85,17 @@ final class EloquentActivityRepository implements ActivityRepository
         return Activity::fromSnapshot($this->toSnapshot($model));
     }
 
+    public function existsForExternalId(TenantId $tenant, ActivitySource $source, string $externalId): bool
+    {
+        return ActivityModel::query()
+            ->where('tenant_id', $tenant->value)
+            ->where('source', $source->value)
+            ->where('external_id', $externalId)
+            ->exists();
+    }
+
     /**
-     * @return array{id:string,tenant_id:string,occurred_at:string,source:string,distance_meters:int,moving_seconds:int,elapsed_seconds:int,elevation_gain_meters:int,average_pace_seconds_per_km:float,splits:list<array{index:int,distance_meters:int,duration_seconds:int,elevation_meters:int}>,best_efforts:list<array{label:string,distance_meters:int,duration_seconds:int,is_personal_record:bool}>,version:int}
+     * @return array{id:string,tenant_id:string,occurred_at:string,source:string,external_id:string|null,distance_meters:int,moving_seconds:int,elapsed_seconds:int,elevation_gain_meters:int,average_pace_seconds_per_km:float,splits:list<array{index:int,distance_meters:int,duration_seconds:int,elevation_meters:int}>,best_efforts:list<array{label:string,distance_meters:int,duration_seconds:int,is_personal_record:bool}>,version:int}
      */
     private function toSnapshot(ActivityModel $model): array
     {
@@ -98,6 +109,7 @@ final class EloquentActivityRepository implements ActivityRepository
             'tenant_id' => $model->tenant_id,
             'occurred_at' => (string) $model->occurred_at,
             'source' => (string) $model->source,
+            'external_id' => $model->external_id,
             'distance_meters' => $model->distance_meters,
             'moving_seconds' => $model->moving_seconds,
             'elapsed_seconds' => $model->elapsed_seconds,
