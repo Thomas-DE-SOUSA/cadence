@@ -14,6 +14,8 @@
 /.zed
 /auth.json
 /build
+/database/*.sqlite
+/database/*.sqlite-*
 /node_modules
 /public/build
 /public/fonts-manifest.dev.json
