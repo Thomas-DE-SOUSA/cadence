@@ -12,6 +12,15 @@ export interface BestEffort {
     isPersonalRecord: boolean;
 }
 
+export interface ActivitySummary {
+    id: string;
+    occurredAt: string;
+    source: string;
+    distanceMeters: number;
+    movingSeconds: number;
+    averagePaceSecondsPerKm: number;
+}
+
 export interface Activity {
     id: string;
     occurredAt: string;
