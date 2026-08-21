@@ -24,7 +24,7 @@ final class TrainingProgramModel extends Model
     /** @var list<string> */
     protected $fillable = [
         'id', 'tenant_id', 'name', 'goal', 'target_race_name', 'target_race_date',
-        'start_date', 'end_date', 'priority', 'status', 'objectives', 'assigned_activity_ids', 'version',
+        'start_date', 'end_date', 'priority', 'status', 'plan_key', 'objectives', 'assigned_activity_ids', 'version',
     ];
 
     /** @var array<string, string> */

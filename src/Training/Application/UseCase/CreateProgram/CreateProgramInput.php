@@ -18,6 +18,7 @@ final readonly class CreateProgramInput
         public ?string $endDate,
         public string $priority,
         public array $objectives = [],
+        public ?string $planKey = null,
     ) {
     }
 }

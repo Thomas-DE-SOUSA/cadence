@@ -1,6 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
-import { ArrowLeft, Plus, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Plus, X } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
 
@@ -11,6 +11,23 @@ interface ObjectiveRow {
     time: string;
     pace: string;
     count: string;
+}
+
+interface PlanPhase {
+    name: string;
+    focus: string;
+    weeks: number;
+}
+
+interface Plan {
+    key: string;
+    name: string;
+    summary: string;
+    goal: string;
+    targetRaceName: string;
+    daysPerWeek: number;
+    totalWeeks: number;
+    phases: PlanPhase[];
 }
 
 const OBJECTIVE_TYPES: { value: string; label: string; hint: string }[] = [
@@ -39,8 +56,9 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
     );
 }
 
-export default function ProgramForm() {
+export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
     const form = useForm({
+        plan_key: '',
         name: '',
         goal: '',
         target_race_name: '',
@@ -50,6 +68,16 @@ export default function ProgramForm() {
         priority: 'A',
         objectives: [] as ObjectiveRow[],
     });
+
+    function choosePlan(plan: Plan) {
+        form.setData((data) => ({
+            ...data,
+            plan_key: plan.key,
+            name: data.name || `Prépa ${plan.targetRaceName}`,
+            goal: plan.goal,
+            target_race_name: plan.targetRaceName,
+        }));
+    }
 
     function setObjective(i: number, patch: Partial<ObjectiveRow>) {
         form.setData(
@@ -70,6 +98,7 @@ export default function ProgramForm() {
     function submit(e: FormEvent) {
         e.preventDefault();
         form.transform((d) => ({
+            plan_key: d.plan_key || null,
             name: d.name,
             goal: d.goal,
             target_race_name: d.target_race_name,
@@ -111,6 +140,58 @@ export default function ProgramForm() {
             )}
 
             <form onSubmit={submit} className="space-y-6">
+                {plans.length > 0 && (
+                    <Card title="Choisis un plan tout fait">
+                        <p className="-mt-1 mb-4 text-sm text-neutral-400">
+                            Le premier cycle arrive déjà détaillé (séances, allures, km). Tu débloqueras les cycles suivants au fur et
+                            à mesure.
+                        </p>
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                            {plans.map((plan) => {
+                                const selected = form.data.plan_key === plan.key;
+                                return (
+                                    <button
+                                        type="button"
+                                        key={plan.key}
+                                        onClick={() => choosePlan(plan)}
+                                        className={`cursor-pointer rounded-xl border p-4 text-left transition-colors ${
+                                            selected
+                                                ? 'border-lime-400/70 bg-lime-400/10'
+                                                : 'border-neutral-800 bg-neutral-900/60 hover:border-neutral-700'
+                                        }`}
+                                    >
+                                        <div className="mb-1 flex items-center justify-between">
+                                            <span className="font-semibold text-neutral-100">{plan.name}</span>
+                                            {selected && <CheckCircle2 size={16} className="text-lime-400" />}
+                                        </div>
+                                        <p className="mb-3 text-xs leading-relaxed text-neutral-400">{plan.summary}</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-[11px] text-neutral-300">
+                                                {plan.totalWeeks} sem.
+                                            </span>
+                                            <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-[11px] text-neutral-300">
+                                                {plan.daysPerWeek} j/sem
+                                            </span>
+                                            <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-[11px] text-neutral-300">
+                                                {plan.phases.length} cycles
+                                            </span>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        {form.data.plan_key && (
+                            <button
+                                type="button"
+                                onClick={() => form.setData('plan_key', '')}
+                                className="mt-3 text-xs text-neutral-500 hover:text-neutral-300"
+                            >
+                                Repartir d'un programme vide
+                            </button>
+                        )}
+                    </Card>
+                )}
+
                 <Card title="Le programme">
                     <div className="space-y-4">
                         <Field label="Nom">

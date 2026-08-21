@@ -23,6 +23,7 @@ final class CreateProgramRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:160'],
+            'plan_key' => ['nullable', 'string', 'max:64'],
             'goal' => ['nullable', 'string', 'max:500'],
             'target_race_name' => ['nullable', 'string', 'max:160'],
             'target_race_date' => ['nullable', 'date'],
@@ -60,6 +61,7 @@ final class CreateProgramRequest extends FormRequest
                 targetPaceSecondsPerKm: isset($o['target_pace_seconds_per_km']) ? (float) $o['target_pace_seconds_per_km'] : null,
                 targetCount: isset($o['target_count']) ? (int) $o['target_count'] : null,
             ), $objectives)),
+            planKey: $this->nullableString('plan_key'),
         );
     }
 

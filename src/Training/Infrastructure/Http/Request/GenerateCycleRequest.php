@@ -18,7 +18,7 @@ final class GenerateCycleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'start_date' => ['required', 'date'],
+            'start_date' => ['nullable', 'date'],
             'weeks' => ['required', 'integer', 'min:1', 'max:6'],
             'ressenti' => ['nullable', 'string', 'max:2000'],
         ];
@@ -26,9 +26,11 @@ final class GenerateCycleRequest extends FormRequest
 
     public function toInput(string $programId): GenerateCycleInput
     {
+        $startDate = $this->validated('start_date');
+
         return new GenerateCycleInput(
             programId: $programId,
-            startDate: (string) $this->validated('start_date'),
+            startDate: is_string($startDate) ? $startDate : '',
             weeks: (int) $this->validated('weeks'),
             ressenti: (string) ($this->validated('ressenti') ?? ''),
         );

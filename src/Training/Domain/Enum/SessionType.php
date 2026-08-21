@@ -12,6 +12,7 @@ enum SessionType: string
     case INTERVALS = 'INTERVALS';
     case RECOVERY = 'RECOVERY';
     case RACE_PACE = 'RACE_PACE';
+    case RACE = 'RACE';
     case CROSS = 'CROSS';
     case REST = 'REST';
 }

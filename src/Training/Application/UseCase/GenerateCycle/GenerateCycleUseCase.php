@@ -7,17 +7,25 @@ namespace Cadence\Training\Application\UseCase\GenerateCycle;
 use Cadence\Shared\Application\AuditTrail;
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Clock\Clock;
+use Cadence\Shared\Domain\TenantId;
 use Cadence\Shared\Identifier\IdGenerator;
+use Cadence\Training\Domain\Exception\CycleGenerationNotAllowed;
 use Cadence\Training\Domain\Exception\ProgramNotFound;
 use Cadence\Training\Domain\Model\Cycle;
+use Cadence\Training\Domain\Plan\PhaseMaterializer;
+use Cadence\Training\Domain\Plan\PlanPhase;
+use Cadence\Training\Domain\Plan\TrainingPlanCatalog;
 use Cadence\Training\Domain\Port\ActivitySummaryProvider;
 use Cadence\Training\Domain\Port\CyclePlanner;
 use Cadence\Training\Domain\Port\CycleRepository;
 use Cadence\Training\Domain\Port\TrainingProgramRepository;
 use Cadence\Training\Domain\ValueObject\ActivitySummary;
 use Cadence\Training\Domain\ValueObject\CycleId;
+use Cadence\Training\Domain\ValueObject\PlannedCycle;
 use Cadence\Training\Domain\ValueObject\PlannerContext;
 use Cadence\Training\Domain\ValueObject\ProgramId;
+use DateTimeImmutable;
+use Throwable;
 
 final readonly class GenerateCycleUseCase
 {
@@ -40,26 +48,110 @@ final readonly class GenerateCycleUseCase
             throw ProgramNotFound::withId(ProgramId::fromString($input->programId));
         }
 
-        $snapshot = $program->toSnapshot();
-        $recent = $this->summariseRecent($this->summaries->summariesFor($tenant, $program->assignedActivityIds()));
-        $previous = $this->summarisePrevious($this->cycles->latestForProgram($input->programId, $tenant));
+        $existing = $this->cycles->forProgram($input->programId, $tenant);
+        $latest = $existing === [] ? null : $existing[count($existing) - 1];
 
-        $plan = $this->planner->plan(new PlannerContext(
-            goal: $snapshot['goal'],
-            targetRaceName: $snapshot['target_race_name'],
-            targetRaceDate: $snapshot['target_race_date'],
-            startDate: $input->startDate,
-            weeks: $input->weeks,
+        // The next cycle only unlocks once the current one is marked completed.
+        if ($latest !== null && ! $latest->isCompleted()) {
+            throw CycleGenerationNotAllowed::currentCycleNotCompleted();
+        }
+
+        $snapshot = $program->toSnapshot();
+        $plan = $snapshot['plan_key'] !== null ? TrainingPlanCatalog::byKey($snapshot['plan_key']) : null;
+        $nextIndex = $latest !== null ? $latest->phaseIndex() + 1 : 0;
+
+        $phase = $plan?->phase($nextIndex);
+        if ($plan !== null && $phase === null) {
+            throw CycleGenerationNotAllowed::roadmapFinished();
+        }
+
+        $startDate = $this->nextStartDate($input, $latest?->endDate(), $program->startDate());
+        $weeks = $phase !== null ? $phase->weeks : max(1, $input->weeks);
+        $blueprintCycle = $phase !== null ? PhaseMaterializer::toPlannedCycle($phase) : null;
+
+        $planned = $this->planWithFallback($snapshot, $input, $startDate, $weeks, $phase, $blueprintCycle, $tenant, $program->assignedActivityIds(), $latest);
+
+        $cycle = Cycle::fromPlan(
+            CycleId::generate($this->ids),
+            $input->programId,
+            $tenant,
+            $planned,
+            $startDate,
+            phaseIndex: $nextIndex,
+        );
+        $this->cycles->save($cycle);
+        $this->auditTrail->record('cycle.generated', $tenant, $cycle->id()->value, ['program_id' => $input->programId, 'phase_index' => $nextIndex], $this->clock->now());
+
+        return $cycle->id()->value;
+    }
+
+    /**
+     * Ask the AI to adapt the expert blueprint to the athlete; fall back to the
+     * blueprint itself when the AI is unavailable, so generation always works.
+     *
+     * @param array<string, mixed> $snapshot
+     * @param list<string> $assignedActivityIds
+     */
+    private function planWithFallback(
+        array $snapshot,
+        GenerateCycleInput $input,
+        string $startDate,
+        int $weeks,
+        ?PlanPhase $phase,
+        ?PlannedCycle $blueprintCycle,
+        TenantId $tenant,
+        array $assignedActivityIds,
+        ?Cycle $latest,
+    ): PlannedCycle {
+        $recent = $this->summariseRecent($this->summaries->summariesFor($tenant, $assignedActivityIds));
+        $previous = $this->summarisePrevious($latest);
+
+        $context = new PlannerContext(
+            goal: (string) $snapshot['goal'],
+            targetRaceName: (string) $snapshot['target_race_name'],
+            targetRaceDate: $snapshot['target_race_date'] !== null ? (string) $snapshot['target_race_date'] : null,
+            startDate: $startDate,
+            weeks: $weeks,
             ressenti: $input->ressenti,
             recentPerformance: $recent,
             previousCycle: $previous,
-        ));
+            phaseName: $phase !== null ? $phase->name : '',
+            phaseFocus: $phase !== null ? $phase->focus : '',
+            blueprint: $blueprintCycle !== null ? $this->renderBlueprint($blueprintCycle) : '',
+        );
 
-        $cycle = Cycle::fromPlan(CycleId::generate($this->ids), $input->programId, $tenant, $plan, $input->startDate);
-        $this->cycles->save($cycle);
-        $this->auditTrail->record('cycle.generated', $tenant, $cycle->id()->value, ['program_id' => $input->programId], $this->clock->now());
+        try {
+            return $this->planner->plan($context);
+        } catch (Throwable $e) {
+            if ($blueprintCycle !== null) {
+                return $blueprintCycle;
+            }
 
-        return $cycle->id()->value;
+            throw $e;
+        }
+    }
+
+    private function nextStartDate(GenerateCycleInput $input, ?string $previousEnd, string $programStart): string
+    {
+        if (trim($input->startDate) !== '') {
+            return $input->startDate;
+        }
+
+        if ($previousEnd !== null) {
+            return (new DateTimeImmutable($previousEnd))->modify('+1 day')->format('Y-m-d');
+        }
+
+        return $programStart;
+    }
+
+    private function renderBlueprint(PlannedCycle $cycle): string
+    {
+        $lines = [$cycle->name.' — '.$cycle->focus];
+        foreach ($cycle->sessions as $s) {
+            $lines[] = sprintf('J+%d: %s — %s (%s)', $s->dayOffset, $s->type, $s->title, $s->description);
+        }
+
+        return implode("\n", $lines);
     }
 
     /** @param list<ActivitySummary> $summaries */

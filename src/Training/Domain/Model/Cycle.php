@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cadence\Training\Domain\Model;
 
 use Cadence\Shared\Domain\TenantId;
+use Cadence\Training\Domain\Enum\CycleStatus;
 use Cadence\Training\Domain\Enum\SessionType;
 use Cadence\Training\Domain\ValueObject\CycleId;
 use Cadence\Training\Domain\ValueObject\PlannedCycle;
@@ -13,7 +14,7 @@ use DateTimeImmutable;
 /**
  * @phpstan-import-type PlannedSessionSnapshot from PlannedSession
  *
- * @phpstan-type CycleSnapshot array{id:string,program_id:string,tenant_id:string,name:string,focus:string,start_date:string,end_date:string,sessions:list<PlannedSessionSnapshot>,version:int}
+ * @phpstan-type CycleSnapshot array{id:string,program_id:string,tenant_id:string,name:string,focus:string,start_date:string,end_date:string,phase_index:int,status:string,sessions:list<PlannedSessionSnapshot>,version:int}
  */
 final class Cycle
 {
@@ -28,13 +29,21 @@ final class Cycle
         private readonly string $focus,
         private readonly string $startDate,
         private readonly string $endDate,
+        private readonly int $phaseIndex,
+        private CycleStatus $status,
         private readonly array $sessions,
-        private readonly int $version,
+        private int $version,
     ) {
     }
 
-    public static function fromPlan(CycleId $id, string $programId, TenantId $tenant, PlannedCycle $plan, string $startDate): self
-    {
+    public static function fromPlan(
+        CycleId $id,
+        string $programId,
+        TenantId $tenant,
+        PlannedCycle $plan,
+        string $startDate,
+        int $phaseIndex = 0,
+    ): self {
         $start = new DateTimeImmutable($startDate);
         $sessions = [];
         $maxOffset = 0;
@@ -61,14 +70,47 @@ final class Cycle
             $plan->focus,
             $startDate,
             $start->modify("+{$maxOffset} days")->format('Y-m-d'),
+            $phaseIndex,
+            CycleStatus::ACTIVE,
             $sessions,
             version: 1,
         );
     }
 
+    public function complete(): void
+    {
+        $this->status = CycleStatus::COMPLETED;
+        $this->version++;
+    }
+
     public function id(): CycleId
     {
         return $this->id;
+    }
+
+    public function phaseIndex(): int
+    {
+        return $this->phaseIndex;
+    }
+
+    public function status(): CycleStatus
+    {
+        return $this->status;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->status === CycleStatus::COMPLETED;
+    }
+
+    public function startDate(): string
+    {
+        return $this->startDate;
+    }
+
+    public function endDate(): string
+    {
+        return $this->endDate;
     }
 
     /** @return CycleSnapshot */
@@ -82,6 +124,8 @@ final class Cycle
             'focus' => $this->focus,
             'start_date' => $this->startDate,
             'end_date' => $this->endDate,
+            'phase_index' => $this->phaseIndex,
+            'status' => $this->status->value,
             'sessions' => array_map(static fn (PlannedSession $s): array => $s->toSnapshot(), $this->sessions),
             'version' => $this->version,
         ];
@@ -90,6 +134,8 @@ final class Cycle
     /** @param CycleSnapshot $s */
     public static function fromSnapshot(array $s): self
     {
+        $sessions = array_map(static fn (array $row): PlannedSession => PlannedSession::fromSnapshot($row), $s['sessions']);
+
         return new self(
             CycleId::fromString($s['id']),
             $s['program_id'],
@@ -98,7 +144,9 @@ final class Cycle
             $s['focus'],
             $s['start_date'],
             $s['end_date'],
-            array_map(static fn (array $row): PlannedSession => PlannedSession::fromSnapshot($row), $s['sessions']),
+            $s['phase_index'],
+            CycleStatus::from($s['status']),
+            $sessions,
             $s['version'],
         );
     }

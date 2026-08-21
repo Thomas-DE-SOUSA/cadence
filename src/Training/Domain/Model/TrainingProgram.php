@@ -19,7 +19,7 @@ use DateTimeImmutable;
 /**
  * @phpstan-import-type ObjectiveSnapshot from Objective
  *
- * @phpstan-type ProgramSnapshot array{id:string,tenant_id:string,name:string,goal:string,target_race_name:string,target_race_date:string|null,start_date:string,end_date:string|null,priority:string,status:string,objectives:list<ObjectiveSnapshot>,assigned_activity_ids:list<string>,version:int}
+ * @phpstan-type ProgramSnapshot array{id:string,tenant_id:string,name:string,goal:string,target_race_name:string,target_race_date:string|null,start_date:string,end_date:string|null,priority:string,status:string,plan_key:string|null,objectives:list<ObjectiveSnapshot>,assigned_activity_ids:list<string>,version:int}
  */
 final class TrainingProgram extends AggregateRoot
 {
@@ -38,6 +38,7 @@ final class TrainingProgram extends AggregateRoot
         private readonly ?string $endDate,
         private readonly ProgramPriority $priority,
         private ProgramStatus $status,
+        private readonly ?string $planKey,
         private readonly array $objectives,
         private array $assignedActivityIds,
         private int $version,
@@ -59,6 +60,7 @@ final class TrainingProgram extends AggregateRoot
         ProgramPriority $priority,
         array $objectives,
         DateTimeImmutable $recordedAt,
+        ?string $planKey = null,
     ): self {
         if (trim($name) === '') {
             throw new InvalidProgram(ProgramErrorCode::NAME_REQUIRED, 'A program needs a name.');
@@ -66,7 +68,7 @@ final class TrainingProgram extends AggregateRoot
 
         $program = new self(
             $id, $tenant, $name, $goal, $targetRaceName, $targetRaceDate, $startDate, $endDate,
-            $priority, ProgramStatus::PLANNED, $objectives, [], version: 1,
+            $priority, ProgramStatus::PLANNED, $planKey, $objectives, [], version: 1,
         );
 
         $program->recordEvent(new ProgramCreated($id->value, $recordedAt, $tenant->value, $name));
@@ -109,6 +111,16 @@ final class TrainingProgram extends AggregateRoot
         return $this->id;
     }
 
+    public function planKey(): ?string
+    {
+        return $this->planKey;
+    }
+
+    public function startDate(): string
+    {
+        return $this->startDate;
+    }
+
     public function tenant(): TenantId
     {
         return $this->tenant;
@@ -145,6 +157,7 @@ final class TrainingProgram extends AggregateRoot
             'end_date' => $this->endDate,
             'priority' => $this->priority->value,
             'status' => $this->status->value,
+            'plan_key' => $this->planKey,
             'objectives' => array_map(static fn (Objective $o): array => $o->toSnapshot(), $this->objectives),
             'assigned_activity_ids' => $this->assignedActivityIds,
             'version' => $this->version,
@@ -165,6 +178,7 @@ final class TrainingProgram extends AggregateRoot
             $s['end_date'],
             ProgramPriority::from($s['priority']),
             ProgramStatus::from($s['status']),
+            $s['plan_key'],
             array_map(static fn (array $row): Objective => Objective::fromSnapshot($row), $s['objectives']),
             $s['assigned_activity_ids'],
             $s['version'],

@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('focus', 500);
             $table->string('start_date', 40);
             $table->string('end_date', 40);
+            $table->unsignedInteger('phase_index')->default(0);
+            $table->string('status', 16)->default('active');
             $table->json('sessions');
             $table->unsignedInteger('version');
             $table->timestamps();

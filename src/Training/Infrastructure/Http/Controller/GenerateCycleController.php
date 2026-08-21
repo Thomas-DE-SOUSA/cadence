@@ -7,6 +7,7 @@ namespace Cadence\Training\Infrastructure\Http\Controller;
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Application\TenantContext;
 use Cadence\Training\Application\UseCase\GenerateCycle\GenerateCycleUseCase;
+use Cadence\Training\Domain\Exception\CycleGenerationNotAllowed;
 use Cadence\Training\Domain\Exception\ProgramNotFound;
 use Cadence\Training\Infrastructure\Http\Request\GenerateCycleRequest;
 use Illuminate\Http\RedirectResponse;
@@ -29,6 +30,8 @@ final class GenerateCycleController
             );
         } catch (ProgramNotFound) {
             abort(404);
+        } catch (CycleGenerationNotAllowed $e) {
+            return back()->withErrors(['cycle' => $e->getMessage()]);
         } catch (Throwable $e) {
             return back()->withErrors(['ressenti' => $e->getMessage()]);
         }

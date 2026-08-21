@@ -6,6 +6,7 @@ namespace Cadence\Training\Infrastructure\Http\Controller;
 
 use Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel;
 use Cadence\Shared\Application\TenantContext;
+use Cadence\Training\Domain\Plan\TrainingPlanCatalog;
 use Cadence\Training\Domain\Port\ActivitySummaryProvider;
 use Cadence\Training\Domain\Port\CycleRepository;
 use Cadence\Training\Domain\Port\TrainingProgramRepository;
@@ -47,10 +48,21 @@ final class ShowProgramController
             ->values()
             ->all();
 
+        $cycles = $this->cycles->forProgram($id, $tenant);
+        $planKey = $program->planKey();
+        $latest = $cycles === [] ? null : $cycles[count($cycles) - 1];
+
+        $nextPhaseExists = $planKey === null
+            || (($plan = TrainingPlanCatalog::byKey($planKey)) !== null && $latest !== null && $plan->phase($latest->phaseIndex() + 1) !== null);
+        $canGenerate = $latest === null || ($latest->isCompleted() && $nextPhaseExists);
+
         return Inertia::render('ProgramDetail', [
             'program' => ProgramView::detail($program, $summaries),
             'available' => $available,
-            'cycles' => ProgramView::cycles($this->cycles->forProgram($id, $tenant)),
+            'cycles' => ProgramView::cycles($cycles),
+            'roadmap' => ProgramView::roadmap($planKey, $cycles),
+            'canGenerate' => $canGenerate,
+            'activeCycleId' => $latest !== null && ! $latest->isCompleted() ? $latest->id()->value : null,
         ]);
     }
 }

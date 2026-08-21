@@ -24,12 +24,14 @@ final class CycleModel extends Model
 
     /** @var list<string> */
     protected $fillable = [
-        'id', 'program_id', 'tenant_id', 'name', 'focus', 'start_date', 'end_date', 'sessions', 'version',
+        'id', 'program_id', 'tenant_id', 'name', 'focus', 'start_date', 'end_date',
+        'phase_index', 'status', 'sessions', 'version',
     ];
 
     /** @var array<string, string> */
     protected $casts = [
         'sessions' => 'array',
+        'phase_index' => 'integer',
         'version' => 'integer',
     ];
 }

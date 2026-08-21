@@ -16,6 +16,9 @@ final class PlannerContext
         public readonly string $ressenti,
         public readonly string $recentPerformance,
         public readonly string $previousCycle,
+        public readonly string $phaseName = '',
+        public readonly string $phaseFocus = '',
+        public readonly string $blueprint = '',
     ) {
     }
 }

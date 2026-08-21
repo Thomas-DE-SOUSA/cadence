@@ -8,6 +8,7 @@ use Cadence\Shared\Domain\TenantId;
 use Cadence\Shared\Infrastructure\Persistence\PersistenceFailure;
 use Cadence\Training\Domain\Model\Cycle;
 use Cadence\Training\Domain\Port\CycleRepository;
+use Cadence\Training\Domain\ValueObject\CycleId;
 use Throwable;
 
 final class EloquentCycleRepository implements CycleRepository
@@ -17,14 +18,15 @@ final class EloquentCycleRepository implements CycleRepository
         $s = $cycle->toSnapshot();
 
         try {
-            CycleModel::query()->create([
-                'id' => $s['id'],
+            CycleModel::query()->updateOrCreate(['id' => $s['id']], [
                 'program_id' => $s['program_id'],
                 'tenant_id' => $s['tenant_id'],
                 'name' => $s['name'],
                 'focus' => $s['focus'],
                 'start_date' => $s['start_date'],
                 'end_date' => $s['end_date'],
+                'phase_index' => $s['phase_index'],
+                'status' => $s['status'],
                 'sessions' => $s['sessions'],
                 'version' => $s['version'],
             ]);
@@ -40,7 +42,7 @@ final class EloquentCycleRepository implements CycleRepository
             CycleModel::query()
                 ->where('program_id', $programId)
                 ->where('tenant_id', $tenant->value)
-                ->orderBy('start_date')
+                ->orderBy('phase_index')
                 ->get() as $model
         ) {
             $cycles[] = Cycle::fromSnapshot($this->toSnapshot($model));
@@ -54,14 +56,24 @@ final class EloquentCycleRepository implements CycleRepository
         $model = CycleModel::query()
             ->where('program_id', $programId)
             ->where('tenant_id', $tenant->value)
-            ->orderByDesc('start_date')
+            ->orderByDesc('phase_index')
+            ->first();
+
+        return $model instanceof CycleModel ? Cycle::fromSnapshot($this->toSnapshot($model)) : null;
+    }
+
+    public function ofId(CycleId $id, TenantId $tenant): ?Cycle
+    {
+        $model = CycleModel::query()
+            ->where('id', $id->value)
+            ->where('tenant_id', $tenant->value)
             ->first();
 
         return $model instanceof CycleModel ? Cycle::fromSnapshot($this->toSnapshot($model)) : null;
     }
 
     /**
-     * @return array{id:string,program_id:string,tenant_id:string,name:string,focus:string,start_date:string,end_date:string,sessions:list<array{date:string,type:string,title:string,description:string,target_distance_meters:int|null,target_duration_seconds:int|null,target_pace_seconds_per_km:int|null}>,version:int}
+     * @return array{id:string,program_id:string,tenant_id:string,name:string,focus:string,start_date:string,end_date:string,phase_index:int,status:string,sessions:list<array{date:string,type:string,title:string,description:string,target_distance_meters:int|null,target_duration_seconds:int|null,target_pace_seconds_per_km:int|null}>,version:int}
      */
     private function toSnapshot(CycleModel $model): array
     {
@@ -76,6 +88,8 @@ final class EloquentCycleRepository implements CycleRepository
             'focus' => (string) $model->focus,
             'start_date' => (string) $model->start_date,
             'end_date' => (string) $model->end_date,
+            'phase_index' => (int) $model->phase_index,
+            'status' => (string) $model->status,
             'sessions' => array_map(static fn (array $r): array => [
                 'date' => (string) $r['date'],
                 'type' => (string) $r['type'],

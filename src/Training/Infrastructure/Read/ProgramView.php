@@ -7,6 +7,9 @@ namespace Cadence\Training\Infrastructure\Read;
 use Cadence\Training\Domain\Model\Cycle;
 use Cadence\Training\Domain\Model\Objective;
 use Cadence\Training\Domain\Model\TrainingProgram;
+use Cadence\Training\Domain\Plan\PlanPhase;
+use Cadence\Training\Domain\Plan\TrainingPlan;
+use Cadence\Training\Domain\Plan\TrainingPlanCatalog;
 use Cadence\Training\Domain\Service\ObjectiveEvaluator;
 use Cadence\Training\Domain\ValueObject\ActivitySummary;
 use Cadence\Training\Domain\ValueObject\ObjectiveResult;
@@ -120,9 +123,74 @@ final class ProgramView
                 'focus' => $s['focus'],
                 'startDate' => $s['start_date'],
                 'endDate' => $s['end_date'],
+                'phaseIndex' => $s['phase_index'],
+                'status' => $s['status'],
                 'weeks' => $grouped,
             ];
         }, $cycles);
+    }
+
+    /**
+     * The full roadmap of a program's plan: every phase with its status, so the
+     * UI can show the current cycle as active and the rest as locked/done.
+     *
+     * @param list<Cycle> $cycles
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function roadmap(?string $planKey, array $cycles): array
+    {
+        $plan = $planKey !== null ? TrainingPlanCatalog::byKey($planKey) : null;
+        if ($plan === null) {
+            return [];
+        }
+
+        $completed = 0;
+        foreach ($cycles as $c) {
+            if ($c->isCompleted()) {
+                $completed++;
+            }
+        }
+        $activeIndex = count($cycles) - 1;
+
+        $roadmap = [];
+        foreach ($plan->phases as $index => $phase) {
+            $materialised = $index <= $activeIndex;
+            $status = 'locked';
+            if ($materialised) {
+                $status = ($cycles[$index] ?? null)?->isCompleted() === true ? 'done' : 'active';
+            }
+
+            $roadmap[] = [
+                'index' => $index,
+                'name' => $phase->name,
+                'focus' => $phase->focus,
+                'weeks' => $phase->weeks,
+                'status' => $status,
+                'cycleId' => $materialised ? $cycles[$index]->id()->value : null,
+            ];
+        }
+
+        return $roadmap;
+    }
+
+    /** @return list<array<string, mixed>> */
+    public static function plans(): array
+    {
+        return array_map(static fn (TrainingPlan $plan): array => [
+            'key' => $plan->key,
+            'name' => $plan->name,
+            'summary' => $plan->summary,
+            'goal' => $plan->goal,
+            'targetRaceName' => $plan->targetRaceName,
+            'daysPerWeek' => $plan->daysPerWeek,
+            'totalWeeks' => $plan->totalWeeks(),
+            'phases' => array_map(static fn (PlanPhase $p): array => [
+                'name' => $p->name,
+                'focus' => $p->focus,
+                'weeks' => $p->weeks,
+            ], $plan->phases),
+        ], TrainingPlanCatalog::all());
     }
 
     /**

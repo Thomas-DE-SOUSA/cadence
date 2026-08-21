@@ -1,6 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
-import { ArrowLeft, CheckCircle2, Circle, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Flag, Lock, Sparkles, X } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
 import { formatDate, formatDuration, formatKilometers, formatPace } from '@/features/activity/domain/format';
@@ -49,7 +49,18 @@ interface Cycle {
     focus: string;
     startDate: string;
     endDate: string;
+    phaseIndex: number;
+    status: string;
     weeks: CycleWeek[];
+}
+
+interface RoadmapPhase {
+    index: number;
+    name: string;
+    focus: string;
+    weeks: number;
+    status: 'done' | 'active' | 'locked';
+    cycleId: string | null;
 }
 
 interface Program {
@@ -70,6 +81,9 @@ interface Props {
     program: Program;
     available: AvailableActivity[];
     cycles: Cycle[];
+    roadmap: RoadmapPhase[];
+    canGenerate: boolean;
+    activeCycleId: string | null;
 }
 
 const SESSION_STYLES: Record<string, { label: string; dot: string; text: string }> = {
@@ -79,6 +93,7 @@ const SESSION_STYLES: Record<string, { label: string; dot: string; text: string 
     INTERVALS: { label: 'Fractionné', dot: 'bg-red-400', text: 'text-red-300' },
     RECOVERY: { label: 'Récupération', dot: 'bg-teal-400', text: 'text-teal-300' },
     RACE_PACE: { label: 'Allure course', dot: 'bg-fuchsia-400', text: 'text-fuchsia-300' },
+    RACE: { label: 'Course', dot: 'bg-lime-400', text: 'text-lime-300' },
     CROSS: { label: 'Cross-training', dot: 'bg-indigo-400', text: 'text-indigo-300' },
     REST: { label: 'Repos', dot: 'bg-neutral-600', text: 'text-neutral-500' },
 };
@@ -95,9 +110,19 @@ function todayIso(): string {
     return new Date().toISOString().slice(0, 10);
 }
 
-export default function ProgramDetail({ program, available, cycles }: Props) {
+export default function ProgramDetail({ program, available, cycles, roadmap, canGenerate, activeCycleId }: Props) {
     const assign = useForm({ activity_id: available[0]?.id ?? '' });
     const generate = useForm({ start_date: todayIso(), weeks: 2, ressenti: '' });
+
+    function completeCycle(cycleId: string) {
+        router.post(`/programme/${program.id}/cycles/${cycleId}/terminer`, {}, { preserveScroll: true });
+    }
+
+    const ROADMAP_BADGE: Record<RoadmapPhase['status'], { label: string; cls: string }> = {
+        done: { label: 'Terminé', cls: 'border-lime-400/40 bg-lime-400/10 text-lime-300' },
+        active: { label: 'En cours', cls: 'border-sky-400/40 bg-sky-400/10 text-sky-300' },
+        locked: { label: 'À débloquer', cls: 'border-neutral-700 bg-neutral-800/40 text-neutral-500' },
+    };
 
     function submitAssign(e: FormEvent) {
         e.preventDefault();
@@ -154,6 +179,55 @@ export default function ProgramDetail({ program, available, cycles }: Props) {
                 </div>
             </div>
 
+            {roadmap.length > 0 && (
+                <div className="mb-8">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">Feuille de route</p>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {roadmap.map((phase) => {
+                            const badge = ROADMAP_BADGE[phase.status];
+                            return (
+                                <div
+                                    key={phase.index}
+                                    className={`rounded-xl border p-3 ${
+                                        phase.status === 'active'
+                                            ? 'border-sky-400/40 bg-sky-400/[0.06]'
+                                            : phase.status === 'done'
+                                              ? 'border-neutral-800 bg-neutral-900/60'
+                                              : 'border-neutral-800 bg-neutral-900/30'
+                                    }`}
+                                >
+                                    <div className="mb-1.5 flex items-center justify-between">
+                                        <span className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                                            Cycle {phase.index + 1}
+                                        </span>
+                                        {phase.status === 'done' ? (
+                                            <CheckCircle2 size={14} className="text-lime-400" />
+                                        ) : phase.status === 'locked' ? (
+                                            <Lock size={13} className="text-neutral-600" />
+                                        ) : (
+                                            <Circle size={13} className="text-sky-400" />
+                                        )}
+                                    </div>
+                                    <p
+                                        className={`text-sm font-semibold ${
+                                            phase.status === 'locked' ? 'text-neutral-500' : 'text-neutral-100'
+                                        }`}
+                                    >
+                                        {phase.name}
+                                    </p>
+                                    <p className="mt-0.5 line-clamp-2 text-xs text-neutral-500">{phase.focus}</p>
+                                    <span
+                                        className={`mt-2 inline-block rounded border px-1.5 py-0.5 text-[10px] font-medium ${badge.cls}`}
+                                    >
+                                        {phase.weeks} sem. · {badge.label}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 {/* Main column — the plan */}
                 <div className="space-y-6 lg:col-span-2">
@@ -166,12 +240,17 @@ export default function ProgramDetail({ program, available, cycles }: Props) {
                         </Card>
                     ) : (
                         cycles.map((cycle) => (
-                            <Card key={cycle.id} title={cycle.name}>
-                                <p className="-mt-1 mb-4 text-sm text-neutral-400">
+                            <Card key={cycle.id} title={`Cycle ${cycle.phaseIndex + 1} · ${cycle.name}`}>
+                                <p className="-mt-1 mb-4 flex flex-wrap items-center gap-2 text-sm text-neutral-400">
                                     {cycle.focus}
-                                    <span className="ml-2 text-xs text-neutral-500">
+                                    <span className="text-xs text-neutral-500">
                                         {formatDate(cycle.startDate)} → {formatDate(cycle.endDate)}
                                     </span>
+                                    {cycle.status === 'completed' && (
+                                        <span className="rounded border border-lime-400/40 bg-lime-400/10 px-1.5 py-0.5 text-[11px] font-medium text-lime-300">
+                                            Terminé
+                                        </span>
+                                    )}
                                 </p>
                                 <div className="space-y-5">
                                     {cycle.weeks.map((week) => (
@@ -218,6 +297,14 @@ export default function ProgramDetail({ program, available, cycles }: Props) {
                                         </div>
                                     ))}
                                 </div>
+                                {cycle.id === activeCycleId && (
+                                    <button
+                                        onClick={() => completeCycle(cycle.id)}
+                                        className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-lime-400/50 px-4 py-2 text-sm font-semibold text-lime-300 transition-colors hover:bg-lime-400/10"
+                                    >
+                                        <Flag size={15} /> Terminer ce cycle
+                                    </button>
+                                )}
                             </Card>
                         ))
                     )}
@@ -258,11 +345,25 @@ export default function ProgramDetail({ program, available, cycles }: Props) {
 
                 {/* Sidebar — generate + assigned runs */}
                 <div className="space-y-6">
-                    <Card title="Générer un cycle (IA)">
+                    <Card title="Générer le prochain cycle (IA)">
+                        {!canGenerate ? (
+                            <div className="flex items-start gap-3 text-sm text-neutral-400">
+                                <Lock size={16} className="mt-0.5 shrink-0 text-neutral-500" />
+                                <p>
+                                    {roadmap.length > 0 && roadmap.every((p) => p.status === 'done')
+                                        ? 'Feuille de route terminée : bravo, tous les cycles sont bouclés.'
+                                        : 'Terminez le cycle en cours (bouton « Terminer ce cycle ») pour débloquer la génération du suivant.'}
+                                </p>
+                            </div>
+                        ) : (
+                        <>
                         <p className="-mt-1 mb-4 text-sm text-neutral-400">
-                            Un coach IA conçoit le prochain cycle jour par jour, d'après vos performances, le cycle précédent et
-                            votre ressenti.
+                            Un coach IA adapte le prochain cycle du plan à vos performances, au cycle précédent et à votre
+                            ressenti.
                         </p>
+                        {(generate.errors as Record<string, string>).cycle && (
+                            <p className="mb-3 text-xs text-red-400">{(generate.errors as Record<string, string>).cycle}</p>
+                        )}
                         <form onSubmit={submitGenerate} className="space-y-3">
                             <div className="grid grid-cols-2 gap-3">
                                 <label className="block">
@@ -308,6 +409,8 @@ export default function ProgramDetail({ program, available, cycles }: Props) {
                                 {generate.processing ? 'Génération…' : 'Générer le cycle'}
                             </button>
                         </form>
+                        </>
+                        )}
                     </Card>
 
                     <Card title="Sorties assignées">

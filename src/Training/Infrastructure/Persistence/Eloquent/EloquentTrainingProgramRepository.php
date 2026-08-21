@@ -38,6 +38,7 @@ final class EloquentTrainingProgramRepository implements TrainingProgramReposito
                     'end_date' => $snapshot['end_date'],
                     'priority' => $snapshot['priority'],
                     'status' => $snapshot['status'],
+                    'plan_key' => $snapshot['plan_key'],
                     'objectives' => $snapshot['objectives'],
                     'assigned_activity_ids' => $snapshot['assigned_activity_ids'],
                     'version' => $snapshot['version'],
@@ -116,7 +117,7 @@ final class EloquentTrainingProgramRepository implements TrainingProgramReposito
     }
 
     /**
-     * @return array{id:string,tenant_id:string,name:string,goal:string,target_race_name:string,target_race_date:string|null,start_date:string,end_date:string|null,priority:string,status:string,objectives:list<array{id:string,type:string,label:string,target_distance_meters:int|null,target_seconds:int|null,target_pace_seconds_per_km:float|null,target_count:int|null}>,assigned_activity_ids:list<string>,version:int}
+     * @return array{id:string,tenant_id:string,name:string,goal:string,target_race_name:string,target_race_date:string|null,start_date:string,end_date:string|null,priority:string,status:string,plan_key:string|null,objectives:list<array{id:string,type:string,label:string,target_distance_meters:int|null,target_seconds:int|null,target_pace_seconds_per_km:float|null,target_count:int|null}>,assigned_activity_ids:list<string>,version:int}
      */
     private function toSnapshot(TrainingProgramModel $model): array
     {
@@ -136,6 +137,7 @@ final class EloquentTrainingProgramRepository implements TrainingProgramReposito
             'end_date' => $model->end_date !== null ? (string) $model->end_date : null,
             'priority' => (string) $model->priority,
             'status' => (string) $model->status,
+            'plan_key' => $model->plan_key !== null ? (string) $model->plan_key : null,
             'objectives' => array_map(static fn (array $r): array => [
                 'id' => (string) $r['id'],
                 'type' => (string) $r['type'],

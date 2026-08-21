@@ -99,6 +99,14 @@ final class ClaudeCyclePlanner implements CyclePlanner
     {
         $days = $c->weeks * 7;
 
+        $phaseBlock = trim($c->blueprint) === '' ? '' : <<<PHASE
+
+        Cette phase du plan expert est ta BASE — adapte-la (volume, intensité) au ressenti et aux performances, sans en changer la nature :
+        - Phase : {$c->phaseName} — {$c->phaseFocus}
+        - Plan de référence :
+        {$c->blueprint}
+        PHASE;
+
         return <<<PROMPT
         Tu es un coach expert en course à pied. Conçois le PROCHAIN cycle d'entraînement, jour par jour.
 
@@ -108,7 +116,7 @@ final class ClaudeCyclePlanner implements CyclePlanner
         - Début du cycle : {$c->startDate}, durée : {$c->weeks} semaine(s) ({$days} jours).
         - Ressenti de l'athlète : {$c->ressenti}
         - Performances récentes : {$c->recentPerformance}
-        - {$c->previousCycle}
+        - {$c->previousCycle}{$phaseBlock}
 
         Réponds avec UNIQUEMENT un objet JSON (aucun texte, aucune balise markdown) de cette forme EXACTE :
         {
