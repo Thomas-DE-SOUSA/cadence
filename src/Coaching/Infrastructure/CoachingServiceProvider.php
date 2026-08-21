@@ -6,13 +6,17 @@ namespace Cadence\Coaching\Infrastructure;
 
 use Cadence\Coaching\Domain\Port\AthleteHistoryProvider;
 use Cadence\Coaching\Domain\Port\CoachChat;
+use Cadence\Coaching\Domain\Port\CoachStreamer;
 use Cadence\Coaching\Domain\Port\ConversationRepository;
 use Cadence\Coaching\Domain\Port\ProgramContextProvider;
 use Cadence\Coaching\Domain\Port\SessionAdjuster;
 use Cadence\Coaching\Infrastructure\Ai\ClaudeCoachChat;
+use Cadence\Coaching\Infrastructure\Ai\ClaudeCoachStreamer;
+use Cadence\Coaching\Infrastructure\Ai\CoachRequestBuilder;
 use Cadence\Coaching\Infrastructure\Http\Controller\ApplyProposalController;
 use Cadence\Coaching\Infrastructure\Http\Controller\SendCoachMessageController;
 use Cadence\Coaching\Infrastructure\Http\Controller\ShowCoachController;
+use Cadence\Coaching\Infrastructure\Http\Controller\StreamCoachController;
 use Cadence\Coaching\Infrastructure\Knowledge\CoachingKnowledge;
 use Cadence\Coaching\Infrastructure\Persistence\Eloquent\EloquentConversationRepository;
 use Cadence\Coaching\Infrastructure\Provider\EloquentAthleteHistoryProvider;
@@ -29,9 +33,15 @@ final class CoachingServiceProvider extends ServiceProvider
         $this->app->bind(ConversationRepository::class, EloquentConversationRepository::class);
         $this->app->bind(ProgramContextProvider::class, TrainingProgramContextProvider::class);
         $this->app->bind(SessionAdjuster::class, TrainingSessionAdjuster::class);
+
+        $builder = fn (): CoachRequestBuilder => new CoachRequestBuilder(new CoachingKnowledge());
         $this->app->bind(CoachChat::class, fn (): ClaudeCoachChat => new ClaudeCoachChat(
             (string) config('services.anthropic.key'),
-            new CoachingKnowledge(),
+            $builder(),
+        ));
+        $this->app->bind(CoachStreamer::class, fn (): ClaudeCoachStreamer => new ClaudeCoachStreamer(
+            (string) config('services.anthropic.key'),
+            $builder(),
         ));
     }
 
@@ -40,6 +50,7 @@ final class CoachingServiceProvider extends ServiceProvider
         Route::prefix('programme/{id}/coach')->group(function (): void {
             Route::get('/', ShowCoachController::class)->name('programs.coach');
             Route::post('/message', SendCoachMessageController::class)->name('programs.coach.message');
+            Route::post('/stream', StreamCoachController::class)->name('programs.coach.stream');
             Route::post('/apply', ApplyProposalController::class)->name('programs.coach.apply');
         });
     }

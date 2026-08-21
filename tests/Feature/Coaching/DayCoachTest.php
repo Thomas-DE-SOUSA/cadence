@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Cadence\Coaching\Domain\Port\CoachChat;
+use Cadence\Coaching\Domain\Port\CoachStreamer;
 use Cadence\Coaching\Domain\ValueObject\CoachContext;
 use Cadence\Coaching\Domain\ValueObject\CoachReply;
 use Cadence\Coaching\Domain\ValueObject\SessionProposal;
@@ -86,6 +87,40 @@ describe('Feature: Day coach', function (): void {
         /** @var list<array<string, mixed>> $after */
         $after = ConversationModel::query()->first()->messages;
         expect($after[1]['proposal_applied'])->toBeTrue();
+    });
+
+    it('streams the coach reply and persists the turn', function (): void {
+        $this->app->bind(CoachStreamer::class, fn (): CoachStreamer => new class implements CoachStreamer
+        {
+            public function stream(CoachContext $context, array $history, callable $onText): CoachReply
+            {
+                $onText('Repose-');
+                $onText('toi bien.');
+
+                return new CoachReply('Repose-toi bien.', new SessionProposal($context->day->date, 'REST', 'Repos', 'Repos complet.', null, null, null, 'Récup.'));
+            }
+        });
+
+        $this->post('/programme', [
+            'name' => 'Bloc', 'plan_key' => 'sub40-10k', 'start_date' => '2026-08-24T00:00:00.000Z',
+            'priority' => 'A', 'objectives' => [],
+        ])->assertRedirect();
+        $programId = (string) TrainingProgramModel::query()->value('id');
+        $cycleId = (string) CycleModel::query()->value('id');
+
+        $response = $this->post("/programme/{$programId}/coach/stream", [
+            'cycle_id' => $cycleId, 'date' => '2026-08-25', 'message' => 'Grosse fatigue.',
+        ]);
+
+        $content = $response->streamedContent();
+        expect($content)->toContain('event: text')->toContain('Repose-')->toContain('event: done');
+
+        /** @var list<array<string, mixed>> $messages */
+        $messages = ConversationModel::query()->first()->messages;
+        expect($messages)->toHaveCount(2);
+        expect($messages[1]['role'])->toBe('coach');
+        expect($messages[1]['text'])->toBe('Repose-toi bien.');
+        expect($messages[1]['proposal']['type'])->toBe('REST');
     });
 
     it('validates the message input', function (): void {

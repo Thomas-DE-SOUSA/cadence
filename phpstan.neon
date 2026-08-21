@@ -10,4 +10,5 @@ parameters:
         - src/Activity/Infrastructure/Ai/ClaudeStravaTextParser.php
         - src/Training/Infrastructure/Ai/ClaudeCyclePlanner.php
         - src/Coaching/Infrastructure/Ai/ClaudeCoachChat.php
+        - src/Coaching/Infrastructure/Ai/ClaudeCoachStreamer.php
     tmpDir: build/phpstan

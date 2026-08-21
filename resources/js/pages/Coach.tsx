@@ -1,4 +1,5 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { ArrowLeft, Check, RefreshCw, Send, Sparkles } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
@@ -42,6 +43,12 @@ interface Props {
     conversation: { id: string; messages: Message[] } | null;
 }
 
+const SUGGESTIONS = [
+    'Je me sens fatigué·e aujourd\'hui, je le sens pas.',
+    'Pourquoi cette séance ? Explique-moi.',
+    'Je n\'ai que 40 min aujourd\'hui.',
+];
+
 function renderRich(text: string): ReactNode[] {
     // Minimal markdown: render **bold**; newlines are kept via whitespace-pre-wrap.
     return text.split('**').map((part, i) =>
@@ -55,19 +62,93 @@ function renderRich(text: string): ReactNode[] {
     );
 }
 
-const SUGGESTIONS = [
-    'Je me sens fatigué·e aujourd\'hui, je le sens pas.',
-    'Pourquoi cette séance ? Explique-moi.',
-    'Je n\'ai que 40 min aujourd\'hui.',
-];
+function xsrfToken(): string {
+    const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
 
 export default function Coach({ programId, cycleId, programName, day, conversation }: Props) {
-    const form = useForm({ cycle_id: cycleId, date: day.date, message: '' });
+    const [message, setMessage] = useState('');
+    const [streaming, setStreaming] = useState(false);
+    const [liveText, setLiveText] = useState('');
+    const [pendingAthlete, setPendingAthlete] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const bottomRef = useRef<HTMLDivElement>(null);
+
     const messages = conversation?.messages ?? [];
 
-    function submit(e: FormEvent) {
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages.length, liveText, streaming]);
+
+    function handleEvent(chunk: string) {
+        let event = 'message';
+        let data = '';
+        for (const line of chunk.split('\n')) {
+            if (line.startsWith('event:')) event = line.slice(6).trim();
+            else if (line.startsWith('data:')) data += line.slice(5).trim();
+        }
+        if (!data) return;
+        let parsed: { t?: string; message?: string };
+        try {
+            parsed = JSON.parse(data);
+        } catch {
+            return;
+        }
+        if (event === 'text') setLiveText((prev) => prev + (parsed.t ?? ''));
+        else if (event === 'done')
+            router.reload({
+                only: ['conversation'],
+                onFinish: () => {
+                    setStreaming(false);
+                    setLiveText('');
+                    setPendingAthlete(null);
+                },
+            });
+        else if (event === 'error') {
+            setError(parsed.message ?? 'Le coach est indisponible.');
+            setStreaming(false);
+            setPendingAthlete(null);
+        }
+    }
+
+    async function submit(e: FormEvent) {
         e.preventDefault();
-        if (form.data.message.trim()) form.post(`/programme/${programId}/coach/message`, { preserveScroll: true });
+        const text = message.trim();
+        if (!text || streaming) return;
+
+        setMessage('');
+        setPendingAthlete(text);
+        setLiveText('');
+        setError(null);
+        setStreaming(true);
+
+        try {
+            const res = await fetch(`/programme/${programId}/coach/stream`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream', 'X-XSRF-TOKEN': xsrfToken() },
+                body: JSON.stringify({ cycle_id: cycleId, date: day.date, message: text }),
+            });
+            if (!res.ok || !res.body) throw new Error('stream failed');
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            for (;;) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                let idx;
+                while ((idx = buffer.indexOf('\n\n')) >= 0) {
+                    handleEvent(buffer.slice(0, idx));
+                    buffer = buffer.slice(idx + 2);
+                }
+            }
+        } catch {
+            setError('Le coach est indisponible.');
+            setStreaming(false);
+            setPendingAthlete(null);
+        }
     }
 
     function applyProposal(messageId: string) {
@@ -105,7 +186,7 @@ export default function Coach({ programId, cycleId, programName, day, conversati
                     </div>
                 </Card>
 
-                {messages.length === 0 && (
+                {messages.length === 0 && !streaming && (
                     <Card>
                         <p className="text-sm text-neutral-400">
                             Discute de cette séance avec ton coach : fatigue, douleurs, contraintes de temps, ou juste « pourquoi
@@ -115,7 +196,7 @@ export default function Coach({ programId, cycleId, programName, day, conversati
                             {SUGGESTIONS.map((s) => (
                                 <button
                                     key={s}
-                                    onClick={() => form.setData('message', s)}
+                                    onClick={() => setMessage(s)}
                                     className="cursor-pointer rounded-full border border-neutral-800 px-3 py-1.5 text-xs text-neutral-300 transition-colors hover:border-neutral-700 hover:text-neutral-100"
                                 >
                                     {s}
@@ -171,19 +252,37 @@ export default function Coach({ programId, cycleId, programName, day, conversati
                         ),
                     )}
 
-                    {form.processing && (
-                        <div className="flex items-center gap-2 text-sm text-neutral-500">
-                            <RefreshCw size={15} className="animate-spin" /> Le coach réfléchit…
+                    {/* Streaming turn: the athlete's just-sent message + the coach's live reply */}
+                    {pendingAthlete && (
+                        <div className="flex justify-end">
+                            <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-lime-400/15 px-4 py-2.5 text-sm text-neutral-100">
+                                {pendingAthlete}
+                            </p>
                         </div>
                     )}
+                    {streaming &&
+                        (liveText === '' ? (
+                            <div className="flex items-center gap-2 text-sm text-neutral-500">
+                                <RefreshCw size={15} className="animate-spin" /> Le coach réfléchit…
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-start">
+                                <div className="max-w-[90%] whitespace-pre-wrap rounded-2xl rounded-bl-sm border border-neutral-800 bg-neutral-900/60 px-4 py-2.5 text-sm text-neutral-200">
+                                    {renderRich(liveText)}
+                                    <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse bg-lime-400/70 align-middle" />
+                                </div>
+                            </div>
+                        ))}
+
+                    <div ref={bottomRef} />
                 </div>
 
-                {form.errors.message && <p className="text-xs text-red-400">{form.errors.message}</p>}
+                {error && <p className="text-xs text-red-400">{error}</p>}
 
                 <form onSubmit={submit} className="sticky bottom-4 flex items-end gap-2">
                     <textarea
-                        value={form.data.message}
-                        onChange={(e) => form.setData('message', e.target.value)}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
@@ -192,12 +291,12 @@ export default function Coach({ programId, cycleId, programName, day, conversati
                         }}
                         rows={2}
                         placeholder="Parle à ton coach…"
-                        disabled={form.processing}
+                        disabled={streaming}
                         className="flex-1 resize-none rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm text-neutral-100 outline-none focus:border-lime-400/60 disabled:opacity-60"
                     />
                     <button
                         type="submit"
-                        disabled={form.processing || !form.data.message.trim()}
+                        disabled={streaming || !message.trim()}
                         className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-lime-400 text-neutral-950 transition-colors hover:bg-lime-300 disabled:opacity-50"
                         aria-label="Envoyer"
                     >
