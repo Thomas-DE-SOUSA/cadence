@@ -82,6 +82,20 @@ describe('HistoryView', function (): void {
         expect($view['stats']['thisWeekMeters'])->toBe(5000);
     });
 
+    it('marks a planned rest day so it is not read as a miss', function (): void {
+        $view = HistoryView::build(
+            [activity('A', '2026-08-20T00:00:00+00:00', 5000, 1400, 280.0, [])],
+            new DateTimeImmutable('2026-08-21'), // Friday
+            ['2026-08-21' => 'REST', '2026-08-22' => 'LONG'],
+        );
+
+        $byDate = collect($view['streak']['days'])->keyBy('date');
+        expect($byDate['2026-08-21']['rest'])->toBeTrue();
+        expect($byDate['2026-08-21']['active'])->toBeFalse();
+        expect($byDate['2026-08-22']['rest'])->toBeFalse(); // a planned run is not a rest day
+        expect($byDate['2026-08-20']['active'])->toBeTrue(); // an actual run stays active
+    });
+
     it('unlocks achievements from the data', function (): void {
         $view = HistoryView::build(
             [activity('A', '2026-08-19T18:00:00+00:00', 10010, 2553, 255.0, [['distance_meters' => 10000, 'duration_seconds' => 2380]])],

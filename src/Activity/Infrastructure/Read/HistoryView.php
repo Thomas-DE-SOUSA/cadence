@@ -17,17 +17,18 @@ final class HistoryView
 
     /**
      * @param list<ActivityModel> $models most recent first
+     * @param array<string, string> $plannedByDate date (Y-m-d) => SessionType value
      *
      * @return array<string, mixed>
      */
-    public static function build(array $models, DateTimeImmutable $today): array
+    public static function build(array $models, DateTimeImmutable $today, array $plannedByDate = []): array
     {
         [$records, $rankByActivityDistance] = self::rankEfforts($models);
         $activeDates = self::activeDates($models);
 
         return [
             'stats' => self::stats($models, $today),
-            'streak' => self::streak($activeDates, $today),
+            'streak' => self::streak($activeDates, $today, $plannedByDate),
             'records' => $records,
             'achievements' => self::achievements($models, $records),
             'activities' => array_map(
@@ -202,10 +203,11 @@ final class HistoryView
 
     /**
      * @param array<string, string> $activeDates date => ISO year-week
+     * @param array<string, string> $plannedByDate date => SessionType value
      *
-     * @return array{weeks:int,days:list<array{label:string,date:string,active:bool,today:bool}>}
+     * @return array{weeks:int,days:list<array{label:string,date:string,active:bool,today:bool,rest:bool}>}
      */
-    private static function streak(array $activeDates, DateTimeImmutable $today): array
+    private static function streak(array $activeDates, DateTimeImmutable $today, array $plannedByDate = []): array
     {
         $activeWeeks = array_flip(array_values($activeDates));
 
@@ -226,6 +228,8 @@ final class HistoryView
                 'label' => self::WEEKDAYS[$i],
                 'date' => $ds,
                 'active' => isset($activeDates[$ds]),
+                // A planned rest day should read as a deliberate day off, not a miss.
+                'rest' => ($plannedByDate[$ds] ?? null) === 'REST',
                 'today' => $ds === $today->format('Y-m-d'),
             ];
         }

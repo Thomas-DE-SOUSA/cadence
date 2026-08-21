@@ -7,6 +7,7 @@ import {
     Gauge,
     Lock,
     Medal,
+    Moon,
     Mountain,
     MoveUpRight,
     Plus,
@@ -57,7 +58,7 @@ interface Achievement {
 
 interface Props {
     stats: { totalActivities: number; totalDistanceMeters: number; thisWeekMeters: number; lastActivityDate: string | null };
-    streak: { weeks: number; days: { label: string; date: string; active: boolean; today: boolean }[] };
+    streak: { weeks: number; days: { label: string; date: string; active: boolean; today: boolean; rest: boolean }[] };
     records: RecordItem[];
     achievements: Achievement[];
     activities: ActivityRow[];
@@ -85,6 +86,7 @@ function StreakDigits({ weeks }: { weeks: number }) {
 
 export default function History({ stats, streak, records, achievements, activities }: Props) {
     const unlocked = achievements.filter((a) => a.unlocked).length;
+    const todayRest = streak.days.some((d) => d.today && d.rest && !d.active);
 
     return (
         <>
@@ -115,7 +117,11 @@ export default function History({ stats, streak, records, achievements, activiti
                                 </span>
                             </p>
                             <p className="mt-1 text-sm text-neutral-500">
-                                {streak.weeks > 0 ? 'de série d’entraînement 🔥' : 'Lance ta série cette semaine !'}
+                                {todayRest
+                                    ? 'Repos prévu aujourd’hui — ta série tient bon 😴'
+                                    : streak.weeks > 0
+                                      ? 'de série d’entraînement 🔥'
+                                      : 'Lance ta série cette semaine !'}
                             </p>
                         </div>
                     </div>
@@ -124,15 +130,18 @@ export default function History({ stats, streak, records, achievements, activiti
                             <div key={d.date} className="flex flex-col items-center gap-1.5">
                                 <span className="text-[11px] font-medium uppercase text-neutral-400">{d.label}</span>
                                 <span
+                                    title={d.rest && !d.active ? 'Repos prévu — ta série est préservée' : undefined}
                                     className={`flex h-8 w-8 items-center justify-center rounded-full border text-[11px] font-bold ${
                                         d.active
                                             ? 'border-brand-500 bg-brand-500 text-white'
-                                            : d.today
-                                              ? 'border-brand-300 bg-white text-brand-500'
-                                              : 'border-neutral-200 bg-white text-neutral-300'
+                                            : d.rest
+                                              ? 'border-indigo-200 bg-indigo-50 text-indigo-400'
+                                              : d.today
+                                                ? 'border-brand-300 bg-white text-brand-500'
+                                                : 'border-neutral-200 bg-white text-neutral-300'
                                     }`}
                                 >
-                                    {d.active ? <Flame size={14} /> : d.date.slice(8)}
+                                    {d.active ? <Flame size={14} /> : d.rest ? <Moon size={13} /> : d.date.slice(8)}
                                 </span>
                             </div>
                         ))}
