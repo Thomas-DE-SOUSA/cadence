@@ -311,7 +311,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                                     onClick={() =>
                                                                         selectedRun && assignDay(cycle.id, s.date, selectedRun)
                                                                     }
-                                                                    className={`rounded-lg border p-3 transition-colors ${
+                                                                    className={`flex flex-col rounded-lg border p-3 transition-colors ${
                                                                         placing
                                                                             ? 'cursor-pointer border-dashed border-lime-400/50 bg-lime-400/[0.04]'
                                                                             : 'border-neutral-800 bg-neutral-900/60'
@@ -330,8 +330,9 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                                     <p className="mt-0.5 text-xs leading-relaxed text-neutral-400">
                                                                         {s.description}
                                                                     </p>
+                                                                    <div className="mt-auto pt-2">
                                                                     {(s.targetDistanceMeters || s.targetPaceSecondsPerKm) && (
-                                                                        <p className="mt-1.5 text-xs tabular-nums text-neutral-500">
+                                                                        <p className="text-xs tabular-nums text-neutral-500">
                                                                             Cible :{' '}
                                                                             {s.targetDistanceMeters
                                                                                 ? `${formatKilometers(s.targetDistanceMeters)} km`
@@ -371,6 +372,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                                             </p>
                                                                         )
                                                                     )}
+                                                                    </div>
                                                                 </div>
                                                             );
                                                         })}
