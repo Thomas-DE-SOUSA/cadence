@@ -33,7 +33,7 @@ final class ShowProgramController
         abort_unless($program !== null, 404);
 
         $summaries = $this->summaries->summariesFor($tenant, $program->assignedActivityIds());
-        $assigned = array_flip($program->assignedActivityIds());
+        $cycles = $this->cycles->forProgram($id, $tenant);
 
         $allActivities = ActivityModel::query()
             ->where('tenant_id', $tenant->value)
@@ -52,8 +52,19 @@ final class ShowProgramController
             ];
         }
 
+        // The pool holds runs not yet placed on a day — so unlinking a day
+        // returns its run to the pool and it can be placed again.
+        $linked = [];
+        foreach ($cycles as $cycle) {
+            foreach ($cycle->toSnapshot()['sessions'] as $session) {
+                if ($session['activity_id'] !== null) {
+                    $linked[$session['activity_id']] = true;
+                }
+            }
+        }
+
         $available = $allActivities
-            ->reject(fn (ActivityModel $m): bool => isset($assigned[$m->id]))
+            ->reject(fn (ActivityModel $m): bool => isset($linked[$m->id]))
             ->map(fn (ActivityModel $m): array => [
                 'id' => $m->id,
                 'occurredAt' => (string) $m->occurred_at,
@@ -62,7 +73,6 @@ final class ShowProgramController
             ->values()
             ->all();
 
-        $cycles = $this->cycles->forProgram($id, $tenant);
         $planKey = $program->planKey();
         $latest = $cycles === [] ? null : $cycles[count($cycles) - 1];
 

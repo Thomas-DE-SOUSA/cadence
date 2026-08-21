@@ -60,10 +60,17 @@ describe('Feature: Day assignment', function (): void {
         $program = TrainingProgramModel::query()->find($programId);
         expect($program->assigned_activity_ids)->toContain($activityId);
 
-        // Unlink clears the day.
+        // A placed run leaves the "to place" pool...
+        $available = $this->withHeader('X-Inertia', 'true')->get("/programme/{$programId}")->json('props.available');
+        expect(array_column($available, 'id'))->not->toContain($activityId);
+
+        // Unlink clears the day and returns the run to the pool.
         $this->post("/programme/{$programId}/cycles/{$cycleId}/jour", ['date' => '2026-08-25', 'activity_id' => null])
             ->assertRedirect();
         expect(linkedActivityOn($cycleId, '2026-08-25'))->toBeNull();
+
+        $available = $this->withHeader('X-Inertia', 'true')->get("/programme/{$programId}")->json('props.available');
+        expect(array_column($available, 'id'))->toContain($activityId);
     });
 
     it('preserves day-links when regenerating the cycle', function (): void {
