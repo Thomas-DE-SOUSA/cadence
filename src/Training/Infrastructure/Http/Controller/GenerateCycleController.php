@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cadence\Training\Infrastructure\Http\Controller;
 
+use Cadence\Coaching\Application\FitnessAssessmentService;
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Application\TenantContext;
 use Cadence\Training\Application\UseCase\GenerateCycle\GenerateCycleUseCase;
@@ -17,16 +18,19 @@ final class GenerateCycleController
 {
     public function __construct(
         private readonly GenerateCycleUseCase $useCase,
+        private readonly FitnessAssessmentService $fitness,
         private readonly TenantContext $tenantContext,
     ) {
     }
 
     public function __invoke(GenerateCycleRequest $request, string $id): RedirectResponse
     {
+        $tenant = $this->tenantContext->current();
+
         try {
             $this->useCase->execute(
-                $request->toInput($id),
-                new ExecutionContext($this->tenantContext->current()),
+                $request->toInput($id, $this->fitness->pacesSummaryFor($tenant)),
+                new ExecutionContext($tenant),
             );
         } catch (ProgramNotFound) {
             abort(404);

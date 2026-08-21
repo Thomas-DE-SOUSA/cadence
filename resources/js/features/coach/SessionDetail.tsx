@@ -8,6 +8,16 @@ interface Paces {
     repetition: number;
 }
 
+interface Step {
+    label: string;
+    repeat: number;
+    distanceMeters: number | null;
+    durationSeconds: number | null;
+    paceSecondsPerKm: number | null;
+    recoverySeconds: number | null;
+    note: string;
+}
+
 interface Session {
     date: string;
     type: string;
@@ -16,6 +26,7 @@ interface Session {
     targetDistanceMeters: number | null;
     targetDurationSeconds: number | null;
     targetPaceSecondsPerKm: number | null;
+    steps: Step[];
     actual: { distanceMeters: number; averagePaceSecondsPerKm: number } | null;
 }
 
@@ -69,6 +80,18 @@ function duration(seconds: number): string {
     return `${Math.floor(s / 3600)} h ${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;
 }
 
+function shortDuration(seconds: number): string {
+    const s = Math.round(seconds);
+    if (s < 3600) return s % 60 === 0 ? `${s / 60} min` : `${Math.floor(s / 60)}′${String(s % 60).padStart(2, '0')}`;
+    return `${Math.floor(s / 3600)} h ${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;
+}
+
+function stepEffort(step: Step): string {
+    if (step.durationSeconds) return shortDuration(step.durationSeconds);
+    if (step.distanceMeters) return step.distanceMeters >= 1000 ? `${formatKilometers(step.distanceMeters)} km` : `${step.distanceMeters} m`;
+    return '';
+}
+
 export function SessionDetail({ session, paces }: { session: Session; paces: Paces | null }) {
     const pace = session.targetPaceSecondsPerKm;
     const zone = TYPE_ZONE[session.type];
@@ -104,6 +127,40 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
                 <h3 className="mt-0.5 text-lg font-bold text-neutral-100">{session.title}</h3>
                 <p className="mt-1 text-sm leading-relaxed text-neutral-400">{session.description}</p>
             </div>
+
+            {session.steps.length > 0 && (
+                <div>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">Déroulé de la séance</p>
+                    <ol className="space-y-2">
+                        {session.steps.map((step, i) => {
+                            const effort = stepEffort(step);
+                            const recovery =
+                                step.repeat > 1 && step.recoverySeconds ? `récup ${shortDuration(step.recoverySeconds)}` : '';
+                            const sub = [recovery, step.note].filter(Boolean).join(' · ');
+                            return (
+                                <li key={i} className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-2.5">
+                                    <div className="flex items-baseline justify-between gap-3">
+                                        <span className="text-sm text-neutral-100">
+                                            {step.repeat > 1 && (
+                                                <span className="font-semibold text-lime-300">{step.repeat} × </span>
+                                            )}
+                                            {effort && <span className="font-semibold">{effort}</span>}
+                                            {effort && ' · '}
+                                            {step.label}
+                                        </span>
+                                        {step.paceSecondsPerKm && (
+                                            <span className="shrink-0 text-sm tabular-nums text-lime-300">
+                                                {mmss(step.paceSecondsPerKm)}/km
+                                            </span>
+                                        )}
+                                    </div>
+                                    {sub && <p className="mt-0.5 text-xs text-neutral-500">{sub}</p>}
+                                </li>
+                            );
+                        })}
+                    </ol>
+                </div>
+            )}
 
             <div className="grid grid-cols-3 gap-3">
                 {pace && (

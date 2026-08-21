@@ -58,6 +58,7 @@ final class Cycle
                 $s->targetDistanceMeters,
                 $s->targetDurationSeconds,
                 $s->targetPaceSecondsPerKm,
+                $s->steps,
             );
             $maxOffset = max($maxOffset, $offset);
         }
@@ -117,7 +118,7 @@ final class Cycle
             if ($s->date === $date) {
                 $changed = true;
 
-                return new PlannedSession($date, $type, $title, $description, $targetDistanceMeters, $targetDurationSeconds, $targetPaceSecondsPerKm, $s->activityId);
+                return new PlannedSession($date, $type, $title, $description, $targetDistanceMeters, $targetDurationSeconds, $targetPaceSecondsPerKm, [], $s->activityId);
             }
 
             return $s;

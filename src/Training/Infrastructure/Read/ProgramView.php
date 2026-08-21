@@ -113,6 +113,15 @@ final class ProgramView
                     'targetDistanceMeters' => $session['target_distance_meters'],
                     'targetDurationSeconds' => $session['target_duration_seconds'],
                     'targetPaceSecondsPerKm' => $session['target_pace_seconds_per_km'],
+                    'steps' => array_map(static fn (array $st): array => [
+                        'label' => $st['label'],
+                        'repeat' => $st['repeat'],
+                        'distanceMeters' => $st['distance_meters'],
+                        'durationSeconds' => $st['duration_seconds'],
+                        'paceSecondsPerKm' => $st['pace_seconds_per_km'],
+                        'recoverySeconds' => $st['recovery_seconds'],
+                        'note' => $st['note'],
+                    ], $session['steps']),
                     'actual' => $manual ?? $auto,
                     'manual' => $manual !== null,
                 ];

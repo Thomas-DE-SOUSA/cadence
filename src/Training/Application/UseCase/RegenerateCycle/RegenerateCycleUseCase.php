@@ -60,7 +60,7 @@ final readonly class RegenerateCycleUseCase
         $weeks = $phase !== null ? $phase->weeks : max(1, $this->weekSpan($current['sessions']));
         $blueprintCycle = $phase !== null ? PhaseMaterializer::toPlannedCycle($phase) : null;
 
-        $planned = $this->plan($snapshot, $input->ressenti, $startDate, $weeks, $phase?->name, $phase?->focus, $blueprintCycle, $tenant, $program?->assignedActivityIds() ?? []);
+        $planned = $this->plan($snapshot, $input->ressenti, $startDate, $weeks, $phase?->name, $phase?->focus, $blueprintCycle, $tenant, $program?->assignedActivityIds() ?? [], $input->athletePaces);
 
         // Keep the same id so the cycle is replaced, and re-apply day-links by date.
         $rebuilt = Cycle::fromPlan($cycle->id(), $input->programId, $tenant, $planned, $startDate, $cycle->phaseIndex());
@@ -78,7 +78,7 @@ final readonly class RegenerateCycleUseCase
      * @param array<string, mixed>|null $snapshot
      * @param list<string> $assignedActivityIds
      */
-    private function plan(?array $snapshot, string $ressenti, string $startDate, int $weeks, ?string $phaseName, ?string $phaseFocus, ?PlannedCycle $blueprintCycle, TenantId $tenant, array $assignedActivityIds): PlannedCycle
+    private function plan(?array $snapshot, string $ressenti, string $startDate, int $weeks, ?string $phaseName, ?string $phaseFocus, ?PlannedCycle $blueprintCycle, TenantId $tenant, array $assignedActivityIds, string $athletePaces): PlannedCycle
     {
         $context = new PlannerContext(
             goal: (string) ($snapshot['goal'] ?? ''),
@@ -92,6 +92,7 @@ final readonly class RegenerateCycleUseCase
             phaseName: $phaseName ?? '',
             phaseFocus: $phaseFocus ?? '',
             blueprint: $blueprintCycle !== null ? $this->renderBlueprint($blueprintCycle) : '',
+            athletePaces: $athletePaces,
         );
 
         try {

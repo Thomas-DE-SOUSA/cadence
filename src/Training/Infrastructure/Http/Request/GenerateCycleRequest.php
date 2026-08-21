@@ -24,7 +24,7 @@ final class GenerateCycleRequest extends FormRequest
         ];
     }
 
-    public function toInput(string $programId): GenerateCycleInput
+    public function toInput(string $programId, string $athletePaces = ''): GenerateCycleInput
     {
         $startDate = $this->validated('start_date');
 
@@ -33,6 +33,7 @@ final class GenerateCycleRequest extends FormRequest
             startDate: is_string($startDate) ? $startDate : '',
             weeks: (int) $this->validated('weeks'),
             ressenti: (string) ($this->validated('ressenti') ?? ''),
+            athletePaces: $athletePaces,
         );
     }
 }

@@ -5,15 +5,21 @@ declare(strict_types=1);
 namespace Cadence\Training\Domain\Model;
 
 use Cadence\Training\Domain\Enum\SessionType;
+use Cadence\Training\Domain\ValueObject\SessionStep;
 
 /**
- * One planned training session on a given day. `activityId` links the actual
- * run logged for that day, once assigned.
+ * One planned training session on a given day. `steps` is the structured
+ * breakdown (warm-up / reps / cool-down); `activityId` links the actual run.
  *
- * @phpstan-type PlannedSessionSnapshot array{date:string,type:string,title:string,description:string,target_distance_meters:int|null,target_duration_seconds:int|null,target_pace_seconds_per_km:int|null,activity_id:string|null}
+ * @phpstan-import-type SessionStepSnapshot from SessionStep
+ *
+ * @phpstan-type PlannedSessionSnapshot array{date:string,type:string,title:string,description:string,target_distance_meters:int|null,target_duration_seconds:int|null,target_pace_seconds_per_km:int|null,steps:list<SessionStepSnapshot>,activity_id:string|null}
  */
 final class PlannedSession
 {
+    /**
+     * @param list<SessionStep> $steps
+     */
     public function __construct(
         public readonly string $date,
         public readonly SessionType $type,
@@ -22,6 +28,7 @@ final class PlannedSession
         public readonly ?int $targetDistanceMeters,
         public readonly ?int $targetDurationSeconds,
         public readonly ?int $targetPaceSecondsPerKm,
+        public readonly array $steps = [],
         public readonly ?string $activityId = null,
     ) {
     }
@@ -36,6 +43,7 @@ final class PlannedSession
             $this->targetDistanceMeters,
             $this->targetDurationSeconds,
             $this->targetPaceSecondsPerKm,
+            $this->steps,
             $activityId,
         );
     }
@@ -51,6 +59,7 @@ final class PlannedSession
             'target_distance_meters' => $this->targetDistanceMeters,
             'target_duration_seconds' => $this->targetDurationSeconds,
             'target_pace_seconds_per_km' => $this->targetPaceSecondsPerKm,
+            'steps' => array_map(static fn (SessionStep $s): array => $s->toSnapshot(), $this->steps),
             'activity_id' => $this->activityId,
         ];
     }
@@ -66,6 +75,7 @@ final class PlannedSession
             $s['target_distance_meters'],
             $s['target_duration_seconds'],
             $s['target_pace_seconds_per_km'],
+            array_map(static fn (array $row): SessionStep => SessionStep::fromSnapshot($row), $s['steps']),
             $s['activity_id'] ?? null,
         );
     }

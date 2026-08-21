@@ -34,6 +34,16 @@ interface AvailableActivity {
     distanceMeters: number;
 }
 
+interface SessionStep {
+    label: string;
+    repeat: number;
+    distanceMeters: number | null;
+    durationSeconds: number | null;
+    paceSecondsPerKm: number | null;
+    recoverySeconds: number | null;
+    note: string;
+}
+
 interface PlannedSession {
     date: string;
     type: string;
@@ -42,6 +52,7 @@ interface PlannedSession {
     targetDistanceMeters: number | null;
     targetDurationSeconds: number | null;
     targetPaceSecondsPerKm: number | null;
+    steps: SessionStep[];
     actual: ActivityStats | null;
     manual: boolean;
 }

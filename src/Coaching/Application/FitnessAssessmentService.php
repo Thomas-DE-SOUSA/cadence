@@ -21,4 +21,26 @@ final readonly class FitnessAssessmentService
     {
         return $this->assessor->assess($this->history->recentFor($tenant));
     }
+
+    /** A one-line paces summary for prompting the cycle planner (empty when unknown). */
+    public function pacesSummaryFor(TenantId $tenant): string
+    {
+        $snapshot = $this->forTenant($tenant);
+        if ($snapshot === null) {
+            return '';
+        }
+
+        $p = $snapshot->paces;
+        $fmt = static fn (int $s): string => sprintf('%d s/km (%d:%02d)', $s, intdiv($s, 60), $s % 60);
+
+        return sprintf(
+            'VDOT ~%.1f. Allures perso : E %s, M %s, T %s, I %s, R %s.',
+            $snapshot->vdot,
+            $fmt($p->easy),
+            $fmt($p->marathon),
+            $fmt($p->threshold),
+            $fmt($p->interval),
+            $fmt($p->repetition),
+        );
+    }
 }
