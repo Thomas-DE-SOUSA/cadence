@@ -47,6 +47,25 @@ describe('HistoryView', function (): void {
         expect($bFive['rank'])->toBe(2);
     });
 
+    it('derives records from km splits, never slower than the full run', function (): void {
+        $splits = [];
+        foreach ([226, 194, 211, 273, 274, 269, 316, 299, 222, 264] as $i => $sec) {
+            $splits[] = ['index' => $i + 1, 'distance_meters' => 1001, 'duration_seconds' => $sec];
+        }
+        $run = activity('A', '2026-08-19T18:00:00+00:00', 10010, 2555, 255.0, []);
+        $run->splits = $splits;
+
+        $view = HistoryView::build([$run], new DateTimeImmutable('2026-08-21'));
+        $records = collect($view['records'])->keyBy('label');
+
+        // Best 10 km must not exceed the full run (2555 s).
+        expect($records['10 km']['durationSeconds'])->toBeLessThanOrEqual(2555)->toBeGreaterThan(2500);
+        // Best single km is the fastest split (194 s), scaled to 1000 m.
+        expect($records['1 km']['durationSeconds'])->toBeLessThan(200);
+        // Efforts get faster as the distance shrinks.
+        expect($records['1 km']['paceSecondsPerKm'])->toBeLessThan($records['10 km']['paceSecondsPerKm']);
+    });
+
     it('computes the weekly streak and stats', function (): void {
         $view = HistoryView::build(
             [
