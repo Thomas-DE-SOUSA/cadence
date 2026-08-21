@@ -39,17 +39,28 @@ const TYPE_ZONE: Record<string, keyof Paces | undefined> = {
     INTERVALS: 'interval',
 };
 
-const ZONES: { key: keyof Paces; label: string }[] = [
-    { key: 'easy', label: 'Facile (E)' },
-    { key: 'marathon', label: 'Marathon (M)' },
-    { key: 'threshold', label: 'Seuil (T)' },
-    { key: 'interval', label: 'Intervalle (I)' },
-    { key: 'repetition', label: 'Répétition (R)' },
+const ZONES: { key: keyof Paces; label: string; hint: string }[] = [
+    { key: 'easy', label: 'Facile (E)', hint: 'footing, récup — construit le foncier' },
+    { key: 'marathon', label: 'Marathon (M)', hint: 'endurance active soutenue' },
+    { key: 'threshold', label: 'Seuil (T)', hint: '~1 h d\'effort, "comfortably hard"' },
+    { key: 'interval', label: 'Intervalle (I)', hint: 'VMA, VO₂max (3–5 min)' },
+    { key: 'repetition', label: 'Répétition (R)', hint: 'vitesse, économie de course' },
 ];
+
+// Sessions run as reps: show per-rep time. Others are continuous: show cumulative splits.
+const REP_TYPES = ['INTERVALS', 'REPETITION', 'RACE_PACE'];
 
 function mmss(seconds: number): string {
     const s = Math.round(seconds);
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function clock(seconds: number): string {
+    const s = Math.round(seconds);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const ss = s % 60;
+    return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}` : `${m}:${String(ss).padStart(2, '0')}`;
 }
 
 function duration(seconds: number): string {
@@ -58,20 +69,31 @@ function duration(seconds: number): string {
     return `${Math.floor(s / 3600)} h ${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;
 }
 
-const SPLITS: { meters: number; label: string }[] = [
-    { meters: 1000, label: '1 km' },
-    { meters: 800, label: '800 m' },
-    { meters: 500, label: '500 m' },
-    { meters: 400, label: '400 m' },
-    { meters: 200, label: '200 m' },
-];
-
 export function SessionDetail({ session, paces }: { session: Session; paces: Paces | null }) {
     const pace = session.targetPaceSecondsPerKm;
     const zone = TYPE_ZONE[session.type];
+    const isReps = REP_TYPES.includes(session.type);
+
+    const distanceMeters =
+        session.targetDistanceMeters ??
+        (pace && session.targetDurationSeconds ? Math.round((session.targetDurationSeconds / pace) * 1000) : null);
     const estimatedSeconds =
-        session.targetDurationSeconds ??
-        (pace && session.targetDistanceMeters ? Math.round((session.targetDistanceMeters / 1000) * pace) : null);
+        session.targetDurationSeconds ?? (pace && session.targetDistanceMeters ? Math.round((session.targetDistanceMeters / 1000) * pace) : null);
+    const distanceEstimated = session.targetDistanceMeters === null && distanceMeters !== null;
+
+    // Continuous → cumulative split at each km mark; reps → time of one rep.
+    let splits: { label: string; time: string }[] = [];
+    if (pace) {
+        if (isReps) {
+            splits = [200, 400, 800, 1000].map((m) => ({ label: m === 1000 ? '1 km' : `${m} m`, time: mmss((pace * m) / 1000) }));
+        } else {
+            const km = distanceMeters ? distanceMeters / 1000 : 5;
+            splits = [1, 2, 3, 5, 10, 15, 20]
+                .filter((k) => k <= km + 0.1)
+                .slice(0, 6)
+                .map((k) => ({ label: `${k} km`, time: clock(pace * k) }));
+        }
+    }
 
     return (
         <div className="space-y-5">
@@ -91,18 +113,20 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
                         <p className="text-[11px] text-neutral-600">{(3600 / pace).toFixed(1)} km/h</p>
                     </div>
                 )}
-                {session.targetDistanceMeters && (
+                {distanceMeters && (
                     <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-3">
-                        <p className="text-[11px] uppercase tracking-wide text-neutral-500">Distance</p>
+                        <p className="text-[11px] uppercase tracking-wide text-neutral-500">
+                            Distance{distanceEstimated ? ' ~' : ''}
+                        </p>
                         <p className="mt-0.5 text-lg font-semibold tabular-nums text-neutral-100">
-                            {formatKilometers(session.targetDistanceMeters)} km
+                            {formatKilometers(distanceMeters)} km
                         </p>
                     </div>
                 )}
                 {estimatedSeconds && (
                     <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-3">
                         <p className="text-[11px] uppercase tracking-wide text-neutral-500">
-                            {session.targetDurationSeconds ? 'Durée' : 'Temps estimé'}
+                            {session.targetDurationSeconds ? 'Durée' : 'Temps ~'}
                         </p>
                         <p className="mt-0.5 text-lg font-semibold tabular-nums text-neutral-100">
                             {duration(estimatedSeconds)}
@@ -111,18 +135,21 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
                 )}
             </div>
 
-            {pace && (
+            {pace && splits.length > 0 && (
                 <div>
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-                        Temps à tenir, par distance
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                        {isReps ? 'Temps de chaque répétition' : 'Temps de passage'}
                     </p>
-                    <div className="grid grid-cols-5 gap-1.5">
-                        {SPLITS.map((split) => (
-                            <div key={split.meters} className="rounded-md border border-neutral-800 bg-neutral-900/50 p-2 text-center">
-                                <p className="text-[10px] text-neutral-500">{split.label}</p>
-                                <p className="text-sm font-semibold tabular-nums text-neutral-100">
-                                    {mmss((pace * split.meters) / 1000)}
-                                </p>
+                    <p className="mb-2 text-xs text-neutral-500">
+                        {isReps
+                            ? `À ${mmss(pace)}/km, voilà combien doit durer chaque répétition selon sa distance.`
+                            : `Si tu tiens ${mmss(pace)}/km, voilà à quel temps tu dois passer chaque borne.`}
+                    </p>
+                    <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+                        {splits.map((s) => (
+                            <div key={s.label} className="rounded-md border border-neutral-800 bg-neutral-900/50 p-2 text-center">
+                                <p className="text-[10px] text-neutral-500">{s.label}</p>
+                                <p className="text-sm font-semibold tabular-nums text-neutral-100">{s.time}</p>
                             </div>
                         ))}
                     </div>
@@ -147,15 +174,26 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
                         {ZONES.map((z) => (
                             <div
                                 key={z.key}
-                                className={`flex items-baseline justify-between rounded-md px-2 py-1 text-sm ${
-                                    zone === z.key ? 'bg-lime-400/10 text-lime-200' : 'text-neutral-400'
+                                className={`flex items-baseline justify-between gap-3 rounded-md px-2 py-1.5 ${
+                                    zone === z.key ? 'bg-lime-400/10' : ''
                                 }`}
                             >
-                                <span>{z.label}</span>
-                                <span className="tabular-nums">{mmss(paces[z.key])}/km</span>
+                                <span className={`text-sm ${zone === z.key ? 'font-medium text-lime-200' : 'text-neutral-300'}`}>
+                                    {z.label}
+                                </span>
+                                <span className="hidden flex-1 text-[11px] text-neutral-600 sm:block">{z.hint}</span>
+                                <span className={`text-sm tabular-nums ${zone === z.key ? 'text-lime-200' : 'text-neutral-400'}`}>
+                                    {mmss(paces[z.key])}/km
+                                </span>
                             </div>
                         ))}
                     </div>
+                    {zone && (
+                        <p className="mt-2 text-xs text-neutral-500">
+                            Cette séance se court en zone{' '}
+                            <span className="text-lime-300">{ZONES.find((z) => z.key === zone)?.label}</span>.
+                        </p>
+                    )}
                 </div>
             )}
         </div>
