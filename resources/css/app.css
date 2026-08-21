@@ -7,17 +7,17 @@
     --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
         sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
 
-    /* Brand — Strava-style orange */
-    --color-brand-50: #fff4ee;
-    --color-brand-100: #ffe3d3;
-    --color-brand-200: #ffc2a6;
-    --color-brand-300: #ff9b70;
-    --color-brand-400: #ff6f38;
-    --color-brand-500: #fc4c02;
-    --color-brand-600: #e64102;
-    --color-brand-700: #bd3506;
-    --color-brand-800: #962c0d;
-    --color-brand-900: #7a280f;
+    /* Brand — fir / pine green (vert sapin) */
+    --color-brand-50: #edf6f1;
+    --color-brand-100: #d0eadd;
+    --color-brand-200: #a3d6bd;
+    --color-brand-300: #6dbd97;
+    --color-brand-400: #3ea073;
+    --color-brand-500: #1c855a;
+    --color-brand-600: #156b48;
+    --color-brand-700: #14563b;
+    --color-brand-800: #134531;
+    --color-brand-900: #103829;
 }
 
 html {
@@ -26,11 +26,11 @@ html {
 
 body {
     -webkit-font-smoothing: antialiased;
-    /* Warm off-white with a soft brand glow at the top for depth. */
-    background-color: #f6f5f3;
+    /* Soft off-white with a subtle brand-green glow at the top for depth. */
+    background-color: #f4f6f4;
     background-image:
-        radial-gradient(1100px 460px at 80% -160px, rgba(252, 76, 2, 0.08), transparent 70%),
-        radial-gradient(900px 400px at 0% -120px, rgba(252, 76, 2, 0.05), transparent 70%);
+        radial-gradient(1100px 460px at 80% -160px, rgba(28, 133, 90, 0.09), transparent 70%),
+        radial-gradient(900px 400px at 0% -120px, rgba(28, 133, 90, 0.05), transparent 70%);
     background-attachment: fixed;
     background-repeat: no-repeat;
     color: #1a1a1e;

@@ -15,7 +15,7 @@ const PROGRESS_HELP = 'Proximité de ton objectif : temps cible ÷ temps actuel.
 const RIEGEL_HELP =
     'Formule de Riegel : elle estime ton temps sur une distance à partir d’une performance connue (on ralentit un peu quand la distance augmente). Indicatif.';
 const CURVE_HELP =
-    'Ton meilleur temps sur cette distance, sortie après sortie. Plus le point est bas, plus tu es rapide. La ligne verte est ton objectif.';
+    'Ton meilleur temps sur cette distance, sortie après sortie. Plus le point est bas, plus tu es rapide. La ligne dorée est ton objectif.';
 const RECORDS_HELP =
     'Ton meilleur temps sur chaque distance, calculé à partir de tes portions les plus rapides — pas seulement d’une course entière.';
 
@@ -112,18 +112,18 @@ function ProgressionChart({ series }: { series: Series }) {
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-56 w-full">
             {targetY !== null && (
                 <>
-                    <line x1={padX} y1={targetY} x2={W - padX} y2={targetY} stroke="#10b981" strokeWidth={2} strokeDasharray="6 5" />
-                    <text x={W - padX} y={targetY - 7} textAnchor="end" className="fill-emerald-600 text-[15px] font-semibold">
+                    <line x1={padX} y1={targetY} x2={W - padX} y2={targetY} stroke="#f59e0b" strokeWidth={2} strokeDasharray="6 5" />
+                    <text x={W - padX} y={targetY - 7} textAnchor="end" className="fill-amber-500 text-[15px] font-semibold">
                         Objectif {formatDuration(targetSeconds!)}
                     </text>
                 </>
             )}
             {points.length > 1 && (
-                <path d={linePath} fill="none" stroke="#fc4c02" strokeWidth={3} strokeLinejoin="round" strokeLinecap="round" />
+                <path d={linePath} fill="none" stroke="#1c855a" strokeWidth={3} strokeLinejoin="round" strokeLinecap="round" />
             )}
             {points.map((p, i) => (
                 <g key={p.date + i}>
-                    <circle cx={x(i)} cy={y(p.seconds)} r={5} fill="#fc4c02" stroke="#fff" strokeWidth={2} />
+                    <circle cx={x(i)} cy={y(p.seconds)} r={5} fill="#1c855a" stroke="#fff" strokeWidth={2} />
                     <text x={x(i)} y={y(p.seconds) - 12} textAnchor="middle" className="fill-neutral-800 text-[15px] font-bold">
                         {formatDuration(p.seconds)}
                     </text>

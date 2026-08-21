@@ -310,7 +310,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                     <Stat value={cycles.length} label="Cycles" icon={Layers} tint="bg-brand-100 text-brand-600" />
                     <Stat value={`${achieved}/${program.objectives.length}`} label="Objectifs" icon={Target} tint="bg-emerald-100 text-emerald-600" />
                     <Stat value={program.activities.length} label="Sorties" icon={Activity} tint="bg-sky-100 text-sky-600" />
-                    {athlete && <Stat value={<CountUp value={athlete.vdot} />} label="VDOT" icon={Gauge} tint="bg-orange-100 text-orange-600" />}
+                    {athlete && <Stat value={<CountUp value={athlete.vdot} />} label="VDOT" icon={Gauge} tint="bg-brand-100 text-brand-600" />}
                 </div>
             </div>
 

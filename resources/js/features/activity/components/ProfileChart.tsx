@@ -89,7 +89,7 @@ export function ProfileChart({ stream }: { stream: StreamPoint[] }) {
                         <line key={f} x1={0} x2={W} y1={padT + f * (H - padT - padB)} y2={padT + f * (H - padT - padB)} stroke="#f0f0f2" strokeWidth={1} />
                     ))}
                     <path d={area} fill="#e6e6ea" />
-                    <path d={line} fill="none" stroke="#fc4c02" strokeWidth={2.4} strokeLinejoin="round" strokeLinecap="round" />
+                    <path d={line} fill="none" stroke="#1c855a" strokeWidth={2.4} strokeLinejoin="round" strokeLinecap="round" />
                     {kmTicks.map((km) => (
                         <text key={km} x={x(km * 1000)} y={H - 6} fontSize={12} fill="#9a9aa2" textAnchor={km === 0 ? 'start' : 'middle'}>
                             {km} km
@@ -97,8 +97,8 @@ export function ProfileChart({ stream }: { stream: StreamPoint[] }) {
                     ))}
                     {hovered && (
                         <g>
-                            <line x1={x(hovered.d)} x2={x(hovered.d)} y1={padT} y2={elevBottom} stroke="#fc4c02" strokeWidth={1} strokeDasharray="4 3" opacity={0.6} />
-                            <circle cx={x(hovered.d)} cy={py(hovered.p)} r={4} fill="#fc4c02" stroke="#fff" strokeWidth={1.5} />
+                            <line x1={x(hovered.d)} x2={x(hovered.d)} y1={padT} y2={elevBottom} stroke="#1c855a" strokeWidth={1} strokeDasharray="4 3" opacity={0.6} />
+                            <circle cx={x(hovered.d)} cy={py(hovered.p)} r={4} fill="#1c855a" stroke="#fff" strokeWidth={1.5} />
                             <circle cx={x(hovered.d)} cy={ey(hovered.e)} r={3.5} fill="#9a9aa2" stroke="#fff" strokeWidth={1.5} />
                         </g>
                     )}

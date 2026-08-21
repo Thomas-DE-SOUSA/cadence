@@ -151,7 +151,7 @@ export default function History({ stats, streak, records, achievements, activiti
                     </div>
 
                     {/* Streak */}
-                    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-orange-50/60 p-4 shadow-sm shadow-neutral-200/60">
+                    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-brand-50/70 p-4 shadow-sm shadow-neutral-200/60">
                         <div className="flex items-center gap-3">
                             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-md shadow-brand-500/30">
                                 <Flame size={22} />

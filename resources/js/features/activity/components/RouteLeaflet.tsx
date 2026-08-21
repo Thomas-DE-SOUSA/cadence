@@ -20,11 +20,11 @@ export function RouteLeaflet({ track, className = '' }: { track: [number, number
             attribution: '© OpenStreetMap © CARTO',
         }).addTo(map);
 
-        const line = L.polyline(track, { color: '#fc4c02', weight: 4, opacity: 0.95, lineJoin: 'round' }).addTo(map);
+        const line = L.polyline(track, { color: '#1c855a', weight: 4, opacity: 0.95, lineJoin: 'round' }).addTo(map);
         map.fitBounds(line.getBounds(), { padding: [24, 24] });
 
         L.circleMarker(track[0], { radius: 6, color: '#fff', weight: 2, fillColor: '#10b981', fillOpacity: 1 }).addTo(map);
-        L.circleMarker(track[track.length - 1], { radius: 6, color: '#fff', weight: 2, fillColor: '#fc4c02', fillOpacity: 1 }).addTo(map);
+        L.circleMarker(track[track.length - 1], { radius: 6, color: '#fff', weight: 2, fillColor: '#1c855a', fillOpacity: 1 }).addTo(map);
 
         L.control.zoom({ position: 'topright' }).addTo(map);
 

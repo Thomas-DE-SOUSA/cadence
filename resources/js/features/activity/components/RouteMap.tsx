@@ -39,12 +39,12 @@ export function RouteMap({ track, className = '' }: Props) {
             <defs>
                 <linearGradient id="routeGrad" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0" stopColor="#ff6f38" />
-                    <stop offset="1" stopColor="#fc4c02" />
+                    <stop offset="1" stopColor="#1c855a" />
                 </linearGradient>
             </defs>
             <path d={d} fill="none" stroke="url(#routeGrad)" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
             <circle cx={px(start[1])} cy={py(start[0])} r={2.8} fill="#10b981" stroke="#fff" strokeWidth={1} />
-            <circle cx={px(end[1])} cy={py(end[0])} r={2.8} fill="#fc4c02" stroke="#fff" strokeWidth={1} />
+            <circle cx={px(end[1])} cy={py(end[0])} r={2.8} fill="#1c855a" stroke="#fff" strokeWidth={1} />
         </svg>
     );
 }
