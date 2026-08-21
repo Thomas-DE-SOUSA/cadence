@@ -5,7 +5,20 @@ declare(strict_types=1);
 namespace Cadence\Coaching\Infrastructure;
 
 use Cadence\Coaching\Domain\Port\AthleteHistoryProvider;
+use Cadence\Coaching\Domain\Port\CoachChat;
+use Cadence\Coaching\Domain\Port\ConversationRepository;
+use Cadence\Coaching\Domain\Port\ProgramContextProvider;
+use Cadence\Coaching\Domain\Port\SessionAdjuster;
+use Cadence\Coaching\Infrastructure\Ai\ClaudeCoachChat;
+use Cadence\Coaching\Infrastructure\Http\Controller\ApplyProposalController;
+use Cadence\Coaching\Infrastructure\Http\Controller\SendCoachMessageController;
+use Cadence\Coaching\Infrastructure\Http\Controller\ShowCoachController;
+use Cadence\Coaching\Infrastructure\Knowledge\CoachingKnowledge;
+use Cadence\Coaching\Infrastructure\Persistence\Eloquent\EloquentConversationRepository;
 use Cadence\Coaching\Infrastructure\Provider\EloquentAthleteHistoryProvider;
+use Cadence\Coaching\Infrastructure\Provider\TrainingProgramContextProvider;
+use Cadence\Coaching\Infrastructure\Provider\TrainingSessionAdjuster;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 final class CoachingServiceProvider extends ServiceProvider
@@ -13,5 +26,21 @@ final class CoachingServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(AthleteHistoryProvider::class, EloquentAthleteHistoryProvider::class);
+        $this->app->bind(ConversationRepository::class, EloquentConversationRepository::class);
+        $this->app->bind(ProgramContextProvider::class, TrainingProgramContextProvider::class);
+        $this->app->bind(SessionAdjuster::class, TrainingSessionAdjuster::class);
+        $this->app->bind(CoachChat::class, fn (): ClaudeCoachChat => new ClaudeCoachChat(
+            (string) config('services.anthropic.key'),
+            new CoachingKnowledge(),
+        ));
+    }
+
+    public function boot(): void
+    {
+        Route::prefix('programme/{id}/coach')->group(function (): void {
+            Route::get('/', ShowCoachController::class)->name('programs.coach');
+            Route::post('/message', SendCoachMessageController::class)->name('programs.coach.message');
+            Route::post('/apply', ApplyProposalController::class)->name('programs.coach.apply');
+        });
     }
 }

@@ -9,4 +9,5 @@ parameters:
         # External LLM boundary: dynamically-typed API responses.
         - src/Activity/Infrastructure/Ai/ClaudeStravaTextParser.php
         - src/Training/Infrastructure/Ai/ClaudeCyclePlanner.php
+        - src/Coaching/Infrastructure/Ai/ClaudeCoachChat.php
     tmpDir: build/phpstan

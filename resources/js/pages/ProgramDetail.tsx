@@ -1,7 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import type { DragEvent, FormEvent, ReactNode } from 'react';
-import { ArrowLeft, CheckCircle2, ChevronDown, Circle, Flag, GripVertical, Lock, RefreshCw, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronDown, Circle, Flag, GripVertical, Lock, MessageCircle, RefreshCw, Sparkles, X } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
 import { formatDate, formatDuration, formatKilometers, formatPace } from '@/features/activity/domain/format';
@@ -391,6 +391,13 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                                             </p>
                                                                         )
                                                                     )}
+                                                                    <Link
+                                                                        href={`/programme/${program.id}/coach?date=${s.date}&cycle=${cycle.id}`}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                        className="mt-2 inline-flex items-center gap-1 text-[11px] text-neutral-500 transition-colors hover:text-lime-300"
+                                                                    >
+                                                                        <MessageCircle size={12} /> Coach
+                                                                    </Link>
                                                                     </div>
                                                                 </div>
                                                             );

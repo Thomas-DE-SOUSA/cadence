@@ -102,6 +102,32 @@ final class Cycle
         }
     }
 
+    /** Replace the planned session on a date, keeping any linked activity. */
+    public function replaceSession(
+        string $date,
+        SessionType $type,
+        string $title,
+        string $description,
+        ?int $targetDistanceMeters,
+        ?int $targetDurationSeconds,
+        ?int $targetPaceSecondsPerKm,
+    ): void {
+        $changed = false;
+        $this->sessions = array_map(static function (PlannedSession $s) use ($date, $type, $title, $description, $targetDistanceMeters, $targetDurationSeconds, $targetPaceSecondsPerKm, &$changed): PlannedSession {
+            if ($s->date === $date) {
+                $changed = true;
+
+                return new PlannedSession($date, $type, $title, $description, $targetDistanceMeters, $targetDurationSeconds, $targetPaceSecondsPerKm, $s->activityId);
+            }
+
+            return $s;
+        }, $this->sessions);
+
+        if ($changed) {
+            $this->version++;
+        }
+    }
+
     public function programId(): string
     {
         return $this->programId;
