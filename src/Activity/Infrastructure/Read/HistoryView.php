@@ -107,77 +107,11 @@ final class HistoryView
     }
 
     /**
-     * Best efforts for standard distances, computed from the (reliable) km
-     * splits with a sliding window — never slower than the full run. Falls back
-     * to the stored best_efforts only when there are no splits.
-     *
      * @return list<array{distance:int,duration:int}>
      */
     private static function efforts(ActivityModel $m): array
     {
-        /** @var mixed $rawSplits */
-        $rawSplits = $m->splits;
-        $splits = array_values(array_filter(is_array($rawSplits) ? $rawSplits : [], 'is_array'));
-        if ($splits === []) {
-            return self::storedEfforts($m);
-        }
-
-        $durations = [];
-        $distances = [];
-        foreach ($splits as $s) {
-            $durations[] = (int) ($s['duration_seconds'] ?? 0);
-            $distances[] = (int) ($s['distance_meters'] ?? 1000);
-        }
-        $n = count($durations);
-
-        $efforts = [];
-        foreach ([1, 3, 5, 10, 15, 20, 21, 30, 42] as $km) {
-            if ($n < $km) {
-                continue;
-            }
-            $bestDuration = null;
-            $bestDistance = 0;
-            for ($i = 0; $i + $km <= $n; $i++) {
-                $windowDuration = 0;
-                $windowDistance = 0;
-                for ($j = 0; $j < $km; $j++) {
-                    $windowDuration += $durations[$i + $j];
-                    $windowDistance += $distances[$i + $j];
-                }
-                if ($windowDuration > 0 && ($bestDuration === null || $windowDuration < $bestDuration)) {
-                    $bestDuration = $windowDuration;
-                    $bestDistance = $windowDistance;
-                }
-            }
-            if ($bestDuration !== null && $bestDistance > 0) {
-                $nominal = $km * 1000;
-                $efforts[] = ['distance' => $nominal, 'duration' => (int) round($bestDuration * $nominal / $bestDistance)];
-            }
-        }
-
-        return $efforts;
-    }
-
-    /**
-     * @return list<array{distance:int,duration:int}>
-     */
-    private static function storedEfforts(ActivityModel $m): array
-    {
-        $efforts = [];
-        /** @var mixed $raw */
-        $raw = $m->best_efforts;
-        foreach (is_array($raw) ? $raw : [] as $e) {
-            if (! is_array($e)) {
-                continue;
-            }
-            $distance = (int) ($e['distance_meters'] ?? 0);
-            $duration = (int) ($e['duration_seconds'] ?? 0);
-            if ($distance > 0 && $duration > 0) {
-                $efforts[] = ['distance' => $distance, 'duration' => $duration];
-            }
-        }
-
-        return $efforts;
+        return EffortCalculator::forActivity($m);
     }
 
     /**

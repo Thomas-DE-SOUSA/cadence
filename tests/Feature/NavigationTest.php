@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
+
+uses(RefreshDatabase::class);
 
 describe('Feature: Section navigation', function (): void {
     it('renders each section shell', function (string $url, string $component): void {
