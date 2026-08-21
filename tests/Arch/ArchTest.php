@@ -47,3 +47,19 @@ arch('the Activity application never reaches into infrastructure')
         'Illuminate\Database\Eloquent',
         'Cadence\Activity\Infrastructure',
     ]);
+
+// Training context — explicit inward-only boundaries.
+arch('the Training domain depends on nothing outward')
+    ->expect('Cadence\Training\Domain')
+    ->not->toUse([
+        'Illuminate',
+        'Cadence\Training\Application',
+        'Cadence\Training\Infrastructure',
+    ]);
+
+arch('the Training application never reaches into infrastructure')
+    ->expect('Cadence\Training\Application')
+    ->not->toUse([
+        'Illuminate\Database\Eloquent',
+        'Cadence\Training\Infrastructure',
+    ]);

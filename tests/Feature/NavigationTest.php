@@ -11,7 +11,6 @@ describe('Feature: Section navigation', function (): void {
         );
     })->with([
         ['/progression', 'Progression'],
-        ['/programme', 'Program'],
         ['/allures', 'Paces'],
         ['/profil', 'Profile'],
     ]);

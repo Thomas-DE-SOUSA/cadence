@@ -27,6 +27,5 @@ Route::delete('/activites/{id}', DeleteActivityController::class)->name('activit
 
 // Section shells — filled in as each bounded context lands (see ROADMAP.md).
 Route::get('/progression', fn () => Inertia::render('Progression'))->name('progression');
-Route::get('/programme', fn () => Inertia::render('Program'))->name('program');
 Route::get('/allures', fn () => Inertia::render('Paces'))->name('paces');
 Route::get('/profil', fn () => Inertia::render('Profile'))->name('profile');
