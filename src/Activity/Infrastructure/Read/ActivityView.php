@@ -30,8 +30,6 @@ final class ActivityView
     {
         /** @var list<array<string, mixed>> $splits */
         $splits = $model->splits;
-        /** @var list<array<string, mixed>> $efforts */
-        $efforts = $model->best_efforts;
 
         return [
             ...self::summary($model),
@@ -43,13 +41,56 @@ final class ActivityView
                 'durationSeconds' => (int) $s['duration_seconds'],
                 'elevationMeters' => (int) $s['elevation_meters'],
             ], $splits),
-            'bestEfforts' => array_map(static fn (array $b): array => [
-                'label' => (string) $b['label'],
-                'distanceMeters' => (int) $b['distance_meters'],
-                'durationSeconds' => (int) $b['duration_seconds'],
-                'isPersonalRecord' => (bool) $b['is_personal_record'],
-            ], $efforts),
+            'bestEfforts' => self::effortsFromSplits($splits),
             'track' => is_array($model->track) ? $model->track : null,
+            'stream' => is_array($model->stream) ? $model->stream : null,
         ];
+    }
+
+    /**
+     * This run's best effort per standard distance, from its km splits (fastest
+     * rolling window). Reliable, unlike the imported best_efforts.
+     *
+     * @param list<array<string, mixed>> $splits
+     *
+     * @return list<array{label:string,distanceMeters:int,durationSeconds:int,isPersonalRecord:bool}>
+     */
+    private static function effortsFromSplits(array $splits): array
+    {
+        $durations = array_map(static fn (array $s): int => (int) $s['duration_seconds'], $splits);
+        $distances = array_map(static fn (array $s): int => (int) $s['distance_meters'], $splits);
+        $count = count($durations);
+
+        $efforts = [];
+        foreach ([1, 3, 5, 10, 15, 21] as $km) {
+            if ($count < $km) {
+                continue;
+            }
+            $bestDuration = null;
+            $bestDistance = 0;
+            for ($i = 0; $i + $km <= $count; $i++) {
+                $windowDuration = 0;
+                $windowDistance = 0;
+                for ($j = 0; $j < $km; $j++) {
+                    $windowDuration += $durations[$i + $j];
+                    $windowDistance += $distances[$i + $j];
+                }
+                if ($windowDuration > 0 && ($bestDuration === null || $windowDuration < $bestDuration)) {
+                    $bestDuration = $windowDuration;
+                    $bestDistance = $windowDistance;
+                }
+            }
+            if ($bestDuration !== null && $bestDistance > 0) {
+                $nominal = $km * 1000;
+                $efforts[] = [
+                    'label' => $km.' km',
+                    'distanceMeters' => $nominal,
+                    'durationSeconds' => (int) round($bestDuration * $nominal / $bestDistance),
+                    'isPersonalRecord' => false,
+                ];
+            }
+        }
+
+        return $efforts;
     }
 }

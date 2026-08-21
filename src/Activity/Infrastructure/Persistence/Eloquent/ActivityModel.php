@@ -40,6 +40,7 @@ final class ActivityModel extends Model
         'splits',
         'best_efforts',
         'track',
+        'stream',
         'external_id',
         'version',
     ];
@@ -54,6 +55,7 @@ final class ActivityModel extends Model
         'splits' => 'array',
         'best_efforts' => 'array',
         'track' => 'array',
+        'stream' => 'array',
         'version' => 'integer',
     ];
 }

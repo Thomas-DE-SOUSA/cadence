@@ -33,4 +33,5 @@ export interface Activity {
     splits: Split[];
     bestEfforts: BestEffort[];
     track: [number, number][] | null;
+    stream: { d: number; e: number; p: number }[] | null;
 }
