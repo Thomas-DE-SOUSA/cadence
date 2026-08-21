@@ -42,9 +42,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-sm font-black text-white shadow-md shadow-brand-500/30">
                             C
                         </span>
-                        <span className="hidden leading-none sm:block">
-                            <span className="block text-[15px] font-black tracking-tight text-neutral-900">Cadence</span>
-                            <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-wider text-brand-500">Sub-40</span>
+                        <span className="hidden whitespace-nowrap text-[15px] font-black tracking-tight text-neutral-900 sm:block">
+                            Cadence
                         </span>
                     </Link>
 
@@ -63,7 +62,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                                     }`}
                                 >
                                     <Icon size={17} className={active ? 'text-brand-500' : 'text-neutral-400 group-hover:text-neutral-600'} />
-                                    <span className="hidden lg:inline">{label}</span>
+                                    <span className="hidden whitespace-nowrap lg:inline">{label}</span>
                                 </Link>
                             );
                         })}
@@ -72,8 +71,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     {/* Right cluster */}
                     <div className="ml-auto flex items-center gap-2 md:ml-0">
                         {raceChip && (
-                            <span className="hidden items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 shadow-sm lg:flex">
-                                <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+                            <span className="hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 shadow-sm lg:flex">
+                                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
                                 {raceChip}
                                 {athlete?.raceName && <span className="text-neutral-400">· {athlete.raceName}</span>}
                             </span>
