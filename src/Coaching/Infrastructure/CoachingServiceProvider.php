@@ -15,7 +15,7 @@ use Cadence\Coaching\Infrastructure\Ai\ClaudeCoachStreamer;
 use Cadence\Coaching\Infrastructure\Ai\CoachRequestBuilder;
 use Cadence\Coaching\Infrastructure\Http\Controller\ApplyProposalController;
 use Cadence\Coaching\Infrastructure\Http\Controller\SendCoachMessageController;
-use Cadence\Coaching\Infrastructure\Http\Controller\ShowCoachController;
+use Cadence\Coaching\Infrastructure\Http\Controller\ShowCoachThreadController;
 use Cadence\Coaching\Infrastructure\Http\Controller\StreamCoachController;
 use Cadence\Coaching\Infrastructure\Knowledge\CoachingKnowledge;
 use Cadence\Coaching\Infrastructure\Persistence\Eloquent\EloquentConversationRepository;
@@ -48,7 +48,7 @@ final class CoachingServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Route::prefix('programme/{id}/coach')->group(function (): void {
-            Route::get('/', ShowCoachController::class)->name('programs.coach');
+            Route::get('/thread', ShowCoachThreadController::class)->name('programs.coach.thread');
             Route::post('/message', SendCoachMessageController::class)->name('programs.coach.message');
             Route::post('/stream', StreamCoachController::class)->name('programs.coach.stream');
             Route::post('/apply', ApplyProposalController::class)->name('programs.coach.apply');

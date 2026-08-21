@@ -1,9 +1,12 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import type { DragEvent, FormEvent, ReactNode } from 'react';
-import { ArrowLeft, CheckCircle2, ChevronDown, Circle, Flag, GripVertical, Lock, MessageCircle, RefreshCw, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronDown, Circle, Flag, GripVertical, Lock, RefreshCw, Sparkles, X } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
+import { Drawer } from '@/components/Drawer';
+import { SessionDetail } from '@/features/coach/SessionDetail';
+import { CoachThread } from '@/features/coach/CoachThread';
 import { formatDate, formatDuration, formatKilometers, formatPace } from '@/features/activity/domain/format';
 
 interface ObjectiveResult {
@@ -145,6 +148,12 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
         () => new Set(cycles.filter((c) => c.status === 'completed').map((c) => c.id)),
     );
     const [selectedRun, setSelectedRun] = useState<string | null>(null);
+    const [openDay, setOpenDay] = useState<{ cycleId: string; date: string } | null>(null);
+
+    // Derived from the current cycles prop, so it stays fresh after a coach adjustment reload.
+    const openSession = openDay
+        ? cycles.find((c) => c.id === openDay.cycleId)?.weeks.flatMap((w) => w.sessions).find((s) => s.date === openDay.date) ?? null
+        : null;
 
     function toggleCycle(id: string) {
         setCollapsed((prev) => {
@@ -328,12 +337,14 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                                     onDragOver={(e) => e.preventDefault()}
                                                                     onDrop={(e) => onDropDay(e, cycle.id, s.date)}
                                                                     onClick={() =>
-                                                                        selectedRun && assignDay(cycle.id, s.date, selectedRun)
+                                                                        selectedRun
+                                                                            ? assignDay(cycle.id, s.date, selectedRun)
+                                                                            : setOpenDay({ cycleId: cycle.id, date: s.date })
                                                                     }
-                                                                    className={`flex flex-col rounded-lg border p-3 transition-colors ${
+                                                                    className={`flex cursor-pointer flex-col rounded-lg border p-3 transition-colors ${
                                                                         placing
-                                                                            ? 'cursor-pointer border-dashed border-lime-400/50 bg-lime-400/[0.04]'
-                                                                            : 'border-neutral-800 bg-neutral-900/60'
+                                                                            ? 'border-dashed border-lime-400/50 bg-lime-400/[0.04]'
+                                                                            : 'border-neutral-800 bg-neutral-900/60 hover:border-neutral-700'
                                                                     }`}
                                                                 >
                                                                     <div className="mb-1 flex items-center justify-between">
@@ -391,13 +402,6 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                                             </p>
                                                                         )
                                                                     )}
-                                                                    <Link
-                                                                        href={`/programme/${program.id}/coach?date=${s.date}&cycle=${cycle.id}`}
-                                                                        onClick={(e) => e.stopPropagation()}
-                                                                        className="mt-2 inline-flex items-center gap-1 text-[11px] text-neutral-500 transition-colors hover:text-lime-300"
-                                                                    >
-                                                                        <MessageCircle size={12} /> Coach
-                                                                    </Link>
                                                                     </div>
                                                                 </div>
                                                             );
@@ -646,6 +650,27 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                     )}
                 </div>
             </div>
+
+            <Drawer
+                open={openSession !== null}
+                onClose={() => setOpenDay(null)}
+                title={openSession ? `${weekdayLabel(openSession.date)} · ${formatDate(openSession.date)}` : ''}
+            >
+                {openSession && openDay && (
+                    <div className="space-y-6">
+                        <SessionDetail session={openSession} paces={athlete?.paces ?? null} />
+                        <div className="border-t border-neutral-800 pt-5">
+                            <CoachThread
+                                key={`${openDay.cycleId}-${openDay.date}`}
+                                programId={program.id}
+                                cycleId={openDay.cycleId}
+                                date={openDay.date}
+                                onApplied={() => router.reload({ only: ['cycles'] })}
+                            />
+                        </div>
+                    </div>
+                )}
+            </Drawer>
         </>
     );
 }

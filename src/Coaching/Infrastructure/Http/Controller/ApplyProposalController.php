@@ -8,7 +8,7 @@ use Cadence\Coaching\Application\ApplyProposal\ApplyProposalUseCase;
 use Cadence\Coaching\Domain\Exception\ConversationNotFound;
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Application\TenantContext;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 final class ApplyProposalController
@@ -19,13 +19,11 @@ final class ApplyProposalController
     ) {
     }
 
-    public function __invoke(Request $request, string $id): RedirectResponse
+    public function __invoke(Request $request, string $id): JsonResponse
     {
         $data = $request->validate([
             'conversation_id' => ['required', 'string', 'max:64'],
             'message_id' => ['required', 'string', 'max:64'],
-            'date' => ['required', 'string', 'max:40'],
-            'cycle_id' => ['required', 'string', 'max:64'],
         ]);
 
         try {
@@ -38,8 +36,6 @@ final class ApplyProposalController
             abort(404);
         }
 
-        $back = route('programs.coach', $id).'?'.http_build_query(['date' => $data['date'], 'cycle' => $data['cycle_id']]);
-
-        return redirect($back)->with('status', 'Séance ajustée par le coach.');
+        return new JsonResponse(['ok' => true]);
     }
 }

@@ -29,7 +29,7 @@ final class SendCoachMessageController
             'message' => ['required', 'string', 'max:4000'],
         ]);
 
-        $back = route('programs.coach', $id).'?'.http_build_query(['date' => $data['date'], 'cycle' => $data['cycle_id']]);
+        $back = route('programs.show', $id);
 
         try {
             $this->useCase->execute(

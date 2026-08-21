@@ -78,9 +78,7 @@ describe('Feature: Day coach', function (): void {
         $this->post("/programme/{$programId}/coach/apply", [
             'conversation_id' => $conversation->id,
             'message_id' => $messages[1]['id'],
-            'date' => $date,
-            'cycle_id' => $cycleId,
-        ])->assertRedirect();
+        ])->assertOk()->assertJson(['ok' => true]);
 
         expect(sessionType($cycleId, $date))->toBe('REST');
 

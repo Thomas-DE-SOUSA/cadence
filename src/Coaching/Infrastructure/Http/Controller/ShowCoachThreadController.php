@@ -6,58 +6,32 @@ namespace Cadence\Coaching\Infrastructure\Http\Controller;
 
 use Cadence\Coaching\Domain\Model\Message;
 use Cadence\Coaching\Domain\Port\ConversationRepository;
-use Cadence\Coaching\Domain\Port\ProgramContextProvider;
-use Cadence\Coaching\Domain\ValueObject\PlannedDay;
 use Cadence\Shared\Application\TenantContext;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 
-final class ShowCoachController
+/** Returns the coach conversation for a day as JSON, so the drawer can load it in place. */
+final class ShowCoachThreadController
 {
     public function __construct(
-        private readonly ProgramContextProvider $programs,
         private readonly ConversationRepository $conversations,
         private readonly TenantContext $tenantContext,
     ) {
     }
 
-    public function __invoke(Request $request, string $id): Response
+    public function __invoke(Request $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->current();
         $date = (string) $request->query('date', '');
-        $cycle = (string) $request->query('cycle', '');
-
-        $programDay = $this->programs->forDay($id, $cycle, $date, $tenant);
-        abort_unless($programDay !== null, 404);
 
         $conversation = $this->conversations->forDay($id, $date, $tenant);
 
-        return Inertia::render('Coach', [
-            'programId' => $id,
-            'cycleId' => $cycle,
-            'programName' => $programDay->programName,
-            'day' => $this->dayView($programDay->day),
+        return new JsonResponse([
             'conversation' => $conversation === null ? null : [
                 'id' => $conversation->id()->value,
                 'messages' => array_map(fn (Message $m): array => $this->messageView($m), $conversation->messages()),
             ],
         ]);
-    }
-
-    /** @return array<string, mixed> */
-    private function dayView(PlannedDay $day): array
-    {
-        return [
-            'date' => $day->date,
-            'type' => $day->type,
-            'title' => $day->title,
-            'description' => $day->description,
-            'targetDistanceMeters' => $day->targetDistanceMeters,
-            'targetDurationSeconds' => $day->targetDurationSeconds,
-            'targetPaceSecondsPerKm' => $day->targetPaceSecondsPerKm,
-            'actualSummary' => $day->actualSummary,
-        ];
     }
 
     /** @return array<string, mixed> */
