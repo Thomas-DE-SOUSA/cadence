@@ -259,7 +259,7 @@ export default function History({ stats, streak, records, achievements, activiti
                                             </div>
                                             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-400">
                                                 <span>{formatDate(a.occurredAt)}</span>
-                                                <span>· {a.source === 'STRAVA' ? 'Strava' : 'Manuel'}</span>
+                                                <span>· {a.source === 'STRAVA' ? 'Strava' : a.source === 'GPX' ? 'GPX' : 'Manuel'}</span>
                                                 {a.elevationGainMeters > 0 && <span>· D+ {a.elevationGainMeters} m</span>}
                                             </div>
                                             {a.medals.length > 0 && (

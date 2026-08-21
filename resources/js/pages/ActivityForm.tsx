@@ -1,6 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import type { FormEvent, ReactNode } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { useRef, useState } from 'react';
+import type { DragEvent, FormEvent, ReactNode } from 'react';
+import { ArrowLeft, MapPin, UploadCloud } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
 
@@ -32,10 +33,25 @@ export default function ActivityForm() {
     });
 
     const pasteForm = useForm({ text: '', occurred_at: '' });
+    const gpxForm = useForm<{ gpx: File | null }>({ gpx: null });
+    const [dragging, setDragging] = useState(false);
+    const fileRef = useRef<HTMLInputElement>(null);
 
     function submitPaste(event: FormEvent) {
         event.preventDefault();
         pasteForm.post('/activites/importer-texte');
+    }
+
+    function uploadGpx(file: File | undefined) {
+        if (!file) return;
+        gpxForm.setData('gpx', file);
+        gpxForm.post('/activites/importer-gpx', { forceFormData: true });
+    }
+
+    function onDrop(e: DragEvent<HTMLButtonElement>) {
+        e.preventDefault();
+        setDragging(false);
+        uploadGpx(e.dataTransfer.files[0]);
     }
 
     function submit(event: FormEvent) {
@@ -57,12 +73,49 @@ export default function ActivityForm() {
         <>
             <Head title="Nouvelle activité" />
             <Link
-                href="/historique"
+                href="/"
                 className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
             >
-                <ArrowLeft size={16} /> Historique
+                <ArrowLeft size={16} /> Tableau de bord
             </Link>
-            <h1 className="mb-6 text-xl font-bold tracking-tight">Nouvelle activité</h1>
+            <h1 className="mb-6 text-2xl font-bold tracking-tight text-neutral-900">Nouvelle activité</h1>
+
+            <div className="mb-6">
+                <Card title="Déposer un itinéraire (GPX)">
+                    {gpxForm.errors.gpx && <p className="mb-2 text-sm text-red-600">{gpxForm.errors.gpx}</p>}
+                    <button
+                        type="button"
+                        onClick={() => fileRef.current?.click()}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            setDragging(true);
+                        }}
+                        onDragLeave={() => setDragging(false)}
+                        onDrop={onDrop}
+                        disabled={gpxForm.processing}
+                        className={`flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors ${
+                            dragging ? 'border-brand-400 bg-brand-50' : 'border-neutral-300 bg-neutral-50 hover:border-brand-300 hover:bg-brand-50/40'
+                        } disabled:opacity-60`}
+                    >
+                        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-100 text-brand-600">
+                            {gpxForm.processing ? <MapPin size={22} className="animate-pulse" /> : <UploadCloud size={22} />}
+                        </span>
+                        <span className="text-sm font-semibold text-neutral-800">
+                            {gpxForm.processing ? 'Import du tracé…' : 'Glisse ton fichier .gpx ici'}
+                        </span>
+                        <span className="text-xs text-neutral-500">
+                            distance, temps, splits, dénivelé, carte et profil — remplis automatiquement
+                        </span>
+                    </button>
+                    <input
+                        ref={fileRef}
+                        type="file"
+                        accept=".gpx,application/gpx+xml,application/xml,text/xml"
+                        className="hidden"
+                        onChange={(e) => uploadGpx(e.target.files?.[0])}
+                    />
+                </Card>
+            </div>
 
             <div className="mb-6">
                 <Card title="Coller depuis Strava (IA)">

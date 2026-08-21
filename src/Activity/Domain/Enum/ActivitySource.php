@@ -8,4 +8,5 @@ enum ActivitySource: string
 {
     case MANUAL = 'MANUAL';
     case STRAVA = 'STRAVA';
+    case GPX = 'GPX';
 }

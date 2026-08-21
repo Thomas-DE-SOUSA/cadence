@@ -86,7 +86,7 @@ export default function ActivityDetail({ activity }: Props) {
             {/* Hero */}
             <div className="animate-fade-up mb-5 rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-brand-50/40 p-5 shadow-sm shadow-neutral-200/60">
                 <p className="text-sm text-neutral-500">
-                    {formatDate(activity.occurredAt)} · {activity.source === 'STRAVA' ? 'Strava' : 'Manuel'}
+                    {formatDate(activity.occurredAt)} · {activity.source === 'STRAVA' ? 'Strava' : activity.source === 'GPX' ? 'GPX' : 'Manuel'}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-x-8 gap-y-4 border-t border-neutral-100 pt-4">
                     <HeroStat icon={RouteIcon} label="Distance" tint="bg-sky-100 text-sky-600" value={`${formatKilometers(activity.distanceMeters)} km`} />

@@ -98,6 +98,98 @@ final class GpxParser
     }
 
     /**
+     * Full activity summary derived from a GPX: distance, times, elevation gain
+     * and per-km splits (plus track + stream). Everything an import needs.
+     *
+     * @return array{externalId:string,occurredAt:string,distanceMeters:int,movingSeconds:int,elapsedSeconds:int,elevationGainMeters:int,splits:list<array{index:int,distanceMeters:int,durationSeconds:int,elevationMeters:int}>,track:list<array{0:float,1:float}>,stream:list<array{d:int,e:int,p:int}>}|null
+     */
+    public static function summary(string $xml): ?array
+    {
+        $points = self::points($xml);
+        $count = count($points);
+        if ($count < 2) {
+            return null;
+        }
+
+        $cumulative = [0.0];
+        $movingSeconds = 0;
+        for ($i = 1; $i < $count; $i++) {
+            $step = self::haversine($points[$i - 1], $points[$i]);
+            $cumulative[$i] = $cumulative[$i - 1] + $step;
+            $dt = $points[$i]['time'] - $points[$i - 1]['time'];
+            if ($step > 0.5 && $dt > 0 && $dt < 30) {
+                $movingSeconds += $dt;
+            }
+        }
+
+        // Per-km splits.
+        $splits = [];
+        $target = 1000.0;
+        $segStartTime = $points[0]['time'];
+        $segStartEle = $points[0]['ele'];
+        $segStartDist = 0.0;
+        $index = 1;
+        for ($i = 1; $i < $count; $i++) {
+            if ($cumulative[$i] >= $target) {
+                $splits[] = [
+                    'index' => $index,
+                    'distanceMeters' => (int) round($cumulative[$i] - $segStartDist),
+                    'durationSeconds' => max(1, $points[$i]['time'] - $segStartTime),
+                    'elevationMeters' => (int) round($points[$i]['ele'] - $segStartEle),
+                ];
+                $segStartTime = $points[$i]['time'];
+                $segStartEle = $points[$i]['ele'];
+                $segStartDist = $cumulative[$i];
+                $target += 1000.0;
+                $index++;
+            }
+        }
+        // Final partial kilometre.
+        if ($cumulative[$count - 1] - $segStartDist > 50) {
+            $splits[] = [
+                'index' => $index,
+                'distanceMeters' => (int) round($cumulative[$count - 1] - $segStartDist),
+                'durationSeconds' => max(1, $points[$count - 1]['time'] - $segStartTime),
+                'elevationMeters' => (int) round($points[$count - 1]['ele'] - $segStartEle),
+            ];
+        }
+
+        // Elevation gain with hysteresis to filter GPS jitter.
+        $gain = 0.0;
+        $confirmed = $points[0]['ele'];
+        $peak = $confirmed;
+        foreach ($points as $p) {
+            $e = $p['ele'];
+            if ($e > $peak) {
+                $peak = $e;
+            }
+            if ($peak - $confirmed >= 3) {
+                $gain += $peak - $confirmed;
+                $confirmed = $peak;
+            }
+            if ($e < $confirmed) {
+                $confirmed = $e;
+                $peak = $e;
+            }
+        }
+
+        $distanceMeters = array_sum(array_column($splits, 'distanceMeters'));
+        $elapsed = $points[$count - 1]['time'] - $points[0]['time'];
+
+        return [
+            'externalId' => 'gpx-'.substr(sha1($xml), 0, 24),
+            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z', $points[0]['time']),
+            'distanceMeters' => $distanceMeters,
+            'movingSeconds' => $movingSeconds > 0 ? $movingSeconds : $elapsed,
+            'elapsedSeconds' => max($elapsed, $movingSeconds),
+            'elevationGainMeters' => (int) round($gain),
+            'splits' => $splits,
+            'track' => self::track($xml),
+            'stream' => self::stream($xml),
+        ];
+    }
+
+    /**
      * @param array{lat:float,lon:float,ele:float,time:int} $a
      * @param array{lat:float,lon:float,ele:float,time:int} $b
      */
