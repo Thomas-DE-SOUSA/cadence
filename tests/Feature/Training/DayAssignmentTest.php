@@ -73,6 +73,32 @@ describe('Feature: Day assignment', function (): void {
         expect(array_column($available, 'id'))->toContain($activityId);
     });
 
+    it('auto-attaches a run to the day matching its date', function (): void {
+        // Plan starts on the seeded run's date (2026-08-19), so day 0 matches it.
+        $this->post('/programme', [
+            'name' => 'Prépa Odysséa',
+            'plan_key' => 'sub40-10k',
+            'start_date' => '2026-08-19T00:00:00.000Z',
+            'priority' => 'A',
+            'objectives' => [],
+        ])->assertRedirect();
+
+        $programId = (string) TrainingProgramModel::query()->value('id');
+        $this->seed(ActivitySeeder::class);
+        $activityId = (string) \Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel::query()->value('id');
+
+        $props = $this->withHeader('X-Inertia', 'true')->get("/programme/{$programId}")->json('props');
+
+        // The run shows on 2026-08-19 automatically, without a manual link…
+        $day0 = $props['cycles'][0]['weeks'][0]['sessions'][0];
+        expect($day0['date'])->toBe('2026-08-19');
+        expect($day0['actual']['id'])->toBe($activityId);
+        expect($day0['manual'])->toBeFalse();
+
+        // …and it is not offered in the "to place" pool.
+        expect(array_column($props['available'], 'id'))->not->toContain($activityId);
+    });
+
     it('preserves day-links when regenerating the cycle', function (): void {
         // Fall back to the deterministic blueprint (same dates), so the link survives.
         $this->app->bind(CyclePlanner::class, fn (): CyclePlanner => new class implements CyclePlanner

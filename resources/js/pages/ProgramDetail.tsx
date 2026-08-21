@@ -39,8 +39,8 @@ interface PlannedSession {
     targetDistanceMeters: number | null;
     targetDurationSeconds: number | null;
     targetPaceSecondsPerKm: number | null;
-    activityId: string | null;
     actual: ActivityStats | null;
+    manual: boolean;
 }
 
 interface CycleWeek {
@@ -302,7 +302,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                                         {week.sessions.map((s) => {
                                                             const style = sessionStyle(s.type);
-                                                            const placing = selectedRun !== null && !s.activityId;
+                                                            const placing = selectedRun !== null && !s.actual;
                                                             return (
                                                                 <div
                                                                     key={s.date}
@@ -342,21 +342,27 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                                     )}
                                                                     {s.actual ? (
                                                                         <div className="mt-2 flex items-center justify-between rounded-md border border-lime-400/30 bg-lime-400/[0.07] px-2 py-1.5">
-                                                                            <span className="flex items-center gap-1.5 text-xs tabular-nums text-lime-300">
+                                                                            <Link
+                                                                                href={`/activites/${s.actual.id}`}
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                                className="flex items-center gap-1.5 text-xs tabular-nums text-lime-300 hover:text-lime-200"
+                                                                            >
                                                                                 <CheckCircle2 size={13} />
                                                                                 {formatKilometers(s.actual.distanceMeters)} km ·{' '}
                                                                                 {formatPace(s.actual.averagePaceSecondsPerKm)}
-                                                                            </span>
-                                                                            <button
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    assignDay(cycle.id, s.date, null);
-                                                                                }}
-                                                                                className="cursor-pointer text-neutral-500 hover:text-red-400"
-                                                                                aria-label="Retirer la sortie"
-                                                                            >
-                                                                                <X size={13} />
-                                                                            </button>
+                                                                            </Link>
+                                                                            {s.manual && (
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        assignDay(cycle.id, s.date, null);
+                                                                                    }}
+                                                                                    className="cursor-pointer text-neutral-500 hover:text-red-400"
+                                                                                    aria-label="Détacher la sortie"
+                                                                                >
+                                                                                    <X size={13} />
+                                                                                </button>
+                                                                            )}
                                                                         </div>
                                                                     ) : (
                                                                         placing && (
@@ -426,7 +432,8 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                     {/* Runs to place */}
                     <Card title="Sorties à placer">
                         <p className="-mt-1 mb-3 text-xs text-neutral-400">
-                            Glissez une sortie sur un jour du plan — ou touchez-la puis touchez le jour (mobile).
+                            Les sorties se rangent automatiquement sur le jour de leur date. Ici, seules celles qui ne tombent sur
+                            aucun jour du plan : glissez-les (ou touchez‑les puis touchez le jour) pour les rattacher.
                         </p>
                         {selectedRun && (
                             <div className="mb-3 flex items-center justify-between rounded-lg border border-lime-400/40 bg-lime-400/10 px-3 py-2 text-xs text-lime-200">

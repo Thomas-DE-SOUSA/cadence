@@ -32,7 +32,6 @@ final class ShowProgramController
 
         abort_unless($program !== null, 404);
 
-        $summaries = $this->summaries->summariesFor($tenant, $program->assignedActivityIds());
         $cycles = $this->cycles->forProgram($id, $tenant);
 
         $allActivities = ActivityModel::query()
@@ -40,31 +39,48 @@ final class ShowProgramController
             ->orderByDesc('occurred_at')
             ->get();
 
-        /** @var array<string, array<string, mixed>> $activityLookup */
+        /** @var array<string, array<string, mixed>> $activityLookup keyed by id */
         $activityLookup = [];
+        /** @var array<string, array<string, mixed>> $activityByDate keyed by Y-m-d */
+        $activityByDate = [];
         foreach ($allActivities as $m) {
-            $activityLookup[$m->id] = [
+            $stats = [
                 'id' => $m->id,
                 'occurredAt' => (string) $m->occurred_at,
                 'distanceMeters' => (int) $m->distance_meters,
                 'movingSeconds' => (int) $m->moving_seconds,
                 'averagePaceSecondsPerKm' => (float) $m->average_pace_seconds_per_km,
             ];
+            $activityLookup[$m->id] = $stats;
+            $day = substr((string) $m->occurred_at, 0, 10);
+            $activityByDate[$day] ??= $stats;
         }
 
-        // The pool holds runs not yet placed on a day — so unlinking a day
-        // returns its run to the pool and it can be placed again.
-        $linked = [];
+        // A run belongs to a day automatically when it falls on that date; a
+        // manual link overrides the match. Both feed the coach evaluation.
+        $planDates = [];
+        $manualLinks = [];
         foreach ($cycles as $cycle) {
             foreach ($cycle->toSnapshot()['sessions'] as $session) {
+                $planDates[$session['date']] = true;
                 if ($session['activity_id'] !== null) {
-                    $linked[$session['activity_id']] = true;
+                    $manualLinks[$session['activity_id']] = true;
                 }
             }
         }
 
+        $effectiveAssigned = $program->assignedActivityIds();
+        foreach ($allActivities as $m) {
+            if (isset($planDates[substr((string) $m->occurred_at, 0, 10)])) {
+                $effectiveAssigned[] = $m->id;
+            }
+        }
+        $summaries = $this->summaries->summariesFor($tenant, array_values(array_unique($effectiveAssigned)));
+
+        // The pool holds runs not shown on any day: neither matching a plan date
+        // nor manually linked.
         $available = $allActivities
-            ->reject(fn (ActivityModel $m): bool => isset($linked[$m->id]))
+            ->reject(fn (ActivityModel $m): bool => isset($planDates[substr((string) $m->occurred_at, 0, 10)]) || isset($manualLinks[$m->id]))
             ->map(fn (ActivityModel $m): array => [
                 'id' => $m->id,
                 'occurredAt' => (string) $m->occurred_at,
@@ -83,7 +99,7 @@ final class ShowProgramController
         return Inertia::render('ProgramDetail', [
             'program' => ProgramView::detail($program, $summaries),
             'available' => $available,
-            'cycles' => ProgramView::cycles($cycles, $activityLookup),
+            'cycles' => ProgramView::cycles($cycles, $activityLookup, $activityByDate),
             'roadmap' => ProgramView::roadmap($planKey, $cycles),
             'canGenerate' => $canGenerate,
             'activeCycleId' => $latest !== null && ! $latest->isCompleted() ? $latest->id()->value : null,

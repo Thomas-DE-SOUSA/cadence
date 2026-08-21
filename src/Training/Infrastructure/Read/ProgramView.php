@@ -80,17 +80,19 @@ final class ProgramView
     }
 
     /**
-     * Maps cycles to the view, grouping planned sessions by 7-day week and
-     * attaching the actual run linked to each day (from the lookup).
+     * Maps cycles to the view, grouping planned sessions by 7-day week. Each day
+     * shows the run logged on that date automatically; a manual link overrides
+     * the date match (and is the only case the UI lets you detach).
      *
      * @param list<Cycle> $cycles
      * @param array<string, array<string, mixed>> $activityLookup keyed by activity id
+     * @param array<string, array<string, mixed>> $activityByDate keyed by Y-m-d
      *
      * @return list<array<string, mixed>>
      */
-    public static function cycles(array $cycles, array $activityLookup = []): array
+    public static function cycles(array $cycles, array $activityLookup = [], array $activityByDate = []): array
     {
-        return array_map(static function (Cycle $cycle) use ($activityLookup): array {
+        return array_map(static function (Cycle $cycle) use ($activityLookup, $activityByDate): array {
             $s = $cycle->toSnapshot();
             $start = new \DateTimeImmutable($s['start_date']);
 
@@ -100,7 +102,9 @@ final class ProgramView
             $weeks = [];
             foreach ($s['sessions'] as $session) {
                 $days = (int) $start->diff(new \DateTimeImmutable($session['date']))->days;
-                $activityId = $session['activity_id'] ?? null;
+                $manualId = $session['activity_id'] ?? null;
+                $manual = $manualId !== null ? ($activityLookup[$manualId] ?? null) : null;
+                $auto = $manual === null ? ($activityByDate[$session['date']] ?? null) : null;
                 $weeks[intdiv($days, 7)][] = [
                     'date' => $session['date'],
                     'type' => $session['type'],
@@ -109,8 +113,8 @@ final class ProgramView
                     'targetDistanceMeters' => $session['target_distance_meters'],
                     'targetDurationSeconds' => $session['target_duration_seconds'],
                     'targetPaceSecondsPerKm' => $session['target_pace_seconds_per_km'],
-                    'activityId' => $activityId,
-                    'actual' => $activityId !== null ? ($activityLookup[$activityId] ?? null) : null,
+                    'actual' => $manual ?? $auto,
+                    'manual' => $manual !== null,
                 ];
             }
             ksort($weeks);
