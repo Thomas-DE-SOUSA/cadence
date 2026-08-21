@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ArrowLeft, Clock, Gauge, Mountain, Route as RouteIcon, Timer, Trash2 } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
+import { HelpTip } from '@/components/HelpTip';
 import type { Activity } from '@/types';
 import { BestEfforts } from '@/features/activity/components/BestEfforts';
 import { RouteLeaflet } from '@/features/activity/components/RouteLeaflet';
@@ -20,12 +21,14 @@ function HeroStat({
     value,
     accent,
     tint,
+    help,
 }: {
     icon: typeof Gauge;
     label: string;
     value: string;
     accent?: boolean;
     tint: string;
+    help?: string;
 }) {
     return (
         <div className="flex items-center gap-2.5">
@@ -36,7 +39,10 @@ function HeroStat({
                 <p className={`text-xl font-bold leading-none tabular-nums ${accent ? 'text-brand-500' : 'text-neutral-900'}`}>
                     {value}
                 </p>
-                <p className="mt-1 text-[11px] uppercase tracking-wide text-neutral-400">{label}</p>
+                <p className="mt-1 flex items-center gap-1 text-[11px] uppercase tracking-wide text-neutral-400">
+                    {label}
+                    {help && <HelpTip label={label} text={help} size={12} />}
+                </p>
             </div>
         </div>
     );
@@ -90,10 +96,35 @@ export default function ActivityDetail({ activity }: Props) {
                 </p>
                 <div className="mt-4 flex flex-wrap gap-x-8 gap-y-4 border-t border-neutral-100 pt-4">
                     <HeroStat icon={RouteIcon} label="Distance" tint="bg-sky-100 text-sky-600" value={`${formatKilometers(activity.distanceMeters)} km`} />
-                    <HeroStat icon={Clock} label="Temps" tint="bg-neutral-100 text-neutral-600" value={formatDuration(activity.movingSeconds)} />
-                    <HeroStat icon={Gauge} label="Allure moy." tint="bg-brand-100 text-brand-600" value={formatPace(activity.averagePaceSecondsPerKm)} accent />
-                    <HeroStat icon={Mountain} label="Dénivelé +" tint="bg-emerald-100 text-emerald-600" value={`${activity.elevationGainMeters} m`} />
-                    <HeroStat icon={Timer} label="Temps écoulé" tint="bg-neutral-100 text-neutral-600" value={formatDuration(activity.elapsedSeconds)} />
+                    <HeroStat
+                        icon={Clock}
+                        label="Temps"
+                        tint="bg-neutral-100 text-neutral-600"
+                        value={formatDuration(activity.movingSeconds)}
+                        help="Temps en mouvement, hors pauses (arrêts, feux). C’est lui qui sert à calculer ton allure."
+                    />
+                    <HeroStat
+                        icon={Gauge}
+                        label="Allure moy."
+                        tint="bg-brand-100 text-brand-600"
+                        value={formatPace(activity.averagePaceSecondsPerKm)}
+                        accent
+                        help="Ton rythme moyen, en minutes par kilomètre (min/km). Plus le chiffre est bas, plus tu cours vite."
+                    />
+                    <HeroStat
+                        icon={Mountain}
+                        label="Dénivelé +"
+                        tint="bg-emerald-100 text-emerald-600"
+                        value={`${activity.elevationGainMeters} m`}
+                        help="Le cumul de montée sur toute la sortie (on additionne uniquement les portions qui montent)."
+                    />
+                    <HeroStat
+                        icon={Timer}
+                        label="Temps écoulé"
+                        tint="bg-neutral-100 text-neutral-600"
+                        value={formatDuration(activity.elapsedSeconds)}
+                        help="Durée totale entre le départ et l’arrivée, pauses comprises."
+                    />
                 </div>
             </div>
 
@@ -111,7 +142,17 @@ export default function ActivityDetail({ activity }: Props) {
             {/* Profile */}
             {activity.stream && activity.stream.length > 1 && (
                 <div className="animate-fade-up mb-5" style={{ animationDelay: '90ms' }}>
-                    <Card title="Allure & dénivelé">
+                    <Card
+                        title={
+                            <span className="inline-flex items-center gap-1.5">
+                                Allure &amp; dénivelé
+                                <HelpTip
+                                    label="Allure & dénivelé"
+                                    text="Ton allure (courbe orange) et l’altitude du terrain (zone grise) tout au long du parcours. Survole le graphique pour lire les valeurs à un point précis."
+                                />
+                            </span>
+                        }
+                    >
                         <ProfileChart stream={activity.stream} />
                     </Card>
                 </div>
@@ -119,14 +160,26 @@ export default function ActivityDetail({ activity }: Props) {
 
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
                 <div className="lg:col-span-2">
-                    <Card title="Temps intermédiaires">
+                    <Card
+                        title={
+                            <span className="inline-flex items-center gap-1.5">
+                                Temps intermédiaires
+                                <HelpTip label="Temps intermédiaires" text="Ton allure kilomètre par kilomètre. La barre est d’autant plus longue que le km est rapide." />
+                            </span>
+                        }
+                    >
                         <div className="overflow-hidden">
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="text-left text-[11px] uppercase tracking-wide text-neutral-400">
                                         <th className="pb-2 font-semibold">Km</th>
                                         <th className="pb-2 font-semibold">Allure</th>
-                                        <th className="pb-2 text-right font-semibold">D±</th>
+                                        <th className="pb-2 text-right font-semibold">
+                                            <span className="inline-flex items-center gap-1">
+                                                D±
+                                                <HelpTip label="D±" side="bottom" text="Dénivelé positif : le cumul de montée sur ce kilomètre." />
+                                            </span>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -160,7 +213,17 @@ export default function ActivityDetail({ activity }: Props) {
                     </Card>
                 </div>
                 <div>
-                    <Card title="Meilleurs efforts">
+                    <Card
+                        title={
+                            <span className="inline-flex items-center gap-1.5">
+                                Meilleurs efforts
+                                <HelpTip
+                                    label="Meilleurs efforts"
+                                    text="Tes segments les plus rapides pendant cette sortie, pour chaque distance (1 km, 5 km…). Utile pour repérer tes accélérations."
+                                />
+                            </span>
+                        }
+                    >
                         <BestEfforts efforts={activity.bestEfforts} />
                     </Card>
                 </div>

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
+import { HelpTip } from '@/components/HelpTip';
 import { RouteMap } from '@/features/activity/components/RouteMap';
 import { useCountUp } from '@/lib/useCountUp';
 import { formatDate, formatDuration, formatKilometers, formatPace } from '@/features/activity/domain/format';
@@ -114,7 +115,13 @@ export default function History({ stats, streak, records, achievements, activiti
                                 <StreakDigits weeks={streak.weeks} />{' '}
                                 <span className="text-lg font-bold text-neutral-500">
                                     semaine{streak.weeks > 1 ? 's' : ''}
-                                </span>
+                                </span>{' '}
+                                <HelpTip
+                                    label="Série"
+                                    side="bottom"
+                                    size={16}
+                                    text="Le nombre de semaines consécutives avec au moins une sortie. Un jour de repos prévu par ton programme ne casse pas la série."
+                                />
                             </p>
                             <p className="mt-1 text-sm text-neutral-500">
                                 {todayRest
@@ -174,7 +181,17 @@ export default function History({ stats, streak, records, achievements, activiti
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
                 {/* Records + achievements */}
                 <div className="animate-fade-up space-y-5 lg:col-span-1" style={{ animationDelay: '90ms' }}>
-                    <Card title="Records personnels">
+                    <Card
+                        title={
+                            <span className="inline-flex items-center gap-1.5">
+                                Records personnels
+                                <HelpTip
+                                    label="Records personnels"
+                                    text="Ton meilleur temps sur chaque distance, calculé à partir de tes portions les plus rapides — pas seulement d’une course entière."
+                                />
+                            </span>
+                        }
+                    >
                         {records.length === 0 ? (
                             <p className="text-sm text-neutral-400">Pas encore de record — chaque sortie compte !</p>
                         ) : (
@@ -203,7 +220,17 @@ export default function History({ stats, streak, records, achievements, activiti
                         )}
                     </Card>
 
-                    <Card title={`Succès — ${unlocked}/${achievements.length}`}>
+                    <Card
+                        title={
+                            <span className="inline-flex items-center gap-1.5">
+                                {`Succès — ${unlocked}/${achievements.length}`}
+                                <HelpTip
+                                    label="Succès"
+                                    text="Des badges débloqués au fil de tes performances (distances franchies, volume, allure, objectif). Une façon ludique de suivre tes paliers."
+                                />
+                            </span>
+                        }
+                    >
                         <div className="grid grid-cols-2 gap-2.5">
                             {achievements.map((a) => {
                                 const Icon = ACHIEVEMENT_ICONS[a.icon] ?? Sparkles;

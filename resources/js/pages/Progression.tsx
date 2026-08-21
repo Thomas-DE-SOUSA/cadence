@@ -4,9 +4,20 @@ import type { ComponentType, ReactNode } from 'react';
 import { Activity, Flag, Gauge, Sparkles, Target, TrendingUp, Trophy } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
+import { HelpTip } from '@/components/HelpTip';
 import { PagePlaceholder } from '@/components/PagePlaceholder';
 import { useCountUp } from '@/lib/useCountUp';
 import { formatDuration, formatKilometers, formatPace } from '@/features/activity/domain/format';
+
+const VDOT_HELP =
+    'Un score de forme unique (façon VO₂max) calculé à partir de ton meilleur effort. Plus il est haut, plus tu es rapide. Il sert de base à toutes tes allures.';
+const PROGRESS_HELP = 'Proximité de ton objectif : temps cible ÷ temps actuel. À 100 %, l’objectif est atteint.';
+const RIEGEL_HELP =
+    'Formule de Riegel : elle estime ton temps sur une distance à partir d’une performance connue (on ralentit un peu quand la distance augmente). Indicatif.';
+const CURVE_HELP =
+    'Ton meilleur temps sur cette distance, sortie après sortie. Plus le point est bas, plus tu es rapide. La ligne verte est ton objectif.';
+const RECORDS_HELP =
+    'Ton meilleur temps sur chaque distance, calculé à partir de tes portions les plus rapides — pas seulement d’une course entière.';
 
 interface RecordRow {
     label: string;
@@ -125,7 +136,19 @@ function ProgressionChart({ series }: { series: Series }) {
     );
 }
 
-function StatTile({ icon: Icon, tint, value, label }: { icon: ComponentType<{ size?: number }>; tint: string; value: string; label: string }) {
+function StatTile({
+    icon: Icon,
+    tint,
+    value,
+    label,
+    help,
+}: {
+    icon: ComponentType<{ size?: number }>;
+    tint: string;
+    value: string;
+    label: string;
+    help?: string;
+}) {
     return (
         <Card className="flex items-center gap-3">
             <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${tint}`}>
@@ -133,7 +156,10 @@ function StatTile({ icon: Icon, tint, value, label }: { icon: ComponentType<{ si
             </span>
             <div>
                 <p className="text-xl font-bold leading-none tabular-nums text-neutral-900">{value}</p>
-                <p className="mt-1 text-[11px] uppercase tracking-wide text-neutral-400">{label}</p>
+                <p className="mt-1 flex items-center gap-1 text-[11px] uppercase tracking-wide text-neutral-400">
+                    {label}
+                    {help && <HelpTip label={label} text={help} size={13} />}
+                </p>
             </div>
         </Card>
     );
@@ -202,8 +228,9 @@ export default function Progression({ goal, records, series, focusDistance, proj
                         <div className="mt-4">
                             <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-neutral-500">
                                 <span>{formatDuration(goal.currentSeconds)}</span>
-                                <span className="tabular-nums">
+                                <span className="inline-flex items-center gap-1 tabular-nums">
                                     <GoalDigits pct={goal.progressPct} />%
+                                    <HelpTip label="Progression vers l’objectif" text={PROGRESS_HELP} />
                                 </span>
                                 <span className="text-emerald-600">Objectif {formatDuration(goal.targetSeconds)}</span>
                             </div>
@@ -220,7 +247,7 @@ export default function Progression({ goal, records, series, focusDistance, proj
 
             {/* Stat tiles */}
             <div className="animate-fade-up mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4" style={{ animationDelay: '60ms' }}>
-                <StatTile icon={Gauge} tint="bg-brand-100 text-brand-600" value={vdot !== null ? `${vdot}` : '—'} label="VDOT estimé" />
+                <StatTile icon={Gauge} tint="bg-brand-100 text-brand-600" value={vdot !== null ? `${vdot}` : '—'} label="VDOT estimé" help={VDOT_HELP} />
                 <StatTile icon={Trophy} tint="bg-amber-100 text-amber-600" value={`${records.length}`} label="Records" />
                 <StatTile icon={Activity} tint="bg-sky-100 text-sky-600" value={`${stats.runs}`} label="Sorties" />
                 <StatTile icon={Flag} tint="bg-emerald-100 text-emerald-600" value={`${formatKilometers(stats.totalDistanceMeters)} km`} label="Distance totale" />
@@ -235,7 +262,11 @@ export default function Progression({ goal, records, series, focusDistance, proj
                                 <Sparkles size={19} />
                             </span>
                             <p className="text-sm text-neutral-600">
-                                Projection Riegel : sur la base de ton <strong className="text-neutral-900">{projection.fromLabel}</strong>, un{' '}
+                                <span className="inline-flex items-center gap-1">
+                                    Projection Riegel
+                                    <HelpTip label="Projection Riegel" text={RIEGEL_HELP} />
+                                </span>{' '}
+                                : sur la base de ton <strong className="text-neutral-900">{projection.fromLabel}</strong>, un{' '}
                                 <strong className="text-neutral-900">{projection.toLabel}</strong> est estimé à{' '}
                                 <strong className="text-brand-600">{formatDuration(projection.predictedSeconds)}</strong>.{' '}
                                 {projection.beatsTarget ? (
@@ -252,7 +283,14 @@ export default function Progression({ goal, records, series, focusDistance, proj
             {/* Progression chart */}
             {chart && (
                 <div className="animate-fade-up mb-5" style={{ animationDelay: '120ms' }}>
-                    <Card title="Courbe de progression">
+                    <Card
+                        title={
+                            <span className="inline-flex items-center gap-1.5">
+                                Courbe de progression
+                                <HelpTip label="Courbe de progression" text={CURVE_HELP} />
+                            </span>
+                        }
+                    >
                         {series.length > 1 && (
                             <div className="mb-3 flex flex-wrap gap-2">
                                 {series.map((s) => (
@@ -282,7 +320,14 @@ export default function Progression({ goal, records, series, focusDistance, proj
 
             {/* Records */}
             <div className="animate-fade-up" style={{ animationDelay: '150ms' }}>
-                <Card title="Records personnels">
+                <Card
+                    title={
+                        <span className="inline-flex items-center gap-1.5">
+                            Records personnels
+                            <HelpTip label="Records personnels" text={RECORDS_HELP} />
+                        </span>
+                    }
+                >
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                         {records.map((r, i) => (
                             <Link

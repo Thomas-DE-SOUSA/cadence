@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Coffee, Flame, Gauge, HeartPulse, Mountain, Timer, Zap } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
+import { HelpTip } from '@/components/HelpTip';
 import { PagePlaceholder } from '@/components/PagePlaceholder';
 import { useCountUp } from '@/lib/useCountUp';
 import { formatDuration, formatPace } from '@/features/activity/domain/format';
@@ -28,13 +29,14 @@ interface Props {
     racePaces: RacePace[];
 }
 
-type ZoneMeta = { name: string; purpose: string; description: string; icon: typeof Coffee; tint: string; bar: string };
+type ZoneMeta = { name: string; purpose: string; description: string; help: string; icon: typeof Coffee; tint: string; bar: string };
 
 const ZONE_META: Record<string, ZoneMeta> = {
     recovery: {
         name: 'Récupération',
         purpose: 'Footing très lent',
         description: 'Décrassage et récup active. On reste vraiment tranquille.',
+        help: 'Ton allure la plus lente. But : laisser le corps récupérer sans ajouter de fatigue. Si tu es essoufflé, c’est déjà trop rapide.',
         icon: Coffee,
         tint: 'bg-slate-100 text-slate-500',
         bar: 'bg-slate-300',
@@ -43,6 +45,7 @@ const ZONE_META: Record<string, ZoneMeta> = {
         name: 'Endurance fondamentale',
         purpose: 'La base aérobie',
         description: "L'essentiel de ton volume et tes sorties longues. Allure conversationnelle.",
+        help: '« Aérobie » = l’énergie produite avec de l’oxygène, celle des efforts longs et faciles. Cette allure construit ton moteur d’endurance (cœur, capillaires). Repère : tu dois pouvoir tenir une conversation.',
         icon: HeartPulse,
         tint: 'bg-emerald-100 text-emerald-600',
         bar: 'bg-emerald-400',
@@ -51,6 +54,7 @@ const ZONE_META: Record<string, ZoneMeta> = {
         name: 'Allure marathon',
         purpose: 'Soutenu et régulier',
         description: 'Endurance spécifique et efficacité de course sur longue distance.',
+        help: 'L’allure que tu pourrais tenir sur un marathon entier. On l’utilise pour apprendre à courir vite tout en restant économe, longtemps.',
         icon: Mountain,
         tint: 'bg-teal-100 text-teal-600',
         bar: 'bg-teal-400',
@@ -59,6 +63,7 @@ const ZONE_META: Record<string, ZoneMeta> = {
         name: 'Seuil',
         purpose: 'Confortablement dur (~1 h d’effort)',
         description: 'Le plus gros levier du 10 km au marathon. Tempo et intervalles au seuil.',
+        help: 'Le « seuil » est l’intensité que tu peux tenir environ 1 h à fond. La travailler recule le moment où les jambes se mettent à brûler — c’est l’entraînement le plus rentable pour progresser sur 10 km à marathon.',
         icon: Gauge,
         tint: 'bg-amber-100 text-amber-600',
         bar: 'bg-amber-400',
@@ -67,6 +72,7 @@ const ZONE_META: Record<string, ZoneMeta> = {
         name: 'Intervalles',
         purpose: 'VO₂max — fractions de 3 à 5 min',
         description: 'Développe la cylindrée aérobie. Dur, par répétitions avec récup.',
+        help: '« VO₂max » = ta cylindrée aérobie maximale, le débit d’oxygène que tu peux exploiter à fond. Ces fractions courtes et dures (3–5 min) l’augmentent. On les court en répétitions, avec récup entre chaque.',
         icon: Flame,
         tint: 'bg-brand-100 text-brand-600',
         bar: 'bg-brand-500',
@@ -75,11 +81,17 @@ const ZONE_META: Record<string, ZoneMeta> = {
         name: 'Répétitions',
         purpose: 'Vif et court, récup complète',
         description: 'Vitesse, économie de course, foulée. Pas de stress aérobie.',
+        help: 'Travail de vitesse pure et de qualité de foulée, sur des efforts très courts avec récupération complète. Ici on ne cherche pas l’endurance mais la mécanique et l’économie de course.',
         icon: Zap,
         tint: 'bg-violet-100 text-violet-600',
         bar: 'bg-violet-500',
     },
 };
+
+const VDOT_HELP =
+    'Un score de forme unique (façon VO₂max) calculé à partir de ton meilleur effort récent. Plus il est haut, plus tu es rapide. Il sert de base pour définir toutes tes allures d’entraînement.';
+const RIEGEL_HELP =
+    'Formule de Riegel : elle estime ton temps sur une autre distance à partir d’une performance connue (on ralentit un peu quand la distance augmente). Indicatif — la course réelle dépend de ta préparation spécifique.';
 
 function mmss(seconds: number): string {
     const m = Math.floor(seconds / 60);
@@ -134,7 +146,9 @@ export default function Paces({ vdot, basis, zones, racePaces }: Props) {
                         </span>
                         <div>
                             <p className="text-3xl font-black leading-none tabular-nums text-neutral-900">
-                                <VdotDigits vdot={vdot} /> <span className="text-lg font-bold text-neutral-500">VDOT</span>
+                                <VdotDigits vdot={vdot} />{' '}
+                                <span className="text-lg font-bold text-neutral-500">VDOT</span>{' '}
+                                <HelpTip label="VDOT" text={VDOT_HELP} side="bottom" size={16} />
                             </p>
                             <p className="mt-1 text-sm text-neutral-500">
                                 Calé sur ton {basis.label} en {formatDuration(basis.seconds)}
@@ -162,7 +176,10 @@ export default function Paces({ vdot, basis, zones, racePaces }: Props) {
                                 </span>
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-baseline justify-between gap-2">
-                                        <p className="font-bold text-neutral-900">{meta.name}</p>
+                                        <p className="flex items-center gap-1 font-bold text-neutral-900">
+                                            {meta.name}
+                                            <HelpTip label={meta.name} text={meta.help} />
+                                        </p>
                                         <p className="whitespace-nowrap text-lg font-black tabular-nums text-neutral-900">
                                             {paceLabel(zone.minSeconds, zone.maxSeconds)}
                                         </p>
@@ -181,7 +198,14 @@ export default function Paces({ vdot, basis, zones, racePaces }: Props) {
 
             {/* Equivalent race paces */}
             <div className="animate-fade-up" style={{ animationDelay: '90ms' }}>
-                <Card title="Allures de course équivalentes">
+                <Card
+                    title={
+                        <span className="inline-flex items-center gap-1.5">
+                            Allures de course équivalentes
+                            <HelpTip label="Allures équivalentes" text={RIEGEL_HELP} />
+                        </span>
+                    }
+                >
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-[11px] uppercase tracking-wide text-neutral-400">
