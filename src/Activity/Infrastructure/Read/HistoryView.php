@@ -18,11 +18,19 @@ final class HistoryView
     /**
      * @param list<ActivityModel> $models most recent first
      * @param array<string, string> $plannedByDate date (Y-m-d) => SessionType value
+     * @param array{name:string,initial:string,age:int|null}|null $athlete
+     * @param array{label:string,distanceMeters:int,targetSeconds:int,raceName:string|null,raceDate:string|null}|null $goal
      *
      * @return array<string, mixed>
      */
-    public static function build(array $models, DateTimeImmutable $today, array $plannedByDate = []): array
-    {
+    public static function build(
+        array $models,
+        DateTimeImmutable $today,
+        array $plannedByDate = [],
+        ?array $athlete = null,
+        ?float $vdot = null,
+        ?array $goal = null,
+    ): array {
         [$records, $rankByActivityDistance] = self::rankEfforts($models);
         $activeDates = self::activeDates($models);
 
@@ -31,10 +39,55 @@ final class HistoryView
             'streak' => self::streak($activeDates, $today, $plannedByDate),
             'records' => $records,
             'achievements' => self::achievements($models, $records),
+            'athlete' => $athlete,
+            'vdot' => $vdot,
+            'goal' => self::goalWidget($goal, $records, $today),
             'activities' => array_map(
                 static fn (ActivityModel $m): array => self::activityRow($m, $rankByActivityDistance),
                 $models,
             ),
+        ];
+    }
+
+    /**
+     * @param array{label:string,distanceMeters:int,targetSeconds:int,raceName:string|null,raceDate:string|null}|null $goal
+     * @param list<array<string,mixed>> $records
+     *
+     * @return array{label:string,distanceMeters:int,targetSeconds:int,currentSeconds:int|null,achieved:bool,progressPct:int,gapSeconds:int|null,raceName:string|null,daysLeft:int|null}|null
+     */
+    private static function goalWidget(?array $goal, array $records, DateTimeImmutable $today): ?array
+    {
+        if ($goal === null) {
+            return null;
+        }
+
+        $current = null;
+        foreach ($records as $r) {
+            if (($r['distanceMeters'] ?? null) === $goal['distanceMeters']) {
+                $current = (int) $r['durationSeconds'];
+                break;
+            }
+        }
+
+        $target = $goal['targetSeconds'];
+        $achieved = $current !== null && $current <= $target;
+
+        $daysLeft = null;
+        if ($goal['raceDate'] !== null && trim($goal['raceDate']) !== '') {
+            $race = new DateTimeImmutable(substr($goal['raceDate'], 0, 10));
+            $daysLeft = (int) $today->setTime(0, 0)->diff($race->setTime(0, 0))->format('%r%a');
+        }
+
+        return [
+            'label' => $goal['label'],
+            'distanceMeters' => $goal['distanceMeters'],
+            'targetSeconds' => $target,
+            'currentSeconds' => $current,
+            'achieved' => $achieved,
+            'progressPct' => $current === null ? 0 : ($achieved ? 100 : (int) min(99, round($target / $current * 100))),
+            'gapSeconds' => $current === null ? null : max(0, $current - $target),
+            'raceName' => $goal['raceName'],
+            'daysLeft' => $daysLeft,
         ];
     }
 

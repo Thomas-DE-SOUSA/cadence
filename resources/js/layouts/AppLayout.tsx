@@ -36,7 +36,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="min-h-screen text-neutral-900">
             {/* Top navigation bar */}
             <header className="fixed inset-x-0 top-0 z-30 border-b border-neutral-200/80 bg-white/85 shadow-[0_1px_2px_rgba(16,16,20,0.04),0_8px_24px_-12px_rgba(16,16,20,0.12)] backdrop-blur-lg">
-                <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 md:px-8">
+                <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:px-8">
                     {/* Brand */}
                     <Link href="/" className="flex shrink-0 items-center gap-2.5">
                         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-sm font-black text-white shadow-md shadow-brand-500/30">
@@ -124,7 +124,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
             {/* Content */}
             <main className="px-4 pb-24 pt-24 sm:px-6 md:px-8 md:pb-14 lg:px-10">
-                <div className="mx-auto max-w-6xl">{children}</div>
+                <div className="mx-auto max-w-7xl">{children}</div>
             </main>
 
             <Toaster position="bottom-right" richColors closeButton theme="light" />
