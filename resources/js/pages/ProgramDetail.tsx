@@ -68,6 +68,16 @@ interface RoadmapPhase {
     cycleId: string | null;
 }
 
+interface Athlete {
+    vdot: number;
+    reference: { distanceMeters: number; seconds: number; date: string };
+    paces: { easy: number; marathon: number; threshold: number; interval: number; repetition: number };
+    recentVolumeMeters: number;
+    longestRunMeters: number;
+    recentRunCount: number;
+    target: { vdot: number; distanceMeters: number; seconds: number } | null;
+}
+
 interface Program {
     id: string;
     name: string;
@@ -89,7 +99,16 @@ interface Props {
     roadmap: RoadmapPhase[];
     canGenerate: boolean;
     activeCycleId: string | null;
+    athlete: Athlete | null;
 }
+
+const PACE_ZONES: { key: keyof Athlete['paces']; label: string; hint: string }[] = [
+    { key: 'easy', label: 'Facile (E)', hint: 'footing, récup' },
+    { key: 'marathon', label: 'Marathon (M)', hint: 'endurance active' },
+    { key: 'threshold', label: 'Seuil (T)', hint: 'tempo, ~1 h effort' },
+    { key: 'interval', label: 'Intervalle (I)', hint: 'VMA, VO₂max' },
+    { key: 'repetition', label: 'Répétition (R)', hint: 'vitesse, économie' },
+];
 
 const SESSION_STYLES: Record<string, { label: string; dot: string; text: string }> = {
     EASY: { label: 'Footing', dot: 'bg-emerald-400', text: 'text-emerald-300' },
@@ -119,7 +138,7 @@ const ROADMAP_BADGE: Record<RoadmapPhase['status'], { label: string; cls: string
     locked: { label: 'À débloquer', cls: 'border-neutral-700 bg-neutral-800/40 text-neutral-500' },
 };
 
-export default function ProgramDetail({ program, available, cycles, roadmap, canGenerate, activeCycleId }: Props) {
+export default function ProgramDetail({ program, available, cycles, roadmap, canGenerate, activeCycleId, athlete }: Props) {
     const ai = useForm({ start_date: '', weeks: 3, ressenti: '' });
     // Completed cycles start collapsed; the active one stays open.
     const [collapsed, setCollapsed] = useState<Set<string>>(
@@ -431,6 +450,57 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
 
                 {/* Sidebar */}
                 <div className="space-y-6">
+                    {athlete && (
+                        <Card title="Profil coureur (estimé)">
+                            <div className="mb-4 flex items-end justify-between">
+                                <div>
+                                    <p className="text-3xl font-bold tabular-nums leading-none text-lime-400">
+                                        {athlete.vdot.toFixed(0)}
+                                    </p>
+                                    <p className="mt-1 text-xs text-neutral-500">
+                                        VDOT · d'après {formatKilometers(athlete.reference.distanceMeters)} km en{' '}
+                                        {formatDuration(athlete.reference.seconds)}
+                                    </p>
+                                </div>
+                                {athlete.target && (
+                                    <div className="text-right">
+                                        <p className="text-sm font-semibold tabular-nums text-neutral-200">
+                                            objectif {athlete.target.vdot.toFixed(0)}
+                                        </p>
+                                        <p className="text-xs text-neutral-500">
+                                            écart{' '}
+                                            <span className={athlete.target.vdot > athlete.vdot ? 'text-orange-300' : 'text-lime-300'}>
+                                                {athlete.target.vdot > athlete.vdot ? '+' : ''}
+                                                {(athlete.target.vdot - athlete.vdot).toFixed(1)}
+                                            </span>
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                {PACE_ZONES.map((zone) => (
+                                    <div key={zone.key} className="flex items-baseline justify-between gap-2 text-sm">
+                                        <span className="text-neutral-300">{zone.label}</span>
+                                        <span className="flex-1 border-b border-dashed border-neutral-800" />
+                                        <span className="tabular-nums text-neutral-100">
+                                            {formatPace(athlete.paces[zone.key])}
+                                        </span>
+                                        <span className="hidden w-24 text-right text-[11px] text-neutral-600 sm:inline">
+                                            {zone.hint}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <p className="mt-4 border-t border-neutral-800 pt-3 text-xs text-neutral-500">
+                                {athlete.recentRunCount} sortie{athlete.recentRunCount > 1 ? 's' : ''} récentes ·{' '}
+                                {formatKilometers(athlete.recentVolumeMeters)} km · plus longue{' '}
+                                {formatKilometers(athlete.longestRunMeters)} km
+                            </p>
+                        </Card>
+                    )}
+
                     {/* Runs to place */}
                     <Card title="Sorties à placer">
                         <p className="-mt-1 mb-3 text-xs text-neutral-400">

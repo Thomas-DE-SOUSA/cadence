@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace Cadence\Training\Infrastructure\Http\Controller;
 
 use Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel;
+use Cadence\Coaching\Application\FitnessAssessmentService;
+use Cadence\Coaching\Domain\Service\VdotCalculator;
 use Cadence\Shared\Application\TenantContext;
+use Cadence\Shared\Domain\TenantId;
+use Cadence\Training\Domain\Enum\ObjectiveType;
+use Cadence\Training\Domain\Model\Objective;
 use Cadence\Training\Domain\Plan\TrainingPlanCatalog;
 use Cadence\Training\Domain\Port\ActivitySummaryProvider;
 use Cadence\Training\Domain\Port\CycleRepository;
@@ -21,6 +26,8 @@ final class ShowProgramController
         private readonly TrainingProgramRepository $programs,
         private readonly ActivitySummaryProvider $summaries,
         private readonly CycleRepository $cycles,
+        private readonly FitnessAssessmentService $fitness,
+        private readonly VdotCalculator $vdot,
         private readonly TenantContext $tenantContext,
     ) {
     }
@@ -103,6 +110,51 @@ final class ShowProgramController
             'roadmap' => ProgramView::roadmap($planKey, $cycles),
             'canGenerate' => $canGenerate,
             'activeCycleId' => $latest !== null && ! $latest->isCompleted() ? $latest->id()->value : null,
+            'athlete' => $this->athleteProfile($tenant, $program->objectives()),
         ]);
+    }
+
+    /**
+     * Computed runner profile (VDOT, personalised paces) plus the VDOT the goal
+     * implies, so the UI can show the gap to the target.
+     *
+     * @param list<Objective> $objectives
+     *
+     * @return array<string, mixed>|null
+     */
+    private function athleteProfile(TenantId $tenant, array $objectives): ?array
+    {
+        $fitness = $this->fitness->forTenant($tenant);
+        if ($fitness === null) {
+            return null;
+        }
+
+        $target = null;
+        foreach ($objectives as $objective) {
+            if ($objective->type === ObjectiveType::RACE_TIME && $objective->targetDistanceMeters !== null && $objective->targetSeconds !== null) {
+                $vdot = $this->vdot->vdot($objective->targetDistanceMeters, $objective->targetSeconds);
+                if ($target === null || $vdot > $target['vdot']) {
+                    $target = [
+                        'vdot' => round($vdot, 1),
+                        'distanceMeters' => $objective->targetDistanceMeters,
+                        'seconds' => $objective->targetSeconds,
+                    ];
+                }
+            }
+        }
+
+        return [
+            'vdot' => $fitness->vdot,
+            'reference' => [
+                'distanceMeters' => $fitness->referenceDistanceMeters,
+                'seconds' => $fitness->referenceSeconds,
+                'date' => $fitness->referenceDate,
+            ],
+            'paces' => $fitness->paces->toArray(),
+            'recentVolumeMeters' => $fitness->recentVolumeMeters,
+            'longestRunMeters' => $fitness->longestRunMeters,
+            'recentRunCount' => $fitness->recentRunCount,
+            'target' => $target,
+        ];
     }
 }
