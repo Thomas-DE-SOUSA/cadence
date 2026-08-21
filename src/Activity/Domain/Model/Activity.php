@@ -126,8 +126,11 @@ final class Activity extends AggregateRoot
     }
 
     /**
-     * Revises the summary fields (date, distance, times, elevation), keeping splits
-     * and best efforts. Bumps the version and records the revision.
+     * Revises an activity (date, distance, times, elevation, splits, best efforts).
+     * Bumps the version and records the revision.
+     *
+     * @param list<Split> $splits
+     * @param list<BestEffort> $bestEfforts
      */
     public function revise(
         DateTimeImmutable $occurredAt,
@@ -135,9 +138,11 @@ final class Activity extends AggregateRoot
         Duration $movingTime,
         Duration $elapsedTime,
         Elevation $elevationGain,
+        array $splits,
+        array $bestEfforts,
         DateTimeImmutable $recordedAt,
     ): self {
-        self::guardSplitsCoverDistance($distance, $this->splits);
+        self::guardSplitsCoverDistance($distance, $splits);
 
         $revised = new self(
             $this->id,
@@ -149,8 +154,8 @@ final class Activity extends AggregateRoot
             $movingTime,
             $elapsedTime,
             $elevationGain,
-            $this->splits,
-            $this->bestEfforts,
+            $splits,
+            $bestEfforts,
             $this->version + 1,
         );
 

@@ -7,10 +7,17 @@ function isActive(currentPath: string, href: string): boolean {
 }
 
 export function AppLayout({ children }: { children: ReactNode }) {
-    const path = usePage().url.split('?')[0];
+    const page = usePage();
+    const path = page.url.split('?')[0];
+    const flash = (page.props.flash as { status?: string } | undefined)?.status;
 
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-100">
+            {flash && (
+                <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-lg border border-lime-400/30 bg-neutral-900 px-4 py-2 text-sm text-lime-300 shadow-lg">
+                    {flash}
+                </div>
+            )}
             {/* Desktop sidebar */}
             <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-neutral-800 bg-neutral-900/40 p-4 md:flex">
                 <div className="mb-8 px-2">

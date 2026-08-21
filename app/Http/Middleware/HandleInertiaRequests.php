@@ -21,6 +21,9 @@ final class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'app' => ['name' => 'Cadence'],
+            'flash' => [
+                'status' => fn (): ?string => $request->session()->get('status'),
+            ],
         ];
     }
 }

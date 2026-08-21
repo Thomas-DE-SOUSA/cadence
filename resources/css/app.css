@@ -15,3 +15,8 @@ html {
 body {
     -webkit-font-smoothing: antialiased;
 }
+
+button:not(:disabled),
+[role='button'] {
+    cursor: pointer;
+}
