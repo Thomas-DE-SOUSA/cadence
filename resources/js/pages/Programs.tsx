@@ -35,14 +35,14 @@ export default function Programs({ programs }: Props) {
                 <h1 className="text-xl font-bold tracking-tight">Programmes</h1>
                 <Link
                     href="/programme/nouveau"
-                    className="flex items-center gap-1.5 rounded-lg bg-lime-400 px-3 py-1.5 text-sm font-medium text-neutral-950 transition-colors hover:bg-lime-300"
+                    className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-600"
                 >
                     <Plus size={16} /> Nouveau
                 </Link>
             </div>
 
             {programs.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-neutral-800 p-10 text-center text-neutral-500">
+                <div className="rounded-xl border border-dashed border-neutral-200 p-10 text-center text-neutral-500">
                     Aucun programme. Crée ton plan Odysséa (ou un autre objectif).
                 </div>
             ) : (
@@ -51,12 +51,12 @@ export default function Programs({ programs }: Props) {
                         <li key={p.id}>
                             <Link
                                 href={`/programme/${p.id}`}
-                                className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900/40 px-5 py-4 transition-colors hover:border-neutral-700"
+                                className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-5 py-4 transition-colors hover:border-neutral-300"
                             >
                                 <div>
-                                    <div className="flex items-center gap-2 font-medium text-neutral-100">
+                                    <div className="flex items-center gap-2 font-medium text-neutral-900">
                                         {p.name}
-                                        <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs text-neutral-400">
+                                        <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-500">
                                             {statusLabel[p.status] ?? p.status}
                                         </span>
                                     </div>
@@ -66,8 +66,8 @@ export default function Programs({ programs }: Props) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1.5 text-sm">
-                                    <Target size={15} className="text-lime-300" />
-                                    <span className="tabular-nums text-neutral-200">
+                                    <Target size={15} className="text-brand-600" />
+                                    <span className="tabular-nums text-neutral-800">
                                         {p.achievedCount}/{p.objectivesCount}
                                     </span>
                                 </div>

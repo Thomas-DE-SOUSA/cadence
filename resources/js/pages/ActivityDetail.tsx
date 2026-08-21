@@ -27,21 +27,21 @@ export default function ActivityDetail({ activity }: Props) {
             <div className="mb-4 flex items-center justify-between">
                 <Link
                     href="/historique"
-                    className="inline-flex items-center gap-1 text-sm text-neutral-400 transition-colors hover:text-neutral-100"
+                    className="inline-flex items-center gap-1 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
                 >
                     <ArrowLeft size={16} /> Historique
                 </Link>
                 <div className="flex items-center gap-2">
                     <Link
                         href={`/activites/${activity.id}/modifier`}
-                        className="rounded-lg border border-neutral-700 px-3 py-1.5 text-sm text-neutral-300 transition-colors hover:bg-neutral-800/60"
+                        className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-100"
                     >
                         Modifier
                     </Link>
                     <button
                         onClick={remove}
                         disabled={del.processing}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 px-3 py-1.5 text-sm text-red-300 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 px-3 py-1.5 text-sm text-red-600 transition-colors hover:bg-red-500/10 disabled:opacity-50"
                     >
                         <Trash2 size={15} /> Supprimer
                     </button>

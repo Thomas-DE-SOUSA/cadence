@@ -43,9 +43,9 @@ function parseTime(v: string): number {
 }
 
 const inputClass =
-    'w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-100 outline-none focus:border-lime-400/60';
+    'w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-neutral-900 outline-none focus:border-brand-500/60';
 const smallInput =
-    'w-full rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1.5 text-sm text-neutral-100 outline-none focus:border-lime-400/60';
+    'w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm text-neutral-900 outline-none focus:border-brand-500/60';
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
     return (
@@ -125,14 +125,14 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
             <Head title="Nouveau programme" />
             <Link
                 href="/programme"
-                className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-400 transition-colors hover:text-neutral-100"
+                className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
             >
                 <ArrowLeft size={16} /> Programmes
             </Link>
             <h1 className="mb-6 text-xl font-bold tracking-tight">Nouveau programme</h1>
 
             {errors.length > 0 && (
-                <ul className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                <ul className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600">
                     {errors.map((m) => (
                         <li key={m}>{m}</li>
                     ))}
@@ -142,7 +142,7 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
             <form onSubmit={submit} className="space-y-6">
                 {plans.length > 0 && (
                     <Card title="Choisis un plan tout fait">
-                        <p className="-mt-1 mb-4 text-sm text-neutral-400">
+                        <p className="-mt-1 mb-4 text-sm text-neutral-500">
                             Le premier cycle arrive déjà détaillé (séances, allures, km). Tu débloqueras les cycles suivants au fur et
                             à mesure.
                         </p>
@@ -156,23 +156,23 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
                                         onClick={() => choosePlan(plan)}
                                         className={`cursor-pointer rounded-xl border p-4 text-left transition-colors ${
                                             selected
-                                                ? 'border-lime-400/70 bg-lime-400/10'
-                                                : 'border-neutral-800 bg-neutral-900/60 hover:border-neutral-700'
+                                                ? 'border-brand-500/70 bg-brand-500/10'
+                                                : 'border-neutral-200 bg-white hover:border-neutral-300'
                                         }`}
                                     >
                                         <div className="mb-1 flex items-center justify-between">
-                                            <span className="font-semibold text-neutral-100">{plan.name}</span>
-                                            {selected && <CheckCircle2 size={16} className="text-lime-400" />}
+                                            <span className="font-semibold text-neutral-900">{plan.name}</span>
+                                            {selected && <CheckCircle2 size={16} className="text-brand-500" />}
                                         </div>
-                                        <p className="mb-3 text-xs leading-relaxed text-neutral-400">{plan.summary}</p>
+                                        <p className="mb-3 text-xs leading-relaxed text-neutral-500">{plan.summary}</p>
                                         <div className="flex flex-wrap gap-1.5">
-                                            <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-[11px] text-neutral-300">
+                                            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] text-neutral-700">
                                                 {plan.totalWeeks} sem.
                                             </span>
-                                            <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-[11px] text-neutral-300">
+                                            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] text-neutral-700">
                                                 {plan.daysPerWeek} j/sem
                                             </span>
-                                            <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-[11px] text-neutral-300">
+                                            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] text-neutral-700">
                                                 {plan.phases.length} cycles
                                             </span>
                                         </div>
@@ -184,7 +184,7 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
                             <button
                                 type="button"
                                 onClick={() => form.setData('plan_key', '')}
-                                className="mt-3 text-xs text-neutral-500 hover:text-neutral-300"
+                                className="mt-3 text-xs text-neutral-500 hover:text-neutral-700"
                             >
                                 Repartir d'un programme vide
                             </button>
@@ -268,7 +268,7 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
                 <Card title="Objectifs">
                     <div className="space-y-3">
                         {form.data.objectives.map((o, i) => (
-                            <div key={i} className="rounded-lg border border-neutral-800 p-3">
+                            <div key={i} className="rounded-lg border border-neutral-200 p-3">
                                 <div className="mb-2 flex items-center gap-2">
                                     <select
                                         value={o.type}
@@ -284,7 +284,7 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
                                     <button
                                         type="button"
                                         onClick={() => removeObjective(i)}
-                                        className="text-neutral-500 hover:text-red-400"
+                                        className="text-neutral-500 hover:text-red-600"
                                         aria-label="Supprimer l'objectif"
                                     >
                                         <X size={16} />
@@ -333,7 +333,7 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
                         <button
                             type="button"
                             onClick={addObjective}
-                            className="inline-flex items-center gap-1 text-sm text-lime-300 hover:text-lime-200"
+                            className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
                         >
                             <Plus size={15} /> Ajouter un objectif
                         </button>
@@ -343,7 +343,7 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
                 <button
                     type="submit"
                     disabled={form.processing}
-                    className="w-full rounded-lg bg-lime-400 px-4 py-2.5 font-medium text-neutral-950 transition-colors hover:bg-lime-300 disabled:opacity-50"
+                    className="w-full rounded-lg bg-brand-500 px-4 py-2.5 font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
                 >
                     Créer le programme
                 </button>

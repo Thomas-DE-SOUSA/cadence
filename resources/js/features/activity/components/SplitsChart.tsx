@@ -24,12 +24,12 @@ export function SplitsChart({ splits, targetSecondsPerKm = 240 }: Props) {
                 return (
                     <div key={split.index} className="flex items-center gap-3 text-sm">
                         <span className="w-10 shrink-0 tabular-nums text-neutral-500">km {split.index}</span>
-                        <div className="relative h-6 flex-1 overflow-hidden rounded bg-neutral-800/60">
+                        <div className="relative h-6 flex-1 overflow-hidden rounded bg-neutral-100">
                             <div
-                                className={`h-full rounded ${isFast ? 'bg-lime-400/80' : 'bg-orange-400/70'}`}
+                                className={`h-full rounded ${isFast ? 'bg-brand-500/80' : 'bg-orange-400/70'}`}
                                 style={{ width: `${width(pace)}%` }}
                             />
-                            <span className="absolute inset-y-0 left-2 flex items-center text-xs font-medium tabular-nums text-neutral-100">
+                            <span className="absolute inset-y-0 left-2 flex items-center text-xs font-medium tabular-nums text-neutral-900">
                                 {formatPace(pace)}
                             </span>
                         </div>
@@ -42,7 +42,7 @@ export function SplitsChart({ splits, targetSecondsPerKm = 240 }: Props) {
             })}
             <p className="pt-2 text-xs text-neutral-500">
                 <span className="mr-3">
-                    <span className="mr-1 inline-block h-2 w-2 rounded-full bg-lime-400/80" />≤ {formatPace(targetSecondsPerKm)} (objectif)
+                    <span className="mr-1 inline-block h-2 w-2 rounded-full bg-brand-500/80" />≤ {formatPace(targetSecondsPerKm)} (objectif)
                 </span>
                 <span>
                     <span className="mr-1 inline-block h-2 w-2 rounded-full bg-orange-400/70" />plus lent

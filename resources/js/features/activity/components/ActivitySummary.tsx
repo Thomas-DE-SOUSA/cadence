@@ -9,7 +9,7 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
     return (
         <div>
             <div className="text-xs uppercase tracking-wide text-neutral-500">{label}</div>
-            <div className={`mt-0.5 text-2xl font-semibold tabular-nums ${accent ? 'text-lime-300' : 'text-neutral-100'}`}>
+            <div className={`mt-0.5 text-2xl font-semibold tabular-nums ${accent ? 'text-brand-600' : 'text-neutral-900'}`}>
                 {value}
             </div>
         </div>
@@ -19,7 +19,7 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
 export function ActivitySummary({ activity }: Props) {
     return (
         <div>
-            <div className="text-sm text-neutral-400">{formatDate(activity.occurredAt)}</div>
+            <div className="text-sm text-neutral-500">{formatDate(activity.occurredAt)}</div>
             <div className="mt-4 grid grid-cols-2 gap-5 sm:grid-cols-4">
                 <Stat label="Distance" value={`${formatKilometers(activity.distanceMeters)} km`} />
                 <Stat label="Temps" value={formatDuration(activity.movingSeconds)} />

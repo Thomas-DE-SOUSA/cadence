@@ -6,14 +6,28 @@
 @theme {
     --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji';
+
+    /* Brand — Strava-style orange */
+    --color-brand-50: #fff4ee;
+    --color-brand-100: #ffe3d3;
+    --color-brand-200: #ffc2a6;
+    --color-brand-300: #ff9b70;
+    --color-brand-400: #ff6f38;
+    --color-brand-500: #fc4c02;
+    --color-brand-600: #e64102;
+    --color-brand-700: #bd3506;
+    --color-brand-800: #962c0d;
+    --color-brand-900: #7a280f;
 }
 
 html {
-    color-scheme: dark;
+    color-scheme: light;
 }
 
 body {
     -webkit-font-smoothing: antialiased;
+    background-color: #f4f4f6;
+    color: #1a1a1e;
 }
 
 button:not(:disabled),

@@ -30,7 +30,7 @@ export default function Dashboard({ activity }: Props) {
                     </Card>
                 </div>
             ) : (
-                <div className="rounded-xl border border-dashed border-neutral-800 p-10 text-center text-neutral-500">
+                <div className="rounded-xl border border-dashed border-neutral-200 p-10 text-center text-neutral-500">
                     Aucune activité enregistrée pour l'instant.
                 </div>
             )}

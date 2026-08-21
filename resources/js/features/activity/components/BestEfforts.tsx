@@ -11,18 +11,18 @@ export function BestEfforts({ efforts }: Props) {
     }
 
     return (
-        <ul className="divide-y divide-neutral-800">
+        <ul className="divide-y divide-neutral-200">
             {efforts.map((effort) => (
                 <li key={effort.label} className="flex items-center justify-between py-2.5">
-                    <span className="flex items-center gap-2 font-medium text-neutral-200">
+                    <span className="flex items-center gap-2 font-medium text-neutral-800">
                         {effort.label}
                         {effort.isPersonalRecord && (
-                            <span className="rounded bg-lime-400/15 px-1.5 py-0.5 text-xs font-semibold text-lime-300">
+                            <span className="rounded bg-brand-500/15 px-1.5 py-0.5 text-xs font-semibold text-brand-600">
                                 RP
                             </span>
                         )}
                     </span>
-                    <span className="tabular-nums text-neutral-400">
+                    <span className="tabular-nums text-neutral-500">
                         {formatDuration(effort.durationSeconds)}
                         <span className="ml-2 text-neutral-500">
                             {formatPace(paceSecondsPerKm(effort.distanceMeters, effort.durationSeconds))}

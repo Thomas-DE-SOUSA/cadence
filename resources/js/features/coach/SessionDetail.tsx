@@ -121,11 +121,11 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
     return (
         <div className="space-y-5">
             <div>
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-lime-300">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-600">
                     {TYPE_LABEL[session.type] ?? session.type}
                 </span>
-                <h3 className="mt-0.5 text-lg font-bold text-neutral-100">{session.title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-neutral-400">{session.description}</p>
+                <h3 className="mt-0.5 text-lg font-bold text-neutral-900">{session.title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-neutral-500">{session.description}</p>
             </div>
 
             {session.steps.length > 0 && (
@@ -138,18 +138,18 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
                                 step.repeat > 1 && step.recoverySeconds ? `récup ${shortDuration(step.recoverySeconds)}` : '';
                             const sub = [recovery, step.note].filter(Boolean).join(' · ');
                             return (
-                                <li key={i} className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-2.5">
+                                <li key={i} className="rounded-lg border border-neutral-200 bg-neutral-50 p-2.5">
                                     <div className="flex items-baseline justify-between gap-3">
-                                        <span className="text-sm text-neutral-100">
+                                        <span className="text-sm text-neutral-900">
                                             {step.repeat > 1 && (
-                                                <span className="font-semibold text-lime-300">{step.repeat} × </span>
+                                                <span className="font-semibold text-brand-600">{step.repeat} × </span>
                                             )}
                                             {effort && <span className="font-semibold">{effort}</span>}
                                             {effort && ' · '}
                                             {step.label}
                                         </span>
                                         {step.paceSecondsPerKm && (
-                                            <span className="shrink-0 text-sm tabular-nums text-lime-300">
+                                            <span className="shrink-0 text-sm tabular-nums text-brand-600">
                                                 {mmss(step.paceSecondsPerKm)}/km
                                             </span>
                                         )}
@@ -164,28 +164,28 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
 
             <div className="grid grid-cols-3 gap-3">
                 {pace && (
-                    <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-3">
+                    <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
                         <p className="text-[11px] uppercase tracking-wide text-neutral-500">Allure</p>
-                        <p className="mt-0.5 text-lg font-semibold tabular-nums text-lime-400">{mmss(pace)}/km</p>
-                        <p className="text-[11px] text-neutral-600">{(3600 / pace).toFixed(1)} km/h</p>
+                        <p className="mt-0.5 text-lg font-semibold tabular-nums text-brand-500">{mmss(pace)}/km</p>
+                        <p className="text-[11px] text-neutral-400">{(3600 / pace).toFixed(1)} km/h</p>
                     </div>
                 )}
                 {distanceMeters && (
-                    <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-3">
+                    <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
                         <p className="text-[11px] uppercase tracking-wide text-neutral-500">
                             Distance{distanceEstimated ? ' ~' : ''}
                         </p>
-                        <p className="mt-0.5 text-lg font-semibold tabular-nums text-neutral-100">
+                        <p className="mt-0.5 text-lg font-semibold tabular-nums text-neutral-900">
                             {formatKilometers(distanceMeters)} km
                         </p>
                     </div>
                 )}
                 {estimatedSeconds && (
-                    <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-3">
+                    <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
                         <p className="text-[11px] uppercase tracking-wide text-neutral-500">
                             {session.targetDurationSeconds ? 'Durée' : 'Temps ~'}
                         </p>
-                        <p className="mt-0.5 text-lg font-semibold tabular-nums text-neutral-100">
+                        <p className="mt-0.5 text-lg font-semibold tabular-nums text-neutral-900">
                             {duration(estimatedSeconds)}
                         </p>
                     </div>
@@ -204,9 +204,9 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
                     </p>
                     <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
                         {splits.map((s) => (
-                            <div key={s.label} className="rounded-md border border-neutral-800 bg-neutral-900/50 p-2 text-center">
+                            <div key={s.label} className="rounded-md border border-neutral-200 bg-neutral-50 p-2 text-center">
                                 <p className="text-[10px] text-neutral-500">{s.label}</p>
-                                <p className="text-sm font-semibold tabular-nums text-neutral-100">{s.time}</p>
+                                <p className="text-sm font-semibold tabular-nums text-neutral-900">{s.time}</p>
                             </div>
                         ))}
                     </div>
@@ -214,9 +214,9 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
             )}
 
             {session.actual && (
-                <div className="rounded-lg border border-lime-400/30 bg-lime-400/[0.06] p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-lime-300">Réalisé ce jour</p>
-                    <p className="mt-0.5 text-sm tabular-nums text-neutral-100">
+                <div className="rounded-lg border border-brand-500/30 bg-brand-500/[0.06] p-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-600">Réalisé ce jour</p>
+                    <p className="mt-0.5 text-sm tabular-nums text-neutral-900">
                         {formatKilometers(session.actual.distanceMeters)} km · {mmss(session.actual.averagePaceSecondsPerKm)}/km
                     </p>
                 </div>
@@ -232,14 +232,14 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
                             <div
                                 key={z.key}
                                 className={`flex items-baseline justify-between gap-3 rounded-md px-2 py-1.5 ${
-                                    zone === z.key ? 'bg-lime-400/10' : ''
+                                    zone === z.key ? 'bg-brand-500/10' : ''
                                 }`}
                             >
-                                <span className={`text-sm ${zone === z.key ? 'font-medium text-lime-200' : 'text-neutral-300'}`}>
+                                <span className={`text-sm ${zone === z.key ? 'font-medium text-brand-700' : 'text-neutral-700'}`}>
                                     {z.label}
                                 </span>
-                                <span className="hidden flex-1 text-[11px] text-neutral-600 sm:block">{z.hint}</span>
-                                <span className={`text-sm tabular-nums ${zone === z.key ? 'text-lime-200' : 'text-neutral-400'}`}>
+                                <span className="hidden flex-1 text-[11px] text-neutral-400 sm:block">{z.hint}</span>
+                                <span className={`text-sm tabular-nums ${zone === z.key ? 'text-brand-700' : 'text-neutral-500'}`}>
                                     {mmss(paces[z.key])}/km
                                 </span>
                             </div>
@@ -248,7 +248,7 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
                     {zone && (
                         <p className="mt-2 text-xs text-neutral-500">
                             Cette séance se court en zone{' '}
-                            <span className="text-lime-300">{ZONES.find((z) => z.key === zone)?.label}</span>.
+                            <span className="text-brand-600">{ZONES.find((z) => z.key === zone)?.label}</span>.
                         </p>
                     )}
                 </div>

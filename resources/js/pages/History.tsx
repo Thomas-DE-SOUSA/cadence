@@ -17,14 +17,14 @@ export default function History({ activities }: Props) {
                 <h1 className="text-xl font-bold tracking-tight">Historique</h1>
                 <Link
                     href="/activites/nouvelle"
-                    className="flex items-center gap-1.5 rounded-lg bg-lime-400 px-3 py-1.5 text-sm font-medium text-neutral-950 transition-colors hover:bg-lime-300"
+                    className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-600"
                 >
                     <Plus size={16} /> Nouvelle
                 </Link>
             </div>
 
             {activities.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-neutral-800 p-10 text-center text-neutral-500">
+                <div className="rounded-xl border border-dashed border-neutral-200 p-10 text-center text-neutral-500">
                     Aucune activité. Ajoute ta première sortie.
                 </div>
             ) : (
@@ -33,10 +33,10 @@ export default function History({ activities }: Props) {
                         <li key={activity.id}>
                             <Link
                                 href={`/activites/${activity.id}`}
-                                className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900/40 px-5 py-4 transition-colors hover:border-neutral-700"
+                                className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-5 py-4 transition-colors hover:border-neutral-300"
                             >
                                 <div>
-                                    <div className="font-medium text-neutral-100">
+                                    <div className="font-medium text-neutral-900">
                                         {formatKilometers(activity.distanceMeters)} km
                                     </div>
                                     <div className="text-xs text-neutral-500">
@@ -44,10 +44,10 @@ export default function History({ activities }: Props) {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="tabular-nums text-neutral-200">
+                                    <div className="tabular-nums text-neutral-800">
                                         {formatDuration(activity.movingSeconds)}
                                     </div>
-                                    <div className="text-xs tabular-nums text-lime-300">
+                                    <div className="text-xs tabular-nums text-brand-600">
                                         {formatPace(activity.averagePaceSecondsPerKm)}
                                     </div>
                                 </div>

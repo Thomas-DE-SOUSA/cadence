@@ -19,7 +19,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 const inputClass =
-    'w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-100 outline-none focus:border-lime-400/60';
+    'w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-neutral-900 outline-none focus:border-brand-500/60';
 
 export default function ActivityForm() {
     const form = useForm({
@@ -58,7 +58,7 @@ export default function ActivityForm() {
             <Head title="Nouvelle activité" />
             <Link
                 href="/historique"
-                className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-400 transition-colors hover:text-neutral-100"
+                className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
             >
                 <ArrowLeft size={16} /> Historique
             </Link>
@@ -67,7 +67,7 @@ export default function ActivityForm() {
             <div className="mb-6">
                 <Card title="Coller depuis Strava (IA)">
                     {pasteForm.errors.text && (
-                        <p className="mb-2 text-sm text-red-300">{pasteForm.errors.text}</p>
+                        <p className="mb-2 text-sm text-red-600">{pasteForm.errors.text}</p>
                     )}
                     <form onSubmit={submitPaste} className="space-y-3">
                         <textarea
@@ -91,7 +91,7 @@ export default function ActivityForm() {
                         <button
                             type="submit"
                             disabled={pasteForm.processing}
-                            className="w-full rounded-lg bg-lime-400 px-4 py-2.5 font-medium text-neutral-950 transition-colors hover:bg-lime-300 disabled:opacity-50"
+                            className="w-full rounded-lg bg-brand-500 px-4 py-2.5 font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
                         >
                             {pasteForm.processing ? 'Analyse en cours…' : "Importer avec l'IA"}
                         </button>
@@ -104,7 +104,7 @@ export default function ActivityForm() {
 
             <Card title="Ou saisie manuelle">
                 {errors.length > 0 && (
-                    <ul className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                    <ul className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600">
                         {errors.map((message) => (
                             <li key={message}>{message}</li>
                         ))}
@@ -180,7 +180,7 @@ export default function ActivityForm() {
                     <button
                         type="submit"
                         disabled={form.processing}
-                        className="w-full rounded-lg bg-lime-400 px-4 py-2.5 font-medium text-neutral-950 transition-colors hover:bg-lime-300 disabled:opacity-50"
+                        className="w-full rounded-lg bg-brand-500 px-4 py-2.5 font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
                     >
                         Enregistrer
                     </button>

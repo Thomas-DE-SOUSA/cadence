@@ -30,12 +30,12 @@ export function Modal({ open, onClose, title, children, size = 'lg' }: Props) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <div className={`relative flex w-full ${panel} flex-col overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl`}>
-                <div className="flex shrink-0 items-center justify-between border-b border-neutral-800 px-5 py-3.5">
-                    <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-300">{title}</h2>
+            <div className={`relative flex w-full ${panel} flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl`}>
+                <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 px-5 py-3.5">
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-700">{title}</h2>
                     <button
                         onClick={onClose}
-                        className="cursor-pointer text-neutral-500 transition-colors hover:text-neutral-100"
+                        className="cursor-pointer text-neutral-500 transition-colors hover:text-neutral-900"
                         aria-label="Fermer"
                     >
                         <X size={18} />

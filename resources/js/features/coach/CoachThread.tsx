@@ -30,7 +30,7 @@ const SUGGESTIONS = [
 function renderRich(text: string): ReactNode[] {
     return text.split('**').map((part, i) =>
         i % 2 === 1 ? (
-            <strong key={i} className="font-semibold text-neutral-100">
+            <strong key={i} className="font-semibold text-neutral-900">
                 {part}
             </strong>
         ) : (
@@ -160,14 +160,14 @@ export function CoachThread({
 
     return (
         <div className="flex h-full min-h-0 flex-col">
-            <p className="mb-3 flex shrink-0 items-center gap-1.5 text-sm font-semibold text-neutral-200">
-                <Sparkles size={16} className="text-lime-400" /> Coach
+            <p className="mb-3 flex shrink-0 items-center gap-1.5 text-sm font-semibold text-neutral-800">
+                <Sparkles size={16} className="text-brand-500" /> Coach
             </p>
 
             <div className="min-h-0 flex-1 overflow-y-auto">
             {messages.length === 0 && !streaming && (
                 <div className="mb-3">
-                    <p className="text-sm text-neutral-400">
+                    <p className="text-sm text-neutral-500">
                         Discute de cette séance : fatigue, douleurs, temps limité, ou « pourquoi cette séance ». Il connaît tes
                         allures et ton objectif.
                     </p>
@@ -176,7 +176,7 @@ export function CoachThread({
                             <button
                                 key={s}
                                 onClick={() => setMessage(s)}
-                                className="cursor-pointer rounded-full border border-neutral-800 px-2.5 py-1 text-xs text-neutral-300 transition-colors hover:border-neutral-700 hover:text-neutral-100"
+                                className="cursor-pointer rounded-full border border-neutral-200 px-2.5 py-1 text-xs text-neutral-700 transition-colors hover:border-neutral-300 hover:text-neutral-900"
                             >
                                 {s}
                             </button>
@@ -189,22 +189,22 @@ export function CoachThread({
                 {messages.map((m) =>
                     m.role === 'athlete' ? (
                         <div key={m.id} className="flex justify-end">
-                            <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-lime-400/15 px-3.5 py-2 text-sm text-neutral-100">
+                            <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-brand-500/15 px-3.5 py-2 text-sm text-neutral-900">
                                 {m.text}
                             </p>
                         </div>
                     ) : (
                         <div key={m.id} className="flex flex-col items-start gap-2">
-                            <div className="max-w-[90%] whitespace-pre-wrap rounded-2xl rounded-bl-sm border border-neutral-800 bg-neutral-900/60 px-3.5 py-2 text-sm text-neutral-200">
+                            <div className="max-w-[90%] whitespace-pre-wrap rounded-2xl rounded-bl-sm border border-neutral-200 bg-white px-3.5 py-2 text-sm text-neutral-800">
                                 {renderRich(m.text)}
                             </div>
                             {m.proposal && (
-                                <div className="w-full rounded-xl border border-lime-400/30 bg-lime-400/[0.05] p-3">
-                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-lime-300">
+                                <div className="w-full rounded-xl border border-brand-500/30 bg-brand-500/[0.05] p-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-600">
                                         Proposition · {formatDate(m.proposal.date)}
                                     </p>
-                                    <p className="mt-1 text-sm font-semibold text-neutral-100">{m.proposal.title}</p>
-                                    <p className="mt-0.5 text-xs text-neutral-400">{m.proposal.description}</p>
+                                    <p className="mt-1 text-sm font-semibold text-neutral-900">{m.proposal.title}</p>
+                                    <p className="mt-0.5 text-xs text-neutral-500">{m.proposal.description}</p>
                                     <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-neutral-500">
                                         {m.proposal.targetDistanceMeters && (
                                             <span>{formatKilometers(m.proposal.targetDistanceMeters)} km</span>
@@ -214,13 +214,13 @@ export function CoachThread({
                                         )}
                                     </div>
                                     {m.proposalApplied ? (
-                                        <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-lime-300">
+                                        <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand-600">
                                             <Check size={15} /> Appliqué au plan
                                         </p>
                                     ) : (
                                         <button
                                             onClick={() => applyProposal(m.id)}
-                                            className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-lime-400 px-3.5 py-1.5 text-sm font-semibold text-neutral-950 transition-colors hover:bg-lime-300"
+                                            className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand-500 px-3.5 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
                                         >
                                             <Check size={15} /> Appliquer
                                         </button>
@@ -233,7 +233,7 @@ export function CoachThread({
 
                 {pendingAthlete && (
                     <div className="flex justify-end">
-                        <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-lime-400/15 px-3.5 py-2 text-sm text-neutral-100">
+                        <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-brand-500/15 px-3.5 py-2 text-sm text-neutral-900">
                             {pendingAthlete}
                         </p>
                     </div>
@@ -245,9 +245,9 @@ export function CoachThread({
                         </div>
                     ) : (
                         <div className="flex flex-col items-start">
-                            <div className="max-w-[90%] whitespace-pre-wrap rounded-2xl rounded-bl-sm border border-neutral-800 bg-neutral-900/60 px-3.5 py-2 text-sm text-neutral-200">
+                            <div className="max-w-[90%] whitespace-pre-wrap rounded-2xl rounded-bl-sm border border-neutral-200 bg-white px-3.5 py-2 text-sm text-neutral-800">
                                 {renderRich(liveText)}
-                                <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse bg-lime-400/70 align-middle" />
+                                <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse bg-brand-500/70 align-middle" />
                             </div>
                         </div>
                     ))}
@@ -255,7 +255,7 @@ export function CoachThread({
             </div>
             </div>
 
-            {error && <p className="mt-2 shrink-0 text-xs text-red-400">{error}</p>}
+            {error && <p className="mt-2 shrink-0 text-xs text-red-600">{error}</p>}
 
             <form onSubmit={submit} className="mt-4 flex shrink-0 items-end gap-2">
                 <textarea
@@ -270,12 +270,12 @@ export function CoachThread({
                     rows={2}
                     placeholder="Parle à ton coach…"
                     disabled={streaming}
-                    className="flex-1 resize-none rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2.5 text-sm text-neutral-100 outline-none focus:border-lime-400/60 disabled:opacity-60"
+                    className="flex-1 resize-none rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900 outline-none focus:border-brand-500/60 disabled:opacity-60"
                 />
                 <button
                     type="submit"
                     disabled={streaming || !message.trim()}
-                    className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-lime-400 text-neutral-950 transition-colors hover:bg-lime-300 disabled:opacity-50"
+                    className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-brand-500 text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
                     aria-label="Envoyer"
                 >
                     <Send size={17} />

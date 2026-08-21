@@ -32,9 +32,9 @@ function secondsToTime(total: number): string {
 }
 
 const inputClass =
-    'w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-100 outline-none focus:border-lime-400/60';
+    'w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-neutral-900 outline-none focus:border-brand-500/60';
 const smallInput =
-    'w-full rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1.5 text-sm text-neutral-100 outline-none focus:border-lime-400/60';
+    'w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm text-neutral-900 outline-none focus:border-brand-500/60';
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
     return (
@@ -135,14 +135,14 @@ export default function ActivityEdit({ activity }: Props) {
             <Head title="Modifier l'activité" />
             <Link
                 href={`/activites/${activity.id}`}
-                className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-400 transition-colors hover:text-neutral-100"
+                className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
             >
                 <ArrowLeft size={16} /> Retour
             </Link>
             <h1 className="mb-6 text-xl font-bold tracking-tight">Modifier l'activité</h1>
 
             {errors.length > 0 && (
-                <ul className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                <ul className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600">
                     {errors.map((message) => (
                         <li key={message}>{message}</li>
                     ))}
@@ -244,7 +244,7 @@ export default function ActivityEdit({ activity }: Props) {
                                 <button
                                     type="button"
                                     onClick={() => removeSplit(i)}
-                                    className="flex justify-center text-neutral-500 hover:text-red-400"
+                                    className="flex justify-center text-neutral-500 hover:text-red-600"
                                     aria-label="Supprimer le split"
                                 >
                                     <X size={16} />
@@ -254,7 +254,7 @@ export default function ActivityEdit({ activity }: Props) {
                         <button
                             type="button"
                             onClick={addSplit}
-                            className="inline-flex items-center gap-1 text-sm text-lime-300 hover:text-lime-200"
+                            className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
                         >
                             <Plus size={15} /> Ajouter un split
                         </button>
@@ -289,7 +289,7 @@ export default function ActivityEdit({ activity }: Props) {
                                     placeholder="mm:ss"
                                     aria-label="Temps"
                                 />
-                                <label className="flex items-center gap-1 text-xs text-neutral-400">
+                                <label className="flex items-center gap-1 text-xs text-neutral-500">
                                     <input
                                         type="checkbox"
                                         checked={effort.is_personal_record}
@@ -300,7 +300,7 @@ export default function ActivityEdit({ activity }: Props) {
                                 <button
                                     type="button"
                                     onClick={() => removeEffort(i)}
-                                    className="flex justify-center text-neutral-500 hover:text-red-400"
+                                    className="flex justify-center text-neutral-500 hover:text-red-600"
                                     aria-label="Supprimer l'effort"
                                 >
                                     <X size={16} />
@@ -310,7 +310,7 @@ export default function ActivityEdit({ activity }: Props) {
                         <button
                             type="button"
                             onClick={addEffort}
-                            className="inline-flex items-center gap-1 text-sm text-lime-300 hover:text-lime-200"
+                            className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
                         >
                             <Plus size={15} /> Ajouter un effort
                         </button>
@@ -320,7 +320,7 @@ export default function ActivityEdit({ activity }: Props) {
                 <button
                     type="submit"
                     disabled={form.processing}
-                    className="w-full rounded-lg bg-lime-400 px-4 py-2.5 font-medium text-neutral-950 transition-colors hover:bg-lime-300 disabled:opacity-50"
+                    className="w-full rounded-lg bg-brand-500 px-4 py-2.5 font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
                 >
                     Enregistrer les modifications
                 </button>
