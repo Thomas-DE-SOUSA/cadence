@@ -10,7 +10,6 @@ import {
     Moon,
     Mountain,
     MoveUpRight,
-    Plus,
     Route,
     Sparkles,
     Target,
@@ -93,15 +92,7 @@ export default function History({ stats, streak, records, achievements, activiti
         <>
             <Head title="Tableau de bord" />
 
-            <div className="mb-6 flex items-center justify-between">
-                <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Tableau de bord</h1>
-                <Link
-                    href="/activites/nouvelle"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-500/30 transition-all hover:-translate-y-0.5 hover:bg-brand-600"
-                >
-                    <Plus size={16} /> Nouvelle
-                </Link>
-            </div>
+            <h1 className="mb-6 text-2xl font-bold tracking-tight text-neutral-900">Tableau de bord</h1>
 
             {/* Streak hero */}
             <div className="animate-fade-up mb-5 overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-orange-50/60 p-5 shadow-sm shadow-neutral-200/60">
