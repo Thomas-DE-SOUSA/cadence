@@ -31,7 +31,7 @@ final class Cycle
         private readonly string $endDate,
         private readonly int $phaseIndex,
         private CycleStatus $status,
-        private readonly array $sessions,
+        private array $sessions,
         private int $version,
     ) {
     }
@@ -81,6 +81,30 @@ final class Cycle
     {
         $this->status = CycleStatus::COMPLETED;
         $this->version++;
+    }
+
+    /** Link an activity to the planned session on the given date. */
+    public function linkActivity(string $date, ?string $activityId): void
+    {
+        $changed = false;
+        $this->sessions = array_map(static function (PlannedSession $s) use ($date, $activityId, &$changed): PlannedSession {
+            if ($s->date === $date) {
+                $changed = true;
+
+                return $s->withActivity($activityId);
+            }
+
+            return $s;
+        }, $this->sessions);
+
+        if ($changed) {
+            $this->version++;
+        }
+    }
+
+    public function programId(): string
+    {
+        return $this->programId;
     }
 
     public function id(): CycleId

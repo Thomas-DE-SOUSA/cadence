@@ -10,9 +10,11 @@ use Cadence\Training\Domain\Port\CycleRepository;
 use Cadence\Training\Domain\Port\TrainingProgramRepository;
 use Cadence\Training\Infrastructure\Ai\ClaudeCyclePlanner;
 use Cadence\Training\Infrastructure\Http\Controller\AssignActivityController;
+use Cadence\Training\Infrastructure\Http\Controller\AssignSessionActivityController;
 use Cadence\Training\Infrastructure\Http\Controller\CompleteCycleController;
 use Cadence\Training\Infrastructure\Http\Controller\CreateProgramController;
 use Cadence\Training\Infrastructure\Http\Controller\GenerateCycleController;
+use Cadence\Training\Infrastructure\Http\Controller\RegenerateCycleController;
 use Cadence\Training\Infrastructure\Http\Controller\ShowProgramController;
 use Cadence\Training\Infrastructure\Http\Controller\ShowProgramsController;
 use Cadence\Training\Infrastructure\Http\Controller\UnassignActivityController;
@@ -47,6 +49,8 @@ final class TrainingServiceProvider extends ServiceProvider
             Route::post('/{id}/retirer', UnassignActivityController::class)->name('programs.unassign');
             Route::post('/{id}/generer-cycle', GenerateCycleController::class)->name('programs.generate-cycle');
             Route::post('/{id}/cycles/{cycleId}/terminer', CompleteCycleController::class)->name('programs.complete-cycle');
+            Route::post('/{id}/cycles/{cycleId}/refaire', RegenerateCycleController::class)->name('programs.regenerate-cycle');
+            Route::post('/{id}/cycles/{cycleId}/jour', AssignSessionActivityController::class)->name('programs.assign-day');
         });
     }
 }

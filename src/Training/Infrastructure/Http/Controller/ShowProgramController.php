@@ -35,10 +35,24 @@ final class ShowProgramController
         $summaries = $this->summaries->summariesFor($tenant, $program->assignedActivityIds());
         $assigned = array_flip($program->assignedActivityIds());
 
-        $available = ActivityModel::query()
+        $allActivities = ActivityModel::query()
             ->where('tenant_id', $tenant->value)
             ->orderByDesc('occurred_at')
-            ->get()
+            ->get();
+
+        /** @var array<string, array<string, mixed>> $activityLookup */
+        $activityLookup = [];
+        foreach ($allActivities as $m) {
+            $activityLookup[$m->id] = [
+                'id' => $m->id,
+                'occurredAt' => (string) $m->occurred_at,
+                'distanceMeters' => (int) $m->distance_meters,
+                'movingSeconds' => (int) $m->moving_seconds,
+                'averagePaceSecondsPerKm' => (float) $m->average_pace_seconds_per_km,
+            ];
+        }
+
+        $available = $allActivities
             ->reject(fn (ActivityModel $m): bool => isset($assigned[$m->id]))
             ->map(fn (ActivityModel $m): array => [
                 'id' => $m->id,
@@ -59,7 +73,7 @@ final class ShowProgramController
         return Inertia::render('ProgramDetail', [
             'program' => ProgramView::detail($program, $summaries),
             'available' => $available,
-            'cycles' => ProgramView::cycles($cycles),
+            'cycles' => ProgramView::cycles($cycles, $activityLookup),
             'roadmap' => ProgramView::roadmap($planKey, $cycles),
             'canGenerate' => $canGenerate,
             'activeCycleId' => $latest !== null && ! $latest->isCompleted() ? $latest->id()->value : null,

@@ -80,15 +80,17 @@ final class ProgramView
     }
 
     /**
-     * Maps cycles to the view, grouping planned sessions by ISO week.
+     * Maps cycles to the view, grouping planned sessions by 7-day week and
+     * attaching the actual run linked to each day (from the lookup).
      *
      * @param list<Cycle> $cycles
+     * @param array<string, array<string, mixed>> $activityLookup keyed by activity id
      *
      * @return list<array<string, mixed>>
      */
-    public static function cycles(array $cycles): array
+    public static function cycles(array $cycles, array $activityLookup = []): array
     {
-        return array_map(static function (Cycle $cycle): array {
+        return array_map(static function (Cycle $cycle) use ($activityLookup): array {
             $s = $cycle->toSnapshot();
             $start = new \DateTimeImmutable($s['start_date']);
 
@@ -98,6 +100,7 @@ final class ProgramView
             $weeks = [];
             foreach ($s['sessions'] as $session) {
                 $days = (int) $start->diff(new \DateTimeImmutable($session['date']))->days;
+                $activityId = $session['activity_id'] ?? null;
                 $weeks[intdiv($days, 7)][] = [
                     'date' => $session['date'],
                     'type' => $session['type'],
@@ -106,6 +109,8 @@ final class ProgramView
                     'targetDistanceMeters' => $session['target_distance_meters'],
                     'targetDurationSeconds' => $session['target_duration_seconds'],
                     'targetPaceSecondsPerKm' => $session['target_pace_seconds_per_km'],
+                    'activityId' => $activityId,
+                    'actual' => $activityId !== null ? ($activityLookup[$activityId] ?? null) : null,
                 ];
             }
             ksort($weeks);

@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import type { FormEvent, ReactNode } from 'react';
-import { ArrowLeft, CheckCircle2, Circle, Flag, Lock, Sparkles, X } from 'lucide-react';
+import { useState } from 'react';
+import type { DragEvent, FormEvent, ReactNode } from 'react';
+import { ArrowLeft, CheckCircle2, ChevronDown, Circle, Flag, GripVertical, Lock, RefreshCw, Sparkles, X } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
 import { formatDate, formatDuration, formatKilometers, formatPace } from '@/features/activity/domain/format';
@@ -14,13 +15,15 @@ interface ObjectiveResult {
     detail: string;
 }
 
-interface AssignedActivity {
+interface ActivityStats {
     id: string;
     occurredAt: string;
     distanceMeters: number;
     movingSeconds: number;
     averagePaceSecondsPerKm: number;
 }
+
+interface AssignedActivity extends ActivityStats {}
 
 interface AvailableActivity {
     id: string;
@@ -36,6 +39,8 @@ interface PlannedSession {
     targetDistanceMeters: number | null;
     targetDurationSeconds: number | null;
     targetPaceSecondsPerKm: number | null;
+    activityId: string | null;
+    actual: ActivityStats | null;
 }
 
 interface CycleWeek {
@@ -103,44 +108,67 @@ function sessionStyle(type: string) {
 }
 
 function weekdayLabel(iso: string): string {
-    return new Date(iso).toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit' });
+    // Parse as a local date so the weekday never shifts by timezone.
+    const [y, m, d] = iso.split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1).toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit' });
 }
 
-function todayIso(): string {
-    return new Date().toISOString().slice(0, 10);
-}
+const ROADMAP_BADGE: Record<RoadmapPhase['status'], { label: string; cls: string }> = {
+    done: { label: 'Terminé', cls: 'border-lime-400/40 bg-lime-400/10 text-lime-300' },
+    active: { label: 'En cours', cls: 'border-sky-400/40 bg-sky-400/10 text-sky-300' },
+    locked: { label: 'À débloquer', cls: 'border-neutral-700 bg-neutral-800/40 text-neutral-500' },
+};
 
 export default function ProgramDetail({ program, available, cycles, roadmap, canGenerate, activeCycleId }: Props) {
-    const assign = useForm({ activity_id: available[0]?.id ?? '' });
-    const generate = useForm({ start_date: todayIso(), weeks: 2, ressenti: '' });
+    const ai = useForm({ start_date: '', weeks: 3, ressenti: '' });
+    // Completed cycles start collapsed; the active one stays open.
+    const [collapsed, setCollapsed] = useState<Set<string>>(
+        () => new Set(cycles.filter((c) => c.status === 'completed').map((c) => c.id)),
+    );
+    const [selectedRun, setSelectedRun] = useState<string | null>(null);
+
+    function toggleCycle(id: string) {
+        setCollapsed((prev) => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    }
+
+    function assignDay(cycleId: string, date: string, activityId: string | null) {
+        router.post(
+            `/programme/${program.id}/cycles/${cycleId}/jour`,
+            { date, activity_id: activityId },
+            { preserveScroll: true, onSuccess: () => setSelectedRun(null) },
+        );
+    }
+
+    function onDropDay(e: DragEvent, cycleId: string, date: string) {
+        e.preventDefault();
+        const id = e.dataTransfer.getData('text/plain');
+        if (id) assignDay(cycleId, date, id);
+    }
 
     function completeCycle(cycleId: string) {
         router.post(`/programme/${program.id}/cycles/${cycleId}/terminer`, {}, { preserveScroll: true });
     }
 
-    const ROADMAP_BADGE: Record<RoadmapPhase['status'], { label: string; cls: string }> = {
-        done: { label: 'Terminé', cls: 'border-lime-400/40 bg-lime-400/10 text-lime-300' },
-        active: { label: 'En cours', cls: 'border-sky-400/40 bg-sky-400/10 text-sky-300' },
-        locked: { label: 'À débloquer', cls: 'border-neutral-700 bg-neutral-800/40 text-neutral-500' },
-    };
-
-    function submitAssign(e: FormEvent) {
-        e.preventDefault();
-        if (assign.data.activity_id) {
-            assign.post(`/programme/${program.id}/assigner`, { preserveScroll: true });
-        }
-    }
-
     function submitGenerate(e: FormEvent) {
         e.preventDefault();
-        generate.post(`/programme/${program.id}/generer-cycle`, { preserveScroll: true });
+        ai.post(`/programme/${program.id}/generer-cycle`, { preserveScroll: true });
     }
 
-    function remove(activityId: string) {
+    function submitRegenerate(e: FormEvent) {
+        e.preventDefault();
+        if (activeCycleId) ai.post(`/programme/${program.id}/cycles/${activeCycleId}/refaire`, { preserveScroll: true });
+    }
+
+    function removeAssigned(activityId: string) {
         router.post(`/programme/${program.id}/retirer`, { activity_id: activityId }, { preserveScroll: true });
     }
 
     const achieved = program.objectives.filter((o) => o.achieved).length;
+    const aiError = (ai.errors as Record<string, string>).cycle ?? (ai.errors as Record<string, string>).ressenti;
 
     return (
         <>
@@ -191,9 +219,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                     className={`rounded-xl border p-3 ${
                                         phase.status === 'active'
                                             ? 'border-sky-400/40 bg-sky-400/[0.06]'
-                                            : phase.status === 'done'
-                                              ? 'border-neutral-800 bg-neutral-900/60'
-                                              : 'border-neutral-800 bg-neutral-900/30'
+                                            : 'border-neutral-800 bg-neutral-900/40'
                                     }`}
                                 >
                                     <div className="mb-1.5 flex items-center justify-between">
@@ -234,79 +260,131 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                     {cycles.length === 0 ? (
                         <Card title="Plan d'entraînement">
                             <p className="text-sm text-neutral-400">
-                                Aucun cycle pour l'instant. Générez un premier cycle avec l'IA à partir de vos performances et de
-                                votre ressenti.
+                                Aucun cycle pour l'instant. Générez un premier cycle avec l'IA, ou créez un programme depuis un plan
+                                tout fait.
                             </p>
                         </Card>
                     ) : (
-                        cycles.map((cycle) => (
-                            <Card key={cycle.id} title={`Cycle ${cycle.phaseIndex + 1} · ${cycle.name}`}>
-                                <p className="-mt-1 mb-4 flex flex-wrap items-center gap-2 text-sm text-neutral-400">
-                                    {cycle.focus}
-                                    <span className="text-xs text-neutral-500">
-                                        {formatDate(cycle.startDate)} → {formatDate(cycle.endDate)}
-                                    </span>
-                                    {cycle.status === 'completed' && (
-                                        <span className="rounded border border-lime-400/40 bg-lime-400/10 px-1.5 py-0.5 text-[11px] font-medium text-lime-300">
-                                            Terminé
-                                        </span>
-                                    )}
-                                </p>
-                                <div className="space-y-5">
-                                    {cycle.weeks.map((week) => (
-                                        <div key={week.label}>
-                                            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                                                {week.label}
-                                            </p>
-                                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                                {week.sessions.map((s) => {
-                                                    const style = sessionStyle(s.type);
-                                                    return (
-                                                        <div
-                                                            key={s.date}
-                                                            className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3"
-                                                        >
-                                                            <div className="mb-1 flex items-center justify-between">
-                                                                <span className="flex items-center gap-2 text-xs font-medium text-neutral-300">
-                                                                    <span className={`h-2 w-2 rounded-full ${style.dot}`} />
-                                                                    {weekdayLabel(s.date)}
-                                                                </span>
-                                                                <span className={`text-[11px] font-semibold uppercase ${style.text}`}>
-                                                                    {style.label}
-                                                                </span>
-                                                            </div>
-                                                            <p className="text-sm font-medium text-neutral-100">{s.title}</p>
-                                                            <p className="mt-0.5 text-xs leading-relaxed text-neutral-400">
-                                                                {s.description}
-                                                            </p>
-                                                            {(s.targetDistanceMeters || s.targetPaceSecondsPerKm) && (
-                                                                <p className="mt-1.5 text-xs tabular-nums text-neutral-500">
-                                                                    {s.targetDistanceMeters
-                                                                        ? `${formatKilometers(s.targetDistanceMeters)} km`
-                                                                        : ''}
-                                                                    {s.targetDistanceMeters && s.targetPaceSecondsPerKm ? ' · ' : ''}
-                                                                    {s.targetPaceSecondsPerKm
-                                                                        ? formatPace(s.targetPaceSecondsPerKm)
-                                                                        : ''}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                {cycle.id === activeCycleId && (
+                        cycles.map((cycle) => {
+                            const isCollapsed = collapsed.has(cycle.id);
+                            return (
+                                <Card key={cycle.id}>
                                     <button
-                                        onClick={() => completeCycle(cycle.id)}
-                                        className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-lime-400/50 px-4 py-2 text-sm font-semibold text-lime-300 transition-colors hover:bg-lime-400/10"
+                                        onClick={() => toggleCycle(cycle.id)}
+                                        className="flex w-full cursor-pointer items-start justify-between gap-3 text-left"
                                     >
-                                        <Flag size={15} /> Terminer ce cycle
+                                        <div>
+                                            <h2 className="flex flex-wrap items-center gap-2 text-sm font-semibold uppercase tracking-wide text-neutral-200">
+                                                Cycle {cycle.phaseIndex + 1} · {cycle.name}
+                                                {cycle.status === 'completed' && (
+                                                    <span className="rounded border border-lime-400/40 bg-lime-400/10 px-1.5 py-0.5 text-[10px] font-medium normal-case text-lime-300">
+                                                        Terminé
+                                                    </span>
+                                                )}
+                                            </h2>
+                                            <p className="mt-1 text-xs normal-case text-neutral-500">
+                                                {cycle.focus} · {formatDate(cycle.startDate)} → {formatDate(cycle.endDate)}
+                                            </p>
+                                        </div>
+                                        <ChevronDown
+                                            size={18}
+                                            className={`mt-0.5 shrink-0 text-neutral-500 transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
+                                        />
                                     </button>
-                                )}
-                            </Card>
-                        ))
+
+                                    {!isCollapsed && (
+                                        <div className="mt-5 space-y-5">
+                                            {cycle.weeks.map((week) => (
+                                                <div key={week.label}>
+                                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                                                        {week.label}
+                                                    </p>
+                                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                        {week.sessions.map((s) => {
+                                                            const style = sessionStyle(s.type);
+                                                            const placing = selectedRun !== null && !s.activityId;
+                                                            return (
+                                                                <div
+                                                                    key={s.date}
+                                                                    onDragOver={(e) => e.preventDefault()}
+                                                                    onDrop={(e) => onDropDay(e, cycle.id, s.date)}
+                                                                    onClick={() =>
+                                                                        selectedRun && assignDay(cycle.id, s.date, selectedRun)
+                                                                    }
+                                                                    className={`rounded-lg border p-3 transition-colors ${
+                                                                        placing
+                                                                            ? 'cursor-pointer border-dashed border-lime-400/50 bg-lime-400/[0.04]'
+                                                                            : 'border-neutral-800 bg-neutral-900/60'
+                                                                    }`}
+                                                                >
+                                                                    <div className="mb-1 flex items-center justify-between">
+                                                                        <span className="flex items-center gap-2 text-xs font-medium text-neutral-300">
+                                                                            <span className={`h-2 w-2 rounded-full ${style.dot}`} />
+                                                                            {weekdayLabel(s.date)}
+                                                                        </span>
+                                                                        <span className={`text-[11px] font-semibold uppercase ${style.text}`}>
+                                                                            {style.label}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p className="text-sm font-medium text-neutral-100">{s.title}</p>
+                                                                    <p className="mt-0.5 text-xs leading-relaxed text-neutral-400">
+                                                                        {s.description}
+                                                                    </p>
+                                                                    {(s.targetDistanceMeters || s.targetPaceSecondsPerKm) && (
+                                                                        <p className="mt-1.5 text-xs tabular-nums text-neutral-500">
+                                                                            Cible :{' '}
+                                                                            {s.targetDistanceMeters
+                                                                                ? `${formatKilometers(s.targetDistanceMeters)} km`
+                                                                                : ''}
+                                                                            {s.targetDistanceMeters && s.targetPaceSecondsPerKm ? ' · ' : ''}
+                                                                            {s.targetPaceSecondsPerKm ? formatPace(s.targetPaceSecondsPerKm) : ''}
+                                                                        </p>
+                                                                    )}
+                                                                    {s.actual ? (
+                                                                        <div className="mt-2 flex items-center justify-between rounded-md border border-lime-400/30 bg-lime-400/[0.07] px-2 py-1.5">
+                                                                            <span className="flex items-center gap-1.5 text-xs tabular-nums text-lime-300">
+                                                                                <CheckCircle2 size={13} />
+                                                                                {formatKilometers(s.actual.distanceMeters)} km ·{' '}
+                                                                                {formatPace(s.actual.averagePaceSecondsPerKm)}
+                                                                            </span>
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    assignDay(cycle.id, s.date, null);
+                                                                                }}
+                                                                                className="cursor-pointer text-neutral-500 hover:text-red-400"
+                                                                                aria-label="Retirer la sortie"
+                                                                            >
+                                                                                <X size={13} />
+                                                                            </button>
+                                                                        </div>
+                                                                    ) : (
+                                                                        placing && (
+                                                                            <p className="mt-2 text-[11px] italic text-lime-400/70">
+                                                                                Placer la sortie ici
+                                                                            </p>
+                                                                        )
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            {cycle.id === activeCycleId && (
+                                                <button
+                                                    onClick={() => completeCycle(cycle.id)}
+                                                    className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-lime-400/50 px-4 py-2 text-sm font-semibold text-lime-300 transition-colors hover:bg-lime-400/10"
+                                                >
+                                                    <Flag size={15} /> Terminer ce cycle
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </Card>
+                            );
+                        })
                     )}
 
                     <Card title={`Objectifs — ${achieved}/${program.objectives.length} atteints`}>
@@ -343,110 +421,124 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                     </Card>
                 </div>
 
-                {/* Sidebar — generate + assigned runs */}
+                {/* Sidebar */}
                 <div className="space-y-6">
-                    <Card title="Générer le prochain cycle (IA)">
-                        {!canGenerate ? (
-                            <div className="flex items-start gap-3 text-sm text-neutral-400">
-                                <Lock size={16} className="mt-0.5 shrink-0 text-neutral-500" />
-                                <p>
-                                    {roadmap.length > 0 && roadmap.every((p) => p.status === 'done')
-                                        ? 'Feuille de route terminée : bravo, tous les cycles sont bouclés.'
-                                        : 'Terminez le cycle en cours (bouton « Terminer ce cycle ») pour débloquer la génération du suivant.'}
-                                </p>
-                            </div>
-                        ) : (
-                        <>
-                        <p className="-mt-1 mb-4 text-sm text-neutral-400">
-                            Un coach IA adapte le prochain cycle du plan à vos performances, au cycle précédent et à votre
-                            ressenti.
+                    {/* Runs to place */}
+                    <Card title="Sorties à placer">
+                        <p className="-mt-1 mb-3 text-xs text-neutral-400">
+                            Glissez une sortie sur un jour du plan — ou touchez-la puis touchez le jour (mobile).
                         </p>
-                        {(generate.errors as Record<string, string>).cycle && (
-                            <p className="mb-3 text-xs text-red-400">{(generate.errors as Record<string, string>).cycle}</p>
-                        )}
-                        <form onSubmit={submitGenerate} className="space-y-3">
-                            <div className="grid grid-cols-2 gap-3">
-                                <label className="block">
-                                    <span className="mb-1 block text-xs text-neutral-400">Début</span>
-                                    <input
-                                        type="date"
-                                        value={generate.data.start_date}
-                                        onChange={(e) => generate.setData('start_date', e.target.value)}
-                                        className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-lime-400/60"
-                                    />
-                                </label>
-                                <label className="block">
-                                    <span className="mb-1 block text-xs text-neutral-400">Semaines</span>
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        max={6}
-                                        value={generate.data.weeks}
-                                        onChange={(e) => generate.setData('weeks', Number(e.target.value))}
-                                        className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-lime-400/60"
-                                    />
-                                </label>
+                        {selectedRun && (
+                            <div className="mb-3 flex items-center justify-between rounded-lg border border-lime-400/40 bg-lime-400/10 px-3 py-2 text-xs text-lime-200">
+                                Touchez un jour pour y placer la sortie.
+                                <button
+                                    onClick={() => setSelectedRun(null)}
+                                    className="cursor-pointer text-lime-300 hover:text-lime-100"
+                                >
+                                    Annuler
+                                </button>
                             </div>
-                            <label className="block">
-                                <span className="mb-1 block text-xs text-neutral-400">Ressenti</span>
-                                <textarea
-                                    value={generate.data.ressenti}
-                                    onChange={(e) => generate.setData('ressenti', e.target.value)}
-                                    rows={4}
-                                    placeholder="Fatigue, douleurs, motivation, disponibilités…"
-                                    className="w-full resize-none rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-lime-400/60"
-                                />
-                            </label>
-                            {generate.errors.ressenti && (
-                                <p className="text-xs text-red-400">{generate.errors.ressenti}</p>
-                            )}
-                            <button
-                                type="submit"
-                                disabled={generate.processing}
-                                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-lime-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition-colors hover:bg-lime-300 disabled:opacity-50"
-                            >
-                                <Sparkles size={16} />
-                                {generate.processing ? 'Génération…' : 'Générer le cycle'}
-                            </button>
-                        </form>
-                        </>
+                        )}
+                        {available.length === 0 ? (
+                            <p className="text-sm text-neutral-500">Toutes vos sorties sont placées.</p>
+                        ) : (
+                            <div className="flex flex-col gap-2">
+                                {available.map((a) => (
+                                    <button
+                                        key={a.id}
+                                        draggable
+                                        onDragStart={(e) => e.dataTransfer.setData('text/plain', a.id)}
+                                        onClick={() => setSelectedRun((cur) => (cur === a.id ? null : a.id))}
+                                        className={`flex cursor-grab items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors active:cursor-grabbing ${
+                                            selectedRun === a.id
+                                                ? 'border-lime-400/60 bg-lime-400/10 text-lime-200'
+                                                : 'border-neutral-800 bg-neutral-900 text-neutral-200 hover:border-neutral-700'
+                                        }`}
+                                    >
+                                        <GripVertical size={14} className="shrink-0 text-neutral-600" />
+                                        {formatDate(a.occurredAt)} · {formatKilometers(a.distanceMeters)} km
+                                    </button>
+                                ))}
+                            </div>
                         )}
                     </Card>
 
-                    <Card title="Sorties assignées">
-                        {available.length > 0 && (
-                            <form onSubmit={submitAssign} className="mb-4 flex gap-2">
-                                <select
-                                    value={assign.data.activity_id}
-                                    onChange={(e) => assign.setData('activity_id', e.target.value)}
-                                    className="flex-1 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-lime-400/60"
-                                >
-                                    {available.map((a) => (
-                                        <option key={a.id} value={a.id}>
-                                            {formatDate(a.occurredAt)} · {formatKilometers(a.distanceMeters)} km
-                                        </option>
-                                    ))}
-                                </select>
-                                <button
-                                    type="submit"
-                                    disabled={assign.processing}
-                                    className="cursor-pointer rounded-lg bg-lime-400 px-4 py-2 text-sm font-medium text-neutral-950 transition-colors hover:bg-lime-300 disabled:opacity-50"
-                                >
-                                    Assigner
-                                </button>
-                            </form>
-                        )}
-
-                        {program.activities.length === 0 ? (
-                            <p className="text-sm text-neutral-500">Aucune sortie assignée à ce programme.</p>
+                    {/* AI panel — refine current cycle or generate next */}
+                    <Card title={activeCycleId ? 'Refaire le cycle courant (IA)' : 'Générer le prochain cycle (IA)'}>
+                        {activeCycleId ? (
+                            <>
+                                <p className="-mt-1 mb-4 text-sm text-neutral-400">
+                                    L'IA réécrit le cycle courant à partir de vos sorties récentes et de votre ressenti (les
+                                    sorties déjà placées sont conservées).
+                                </p>
+                                {aiError && <p className="mb-3 text-xs text-red-400">{aiError}</p>}
+                                <form onSubmit={submitRegenerate} className="space-y-3">
+                                    <textarea
+                                        value={ai.data.ressenti}
+                                        onChange={(e) => ai.setData('ressenti', e.target.value)}
+                                        rows={4}
+                                        placeholder="Ressenti, fatigue, contraintes de la semaine…"
+                                        className="w-full resize-none rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-lime-400/60"
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={ai.processing}
+                                        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-lime-400/50 px-4 py-2.5 text-sm font-semibold text-lime-300 transition-colors hover:bg-lime-400/10 disabled:opacity-50"
+                                    >
+                                        <RefreshCw size={15} />
+                                        {ai.processing ? 'Réécriture…' : 'Refaire ce cycle'}
+                                    </button>
+                                </form>
+                            </>
+                        ) : canGenerate ? (
+                            <>
+                                <p className="-mt-1 mb-4 text-sm text-neutral-400">
+                                    L'IA adapte le prochain cycle du plan à vos performances et à votre ressenti.
+                                </p>
+                                {aiError && <p className="mb-3 text-xs text-red-400">{aiError}</p>}
+                                <form onSubmit={submitGenerate} className="space-y-3">
+                                    <label className="block">
+                                        <span className="mb-1 block text-xs text-neutral-400">Semaines</span>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={6}
+                                            value={ai.data.weeks}
+                                            onChange={(e) => ai.setData('weeks', Number(e.target.value))}
+                                            className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-lime-400/60"
+                                        />
+                                    </label>
+                                    <textarea
+                                        value={ai.data.ressenti}
+                                        onChange={(e) => ai.setData('ressenti', e.target.value)}
+                                        rows={4}
+                                        placeholder="Fatigue, douleurs, motivation, disponibilités…"
+                                        className="w-full resize-none rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-lime-400/60"
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={ai.processing}
+                                        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-lime-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition-colors hover:bg-lime-300 disabled:opacity-50"
+                                    >
+                                        <Sparkles size={16} />
+                                        {ai.processing ? 'Génération…' : 'Générer le cycle'}
+                                    </button>
+                                </form>
+                            </>
                         ) : (
+                            <div className="flex items-start gap-3 text-sm text-neutral-400">
+                                <Lock size={16} className="mt-0.5 shrink-0 text-neutral-500" />
+                                <p>Feuille de route terminée : bravo, tous les cycles sont bouclés.</p>
+                            </div>
+                        )}
+                    </Card>
+
+                    {program.activities.length > 0 && (
+                        <Card title="Sorties du programme">
                             <ul className="divide-y divide-neutral-800">
                                 {program.activities.map((a) => (
                                     <li key={a.id} className="flex items-center justify-between py-2.5">
-                                        <Link
-                                            href={`/activites/${a.id}`}
-                                            className="text-sm text-neutral-200 hover:text-lime-300"
-                                        >
+                                        <Link href={`/activites/${a.id}`} className="text-sm text-neutral-200 hover:text-lime-300">
                                             {formatDate(a.occurredAt)} · {formatKilometers(a.distanceMeters)} km
                                         </Link>
                                         <div className="flex items-center gap-3">
@@ -454,7 +546,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                 {formatDuration(a.movingSeconds)} · {formatPace(a.averagePaceSecondsPerKm)}
                                             </span>
                                             <button
-                                                onClick={() => remove(a.id)}
+                                                onClick={() => removeAssigned(a.id)}
                                                 className="cursor-pointer text-neutral-500 hover:text-red-400"
                                                 aria-label="Retirer"
                                             >
@@ -464,8 +556,8 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                     </li>
                                 ))}
                             </ul>
-                        )}
-                    </Card>
+                        </Card>
+                    )}
                 </div>
             </div>
         </>

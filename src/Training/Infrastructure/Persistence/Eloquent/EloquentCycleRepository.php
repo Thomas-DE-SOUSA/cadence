@@ -73,7 +73,7 @@ final class EloquentCycleRepository implements CycleRepository
     }
 
     /**
-     * @return array{id:string,program_id:string,tenant_id:string,name:string,focus:string,start_date:string,end_date:string,phase_index:int,status:string,sessions:list<array{date:string,type:string,title:string,description:string,target_distance_meters:int|null,target_duration_seconds:int|null,target_pace_seconds_per_km:int|null}>,version:int}
+     * @return array{id:string,program_id:string,tenant_id:string,name:string,focus:string,start_date:string,end_date:string,phase_index:int,status:string,sessions:list<array{date:string,type:string,title:string,description:string,target_distance_meters:int|null,target_duration_seconds:int|null,target_pace_seconds_per_km:int|null,activity_id:string|null}>,version:int}
      */
     private function toSnapshot(CycleModel $model): array
     {
@@ -98,6 +98,7 @@ final class EloquentCycleRepository implements CycleRepository
                 'target_distance_meters' => isset($r['target_distance_meters']) ? (int) $r['target_distance_meters'] : null,
                 'target_duration_seconds' => isset($r['target_duration_seconds']) ? (int) $r['target_duration_seconds'] : null,
                 'target_pace_seconds_per_km' => isset($r['target_pace_seconds_per_km']) ? (int) $r['target_pace_seconds_per_km'] : null,
+                'activity_id' => isset($r['activity_id']) ? (string) $r['activity_id'] : null,
             ], $rows),
             'version' => (int) $model->version,
         ];
