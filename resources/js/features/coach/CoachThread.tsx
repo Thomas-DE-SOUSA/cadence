@@ -159,11 +159,12 @@ export function CoachThread({
     }
 
     return (
-        <div className="flex flex-col">
-            <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-neutral-200">
+        <div className="flex h-full min-h-0 flex-col">
+            <p className="mb-3 flex shrink-0 items-center gap-1.5 text-sm font-semibold text-neutral-200">
                 <Sparkles size={16} className="text-lime-400" /> Coach
             </p>
 
+            <div className="min-h-0 flex-1 overflow-y-auto">
             {messages.length === 0 && !streaming && (
                 <div className="mb-3">
                     <p className="text-sm text-neutral-400">
@@ -252,10 +253,11 @@ export function CoachThread({
                     ))}
                 <div ref={bottomRef} />
             </div>
+            </div>
 
-            {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+            {error && <p className="mt-2 shrink-0 text-xs text-red-400">{error}</p>}
 
-            <form onSubmit={submit} className="mt-4 flex items-end gap-2">
+            <form onSubmit={submit} className="mt-4 flex shrink-0 items-end gap-2">
                 <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}

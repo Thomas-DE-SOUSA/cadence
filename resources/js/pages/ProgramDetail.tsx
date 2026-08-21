@@ -4,7 +4,7 @@ import type { DragEvent, FormEvent, ReactNode } from 'react';
 import { ArrowLeft, CheckCircle2, ChevronDown, Circle, Flag, GripVertical, Lock, RefreshCw, Sparkles, X } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
-import { Drawer } from '@/components/Drawer';
+import { Modal } from '@/components/Modal';
 import { SessionDetail } from '@/features/coach/SessionDetail';
 import { CoachThread } from '@/features/coach/CoachThread';
 import { formatDate, formatDuration, formatKilometers, formatPace } from '@/features/activity/domain/format';
@@ -651,15 +651,17 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                 </div>
             </div>
 
-            <Drawer
+            <Modal
                 open={openSession !== null}
                 onClose={() => setOpenDay(null)}
                 title={openSession ? `${weekdayLabel(openSession.date)} · ${formatDate(openSession.date)}` : ''}
             >
                 {openSession && openDay && (
-                    <div className="space-y-6">
-                        <SessionDetail session={openSession} paces={athlete?.paces ?? null} />
-                        <div className="border-t border-neutral-800 pt-5">
+                    <div className="grid h-full grid-cols-1 overflow-y-auto md:grid-cols-2 md:overflow-hidden">
+                        <div className="border-b border-neutral-800 p-5 md:border-b-0 md:border-r md:overflow-y-auto">
+                            <SessionDetail session={openSession} paces={athlete?.paces ?? null} />
+                        </div>
+                        <div className="flex flex-col p-5 md:h-full md:min-h-0">
                             <CoachThread
                                 key={`${openDay.cycleId}-${openDay.date}`}
                                 programId={program.id}
@@ -670,7 +672,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                         </div>
                     </div>
                 )}
-            </Drawer>
+            </Modal>
         </>
     );
 }
