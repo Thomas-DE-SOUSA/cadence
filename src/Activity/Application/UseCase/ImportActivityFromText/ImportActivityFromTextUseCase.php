@@ -23,15 +23,22 @@ final readonly class ImportActivityFromTextUseCase
     ) {
     }
 
-    public function execute(string $rawText, ExecutionContext $context): ImportActivityOutput
-    {
+    public function execute(
+        string $rawText,
+        ExecutionContext $context,
+        ?string $occurredAtOverride = null,
+    ): ImportActivityOutput {
         $parsed = $this->parser->parse($rawText);
+
+        $occurredAt = $occurredAtOverride !== null && $occurredAtOverride !== ''
+            ? $occurredAtOverride
+            : $parsed->occurredAtIso;
 
         $input = new ImportActivityInput(
             source: ActivitySource::STRAVA->value,
             // Fall back to a content hash so pasting the same text twice is idempotent.
             externalId: $parsed->externalId !== '' ? $parsed->externalId : 'paste-'.sha1(trim($rawText)),
-            occurredAt: $parsed->occurredAtIso,
+            occurredAt: $occurredAt,
             distanceMeters: $parsed->distanceMeters,
             movingSeconds: $parsed->movingSeconds,
             elapsedSeconds: $parsed->elapsedSeconds,

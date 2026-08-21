@@ -6,6 +6,7 @@ namespace Cadence\Activity\Infrastructure\Http\Controller;
 
 use Cadence\Activity\Application\Port\Exception\ActivityTextUnparseable;
 use Cadence\Activity\Application\UseCase\ImportActivityFromText\ImportActivityFromTextUseCase;
+use Cadence\Activity\Domain\Exception\DuplicateActivity;
 use Cadence\Activity\Infrastructure\Http\Request\ImportActivityTextRequest;
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Application\TenantContext;
@@ -25,7 +26,10 @@ final class ImportActivityFromTextController
             $output = $this->useCase->execute(
                 $request->pastedText(),
                 new ExecutionContext($this->tenantContext->current()),
+                $request->occurredAtOverride(),
             );
+        } catch (DuplicateActivity) {
+            return back()->withErrors(['text' => 'Cette sortie semble déjà enregistrée.']);
         } catch (ActivityTextUnparseable $e) {
             return back()->withErrors(['text' => $e->getMessage()]);
         }

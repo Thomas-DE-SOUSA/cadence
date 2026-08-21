@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cadence\Activity\Infrastructure\Http\Controller;
 
 use Cadence\Activity\Application\UseCase\RecordActivity\RecordActivityUseCase;
+use Cadence\Activity\Domain\Exception\DuplicateActivity;
 use Cadence\Activity\Infrastructure\Http\Request\RecordActivityRequest;
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Application\TenantContext;
@@ -24,10 +25,14 @@ final class StoreActivityController
 
     public function __invoke(RecordActivityRequest $request): RedirectResponse
     {
-        $output = $this->useCase->execute(
-            $request->toInput(),
-            new ExecutionContext($this->tenantContext->current()),
-        );
+        try {
+            $output = $this->useCase->execute(
+                $request->toInput(),
+                new ExecutionContext($this->tenantContext->current()),
+            );
+        } catch (DuplicateActivity) {
+            return back()->withErrors(['occurred_at' => 'Une sortie très similaire est déjà enregistrée à cette date.']);
+        }
 
         return redirect()
             ->route('activities.show', $output->activityId)

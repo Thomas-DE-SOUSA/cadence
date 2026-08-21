@@ -18,11 +18,20 @@ final class ImportActivityTextRequest extends FormRequest
     {
         return [
             'text' => ['required', 'string', 'min:20', 'max:20000'],
+            'occurred_at' => ['nullable', 'date'],
         ];
     }
 
     public function pastedText(): string
     {
         return (string) $this->validated('text');
+    }
+
+    /** Optional user-provided date that overrides the one parsed from the text. */
+    public function occurredAtOverride(): ?string
+    {
+        $value = $this->validated('occurred_at');
+
+        return is_string($value) && $value !== '' ? $value : null;
     }
 }

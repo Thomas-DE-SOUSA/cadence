@@ -156,6 +156,14 @@ describe('Feature: Recording an activity', function (): void {
         }
     });
 
+    it('rejects a run that duplicates one already recorded that day', function (): void {
+        $this->useCase->execute(tenKilometreRun(), $this->context);
+
+        $call = fn () => $this->useCase->execute(tenKilometreRun(), $this->context);
+
+        expect($call)->toThrow(Cadence\Activity\Domain\Exception\DuplicateActivity::class);
+    });
+
     it('is isolated per tenant: another tenant cannot read the activity', function (): void {
         $this->useCase->execute(tenKilometreRun(), $this->context);
 

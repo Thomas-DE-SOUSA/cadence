@@ -31,7 +31,7 @@ export default function ActivityForm() {
         source: 'MANUAL',
     });
 
-    const pasteForm = useForm({ text: '' });
+    const pasteForm = useForm({ text: '', occurred_at: '' });
 
     function submitPaste(event: FormEvent) {
         event.preventDefault();
@@ -78,6 +78,17 @@ export default function ActivityForm() {
                             placeholder="Colle ici le résumé de ta sortie Strava (distance, temps, splits km, meilleurs efforts)…"
                             className={inputClass}
                         />
+                        <div>
+                            <span className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">
+                                Date (optionnel — sinon devinée par l'IA)
+                            </span>
+                            <input
+                                type="date"
+                                value={pasteForm.data.occurred_at}
+                                onChange={(e) => pasteForm.setData('occurred_at', e.target.value)}
+                                className={inputClass}
+                            />
+                        </div>
                         <button
                             type="submit"
                             disabled={pasteForm.processing}

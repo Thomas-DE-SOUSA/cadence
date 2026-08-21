@@ -62,4 +62,12 @@ describe('Feature: Importing an activity', function (): void {
             ->and($second->activityId)->toBeNull()
             ->and($this->repository->outbox)->toHaveCount(1);
     });
+
+    it('rejects importing a run similar to one already present (any source)', function (): void {
+        $this->useCase->execute(stravaImport('strava-A'), $this->context);
+
+        $call = fn () => $this->useCase->execute(stravaImport('strava-B'), $this->context);
+
+        expect($call)->toThrow(Cadence\Activity\Domain\Exception\DuplicateActivity::class);
+    });
 });

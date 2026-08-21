@@ -94,6 +94,22 @@ final class EloquentActivityRepository implements ActivityRepository
             ->exists();
     }
 
+    public function hasActivityOn(
+        TenantId $tenant,
+        string $day,
+        int $minDistanceMeters,
+        int $maxDistanceMeters,
+        int $minMovingSeconds,
+        int $maxMovingSeconds,
+    ): bool {
+        return ActivityModel::query()
+            ->where('tenant_id', $tenant->value)
+            ->where('occurred_at', 'like', $day.'%')
+            ->whereBetween('distance_meters', [$minDistanceMeters, $maxDistanceMeters])
+            ->whereBetween('moving_seconds', [$minMovingSeconds, $maxMovingSeconds])
+            ->exists();
+    }
+
     /**
      * @return array{id:string,tenant_id:string,occurred_at:string,source:string,external_id:string|null,distance_meters:int,moving_seconds:int,elapsed_seconds:int,elevation_gain_meters:int,average_pace_seconds_per_km:float,splits:list<array{index:int,distance_meters:int,duration_seconds:int,elevation_meters:int}>,best_efforts:list<array{label:string,distance_meters:int,duration_seconds:int,is_personal_record:bool}>,version:int}
      */

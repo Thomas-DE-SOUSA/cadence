@@ -54,6 +54,31 @@ final class InMemoryActivityRepository implements ActivityRepository
         return false;
     }
 
+    public function hasActivityOn(
+        TenantId $tenant,
+        string $day,
+        int $minDistanceMeters,
+        int $maxDistanceMeters,
+        int $minMovingSeconds,
+        int $maxMovingSeconds,
+    ): bool {
+        foreach ($this->store as $activity) {
+            $snapshot = $activity->toSnapshot();
+            if (
+                $snapshot['tenant_id'] === $tenant->value
+                && str_starts_with($snapshot['occurred_at'], $day)
+                && $snapshot['distance_meters'] >= $minDistanceMeters
+                && $snapshot['distance_meters'] <= $maxDistanceMeters
+                && $snapshot['moving_seconds'] >= $minMovingSeconds
+                && $snapshot['moving_seconds'] <= $maxMovingSeconds
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function key(string $tenant, string $id): string
     {
         return $tenant.'|'.$id;

@@ -6,7 +6,9 @@ namespace Cadence\Activity\Application\UseCase\RecordActivity;
 
 use Cadence\Activity\Domain\Enum\ActivitySource;
 use Cadence\Activity\Domain\Event\ActivityRecorded;
+use Cadence\Activity\Domain\Exception\DuplicateActivity;
 use Cadence\Activity\Domain\Model\Activity;
+use Cadence\Activity\Domain\Service\SimilarActivityPolicy;
 use Cadence\Activity\Domain\Model\BestEffort;
 use Cadence\Activity\Domain\Model\Split;
 use Cadence\Activity\Domain\Port\ActivityRepository;
@@ -39,6 +41,15 @@ final readonly class RecordActivityUseCase
     public function execute(RecordActivityInput $input, ExecutionContext $context): RecordActivityOutput
     {
         $tenant = $context->tenant;
+
+        [$minDistance, $maxDistance] = SimilarActivityPolicy::range($input->distanceMeters);
+        [$minMoving, $maxMoving] = SimilarActivityPolicy::range($input->movingSeconds);
+        $day = SimilarActivityPolicy::day($input->occurredAt);
+
+        if ($this->activities->hasActivityOn($tenant, $day, $minDistance, $maxDistance, $minMoving, $maxMoving)) {
+            throw DuplicateActivity::onDay($day);
+        }
+
         $id = ActivityId::generate($this->ids);
 
         $activity = Activity::record(

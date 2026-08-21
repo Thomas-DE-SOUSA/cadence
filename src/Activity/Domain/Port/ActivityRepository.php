@@ -23,4 +23,17 @@ interface ActivityRepository
 
     /** True when an activity from this provider is already imported (dedup guard). */
     public function existsForExternalId(TenantId $tenant, ActivitySource $source, string $externalId): bool;
+
+    /**
+     * True when a "same run" already exists: same day, and distance/moving time
+     * within the given inclusive bounds (any source).
+     */
+    public function hasActivityOn(
+        TenantId $tenant,
+        string $day,
+        int $minDistanceMeters,
+        int $maxDistanceMeters,
+        int $minMovingSeconds,
+        int $maxMovingSeconds,
+    ): bool;
 }
