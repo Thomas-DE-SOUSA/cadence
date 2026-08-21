@@ -8,6 +8,7 @@ use Cadence\Activity\Infrastructure\Http\Controller\ImportActivityFromTextContro
 use Cadence\Activity\Infrastructure\Http\Controller\ShowActivityController;
 use Cadence\Activity\Infrastructure\Http\Controller\ShowEditActivityController;
 use Cadence\Activity\Infrastructure\Http\Controller\ShowHistoryController;
+use Cadence\Activity\Infrastructure\Http\Controller\ShowPacesController;
 use Cadence\Activity\Infrastructure\Http\Controller\ShowProgressionController;
 use Cadence\Activity\Infrastructure\Http\Controller\StoreActivityController;
 use Cadence\Activity\Infrastructure\Http\Controller\UpdateActivityController;
@@ -29,5 +30,5 @@ Route::delete('/activites/{id}', DeleteActivityController::class)->name('activit
 
 // Section shells — filled in as each bounded context lands (see ROADMAP.md).
 Route::get('/progression', ShowProgressionController::class)->name('progression');
-Route::get('/allures', fn () => Inertia::render('Paces'))->name('paces');
+Route::get('/allures', ShowPacesController::class)->name('paces');
 Route::get('/profil', fn () => Inertia::render('Profile'))->name('profile');
