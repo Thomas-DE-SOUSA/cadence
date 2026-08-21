@@ -10,6 +10,7 @@ use Cadence\Activity\Domain\Port\ActivityRepository;
 use Cadence\Activity\Domain\ValueObject\ActivityId;
 use Cadence\Shared\Domain\TenantId;
 use Cadence\Shared\Infrastructure\Outbox\OutboxEventModel;
+use Cadence\Shared\Infrastructure\Persistence\ConcurrencyException;
 use Cadence\Shared\Infrastructure\Persistence\PersistenceFailure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -28,8 +29,7 @@ final class EloquentActivityRepository implements ActivityRepository
 
         try {
             DB::transaction(function () use ($snapshot, $events): void {
-                ActivityModel::query()->create([
-                    'id' => $snapshot['id'],
+                $attributes = [
                     'tenant_id' => $snapshot['tenant_id'],
                     'occurred_at' => $snapshot['occurred_at'],
                     'source' => $snapshot['source'],
@@ -42,7 +42,22 @@ final class EloquentActivityRepository implements ActivityRepository
                     'splits' => $snapshot['splits'],
                     'best_efforts' => $snapshot['best_efforts'],
                     'version' => $snapshot['version'],
-                ]);
+                ];
+
+                if ($snapshot['version'] === 1) {
+                    ActivityModel::query()->create(['id' => $snapshot['id'], ...$attributes]);
+                } else {
+                    // Optimistic lock: only update the row still at the previous version.
+                    $affected = ActivityModel::query()
+                        ->where('id', $snapshot['id'])
+                        ->where('tenant_id', $snapshot['tenant_id'])
+                        ->where('version', $snapshot['version'] - 1)
+                        ->update($attributes);
+
+                    if ($affected === 0) {
+                        throw new ConcurrencyException("Activity {$snapshot['id']} was modified concurrently.");
+                    }
+                }
 
                 $ordinal = 0;
                 foreach ($events as $event) {
@@ -60,6 +75,8 @@ final class EloquentActivityRepository implements ActivityRepository
                     $ordinal++;
                 }
             });
+        } catch (ConcurrencyException $e) {
+            throw $e;
         } catch (Throwable $e) {
             $this->logger->error('Failed to persist activity', [
                 'aggregate_id' => $snapshot['id'],
@@ -83,6 +100,14 @@ final class EloquentActivityRepository implements ActivityRepository
         }
 
         return Activity::fromSnapshot($this->toSnapshot($model));
+    }
+
+    public function delete(ActivityId $id, TenantId $tenant): void
+    {
+        ActivityModel::query()
+            ->where('id', $id->value)
+            ->where('tenant_id', $tenant->value)
+            ->delete();
     }
 
     public function existsForExternalId(TenantId $tenant, ActivitySource $source, string $externalId): bool

@@ -21,6 +21,9 @@ interface ActivityRepository
 
     public function ofId(ActivityId $id, TenantId $tenant): ?Activity;
 
+    /** Soft-deletes the activity (tenant-scoped). */
+    public function delete(ActivityId $id, TenantId $tenant): void;
+
     /** True when an activity from this provider is already imported (dedup guard). */
     public function existsForExternalId(TenantId $tenant, ActivitySource $source, string $externalId): bool;
 

@@ -7,6 +7,7 @@ namespace Cadence\Activity\Domain\Model;
 use Cadence\Activity\Domain\Enum\ActivitySource;
 use Cadence\Activity\Domain\Event\ActivityImported;
 use Cadence\Activity\Domain\Event\ActivityRecorded;
+use Cadence\Activity\Domain\Event\ActivityRevised;
 use Cadence\Activity\Domain\Exception\ActivityErrorCode;
 use Cadence\Activity\Domain\Exception\InvalidActivity;
 use Cadence\Activity\Domain\ValueObject\ActivityId;
@@ -122,6 +123,48 @@ final class Activity extends AggregateRoot
         ));
 
         return $activity;
+    }
+
+    /**
+     * Revises the summary fields (date, distance, times, elevation), keeping splits
+     * and best efforts. Bumps the version and records the revision.
+     */
+    public function revise(
+        DateTimeImmutable $occurredAt,
+        Distance $distance,
+        Duration $movingTime,
+        Duration $elapsedTime,
+        Elevation $elevationGain,
+        DateTimeImmutable $recordedAt,
+    ): self {
+        self::guardSplitsCoverDistance($distance, $this->splits);
+
+        $revised = new self(
+            $this->id,
+            $this->tenant,
+            $occurredAt,
+            $this->source,
+            $this->externalId,
+            $distance,
+            $movingTime,
+            $elapsedTime,
+            $elevationGain,
+            $this->splits,
+            $this->bestEfforts,
+            $this->version + 1,
+        );
+
+        $revised->recordEvent(new ActivityRevised(
+            $this->id->value,
+            $recordedAt,
+            $this->tenant->value,
+            $distance->meters,
+            $movingTime->seconds,
+            $revised->averagePace()->secondsPerKm,
+            $this->source->value,
+        ));
+
+        return $revised;
     }
 
     /**

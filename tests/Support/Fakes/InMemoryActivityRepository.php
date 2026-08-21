@@ -38,6 +38,11 @@ final class InMemoryActivityRepository implements ActivityRepository
         return $this->store[$this->key($tenant->value, $id->value)] ?? null;
     }
 
+    public function delete(ActivityId $id, TenantId $tenant): void
+    {
+        unset($this->store[$this->key($tenant->value, $id->value)]);
+    }
+
     public function existsForExternalId(TenantId $tenant, ActivitySource $source, string $externalId): bool
     {
         foreach ($this->store as $activity) {
