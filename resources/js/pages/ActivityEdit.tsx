@@ -106,27 +106,26 @@ export default function ActivityEdit({ activity }: Props) {
 
     function submit(event: FormEvent) {
         event.preventDefault();
-        form
-            .transform((d) => ({
-                occurred_at: new Date(d.occurred_at).toISOString(),
-                distance_meters: Math.round(parseFloat(d.distance_km || '0') * 1000),
-                moving_seconds: parseTimeToSeconds(d.moving_time),
-                elapsed_seconds: parseTimeToSeconds(d.elapsed_time || d.moving_time),
-                elevation_gain_meters: parseInt(d.elevation_gain_meters || '0', 10),
-                splits: d.splits.map((s) => ({
-                    index: Number(s.index),
-                    distance_meters: Number(s.distance_meters),
-                    duration_seconds: parseTimeToSeconds(s.duration),
-                    elevation_meters: Number(s.elevation_meters),
-                })),
-                best_efforts: d.best_efforts.map((b) => ({
-                    label: b.label,
-                    distance_meters: Number(b.distance_meters),
-                    duration_seconds: parseTimeToSeconds(b.duration),
-                    is_personal_record: b.is_personal_record,
-                })),
-            }))
-            .put(`/activites/${activity.id}`);
+        form.transform((d) => ({
+            occurred_at: new Date(d.occurred_at).toISOString(),
+            distance_meters: Math.round(parseFloat(d.distance_km || '0') * 1000),
+            moving_seconds: parseTimeToSeconds(d.moving_time),
+            elapsed_seconds: parseTimeToSeconds(d.elapsed_time || d.moving_time),
+            elevation_gain_meters: parseInt(d.elevation_gain_meters || '0', 10),
+            splits: d.splits.map((s) => ({
+                index: Number(s.index),
+                distance_meters: Number(s.distance_meters),
+                duration_seconds: parseTimeToSeconds(s.duration),
+                elevation_meters: Number(s.elevation_meters),
+            })),
+            best_efforts: d.best_efforts.map((b) => ({
+                label: b.label,
+                distance_meters: Number(b.distance_meters),
+                duration_seconds: parseTimeToSeconds(b.duration),
+                is_personal_record: b.is_personal_record,
+            })),
+        }));
+        form.put(`/activites/${activity.id}`);
     }
 
     const errors = Object.values(form.errors);

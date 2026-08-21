@@ -40,16 +40,15 @@ export default function ActivityForm() {
 
     function submit(event: FormEvent) {
         event.preventDefault();
-        form
-            .transform((data) => ({
-                occurred_at: new Date(data.occurredAt).toISOString(),
-                source: data.source,
-                distance_meters: Math.round(parseFloat(data.distanceKm || '0') * 1000),
-                moving_seconds: parseTimeToSeconds(data.movingTime),
-                elapsed_seconds: parseTimeToSeconds(data.elapsedTime || data.movingTime),
-                elevation_gain_meters: parseInt(data.elevationGainMeters || '0', 10),
-            }))
-            .post('/activites');
+        form.transform((data) => ({
+            occurred_at: new Date(data.occurredAt).toISOString(),
+            source: data.source,
+            distance_meters: Math.round(parseFloat(data.distanceKm || '0') * 1000),
+            moving_seconds: parseTimeToSeconds(data.movingTime),
+            elapsed_seconds: parseTimeToSeconds(data.elapsedTime || data.movingTime),
+            elevation_gain_meters: parseInt(data.elevationGainMeters || '0', 10),
+        }));
+        form.post('/activites');
     }
 
     const errors = Object.values(form.errors);
