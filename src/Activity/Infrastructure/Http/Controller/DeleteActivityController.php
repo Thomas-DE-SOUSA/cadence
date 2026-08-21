@@ -26,6 +26,6 @@ final class DeleteActivityController
             abort(404);
         }
 
-        return redirect()->route('history')->with('status', 'Activité supprimée.');
+        return redirect()->route('dashboard')->with('status', 'Activité supprimée.');
     }
 }

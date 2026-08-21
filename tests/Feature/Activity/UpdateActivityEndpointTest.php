@@ -36,7 +36,7 @@ describe('Feature: Update activity endpoint', function (): void {
         $this->seed(ActivitySeeder::class);
         $id = (string) ActivityModel::query()->value('id');
 
-        $this->delete("/activites/{$id}")->assertRedirect('/historique');
+        $this->delete("/activites/{$id}")->assertRedirect('/');
 
         $this->assertDatabaseMissing('activities', ['id' => $id, 'deleted_at' => null]);
     });

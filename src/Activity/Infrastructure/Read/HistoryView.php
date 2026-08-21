@@ -101,6 +101,7 @@ final class HistoryView
             'averagePaceSecondsPerKm' => (float) $m->average_pace_seconds_per_km,
             'elevationGainMeters' => (int) $m->elevation_gain_meters,
             'medals' => $medals,
+            'track' => is_array($m->track) ? $m->track : null,
         ];
     }
 

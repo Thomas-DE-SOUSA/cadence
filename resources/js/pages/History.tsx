@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
+import { RouteMap } from '@/features/activity/components/RouteMap';
 import { useCountUp } from '@/lib/useCountUp';
 import { formatDate, formatDuration, formatKilometers, formatPace } from '@/features/activity/domain/format';
 
@@ -35,6 +36,7 @@ interface ActivityRow {
     averagePaceSecondsPerKm: number;
     elevationGainMeters: number;
     medals: MedalItem[];
+    track: [number, number][] | null;
 }
 
 interface RecordItem {
@@ -86,10 +88,10 @@ export default function History({ stats, streak, records, achievements, activiti
 
     return (
         <>
-            <Head title="Historique" />
+            <Head title="Tableau de bord" />
 
             <div className="mb-6 flex items-center justify-between">
-                <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Historique</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Tableau de bord</h1>
                 <Link
                     href="/activites/nouvelle"
                     className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-500/30 transition-all hover:-translate-y-0.5 hover:bg-brand-600"
@@ -236,43 +238,50 @@ export default function History({ stats, streak, records, achievements, activiti
                                 <li key={a.id}>
                                     <Link
                                         href={`/activites/${a.id}`}
-                                        className="block rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm shadow-neutral-200/50 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md hover:shadow-neutral-200/70"
+                                        className="flex items-stretch gap-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm shadow-neutral-200/50 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md hover:shadow-neutral-200/70"
                                     >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-2xl font-black tabular-nums text-neutral-900">
-                                                    {formatKilometers(a.distanceMeters)}
-                                                </span>
-                                                <span className="text-sm font-semibold text-neutral-400">km</span>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="text-2xl font-black tabular-nums text-neutral-900">
+                                                        {formatKilometers(a.distanceMeters)}
+                                                    </span>
+                                                    <span className="text-sm font-semibold text-neutral-400">km</span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-bold tabular-nums text-neutral-800">
+                                                        {formatDuration(a.movingSeconds)}
+                                                    </p>
+                                                    <p className="text-xs font-semibold tabular-nums text-brand-600">
+                                                        {formatPace(a.averagePaceSecondsPerKm)}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-sm font-bold tabular-nums text-neutral-800">
-                                                    {formatDuration(a.movingSeconds)}
-                                                </p>
-                                                <p className="text-xs font-semibold tabular-nums text-brand-600">
-                                                    {formatPace(a.averagePaceSecondsPerKm)}
-                                                </p>
+                                            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-400">
+                                                <span>{formatDate(a.occurredAt)}</span>
+                                                <span>· {a.source === 'STRAVA' ? 'Strava' : 'Manuel'}</span>
+                                                {a.elevationGainMeters > 0 && <span>· D+ {a.elevationGainMeters} m</span>}
                                             </div>
+                                            {a.medals.length > 0 && (
+                                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                                    {a.medals.map((m) => {
+                                                        const style = MEDAL_STYLES[m.rank] ?? MEDAL_STYLES[3];
+                                                        return (
+                                                            <span
+                                                                key={m.distanceMeters}
+                                                                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${style.cls}`}
+                                                            >
+                                                                <Medal size={12} />
+                                                                {style.label} · {m.label}
+                                                            </span>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-400">
-                                            <span>{formatDate(a.occurredAt)}</span>
-                                            <span>· {a.source === 'STRAVA' ? 'Strava' : 'Manuel'}</span>
-                                            {a.elevationGainMeters > 0 && <span>· D+ {a.elevationGainMeters} m</span>}
-                                        </div>
-                                        {a.medals.length > 0 && (
-                                            <div className="mt-3 flex flex-wrap gap-1.5">
-                                                {a.medals.map((m) => {
-                                                    const style = MEDAL_STYLES[m.rank] ?? MEDAL_STYLES[3];
-                                                    return (
-                                                        <span
-                                                            key={m.distanceMeters}
-                                                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${style.cls}`}
-                                                        >
-                                                            <Medal size={12} />
-                                                            {style.label} · {m.label}
-                                                        </span>
-                                                    );
-                                                })}
+                                        {a.track && (
+                                            <div className="hidden w-28 shrink-0 items-center rounded-xl border border-neutral-200 bg-gradient-to-br from-neutral-50 to-white p-1.5 sm:flex">
+                                                <RouteMap track={a.track} className="h-full w-full" />
                                             </div>
                                         )}
                                     </Link>

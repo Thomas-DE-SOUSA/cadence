@@ -13,7 +13,7 @@ describe('Feature: Activity history', function (): void {
     it('lists the tenant activities', function (): void {
         $this->seed(ActivitySeeder::class);
 
-        $this->get('/historique')->assertInertia(
+        $this->get('/')->assertInertia(
             fn (AssertableInertia $page) => $page
                 ->component('History')
                 ->has('activities', 1)
@@ -22,7 +22,7 @@ describe('Feature: Activity history', function (): void {
     });
 
     it('shows an empty history when there is no activity', function (): void {
-        $this->get('/historique')->assertInertia(
+        $this->get('/')->assertInertia(
             fn (AssertableInertia $page) => $page->component('History')->has('activities', 0),
         );
     });

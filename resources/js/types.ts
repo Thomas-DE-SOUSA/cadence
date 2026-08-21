@@ -32,4 +32,5 @@ export interface Activity {
     averagePaceSecondsPerKm: number;
     splits: Split[];
     bestEfforts: BestEffort[];
+    track: [number, number][] | null;
 }

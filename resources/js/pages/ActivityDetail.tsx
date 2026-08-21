@@ -7,6 +7,7 @@ import type { Activity } from '@/types';
 import { ActivitySummary } from '@/features/activity/components/ActivitySummary';
 import { SplitsChart } from '@/features/activity/components/SplitsChart';
 import { BestEfforts } from '@/features/activity/components/BestEfforts';
+import { RouteMap } from '@/features/activity/components/RouteMap';
 
 interface Props {
     activity: Activity;
@@ -26,10 +27,10 @@ export default function ActivityDetail({ activity }: Props) {
             <Head title="Activité" />
             <div className="mb-4 flex items-center justify-between">
                 <Link
-                    href="/historique"
+                    href="/"
                     className="inline-flex items-center gap-1 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
                 >
-                    <ArrowLeft size={16} /> Historique
+                    <ArrowLeft size={16} /> Tableau de bord
                 </Link>
                 <div className="flex items-center gap-2">
                     <Link
@@ -49,6 +50,11 @@ export default function ActivityDetail({ activity }: Props) {
             </div>
 
             <div className="space-y-6">
+                {activity.track && (
+                    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-neutral-50 to-white p-4 shadow-sm shadow-neutral-200/60">
+                        <RouteMap track={activity.track} className="h-52 w-full" />
+                    </div>
+                )}
                 <Card title="Sortie">
                     <ActivitySummary activity={activity} />
                 </Card>

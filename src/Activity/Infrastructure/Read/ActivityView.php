@@ -49,6 +49,7 @@ final class ActivityView
                 'durationSeconds' => (int) $b['duration_seconds'],
                 'isPersonalRecord' => (bool) $b['is_personal_record'],
             ], $efforts),
+            'track' => is_array($model->track) ? $model->track : null,
         ];
     }
 }

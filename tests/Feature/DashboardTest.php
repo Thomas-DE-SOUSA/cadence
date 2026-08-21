@@ -9,23 +9,25 @@ use Inertia\Testing\AssertableInertia;
 uses(RefreshDatabase::class);
 
 describe('Feature: Dashboard', function (): void {
-    it('renders the dashboard with no activity yet', function (): void {
+    it('renders the gamified board with no activity yet', function (): void {
         $this->get('/')->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Dashboard')
-                ->where('activity', null),
+                ->component('History')
+                ->where('stats.totalActivities', 0)
+                ->has('achievements'),
         );
     });
 
-    it('shows the latest activity with its splits and best efforts', function (): void {
+    it('shows recent activities, records and streak', function (): void {
         $this->seed(ActivitySeeder::class);
 
         $this->get('/')->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Dashboard')
-                ->has('activity.splits', 10)
-                ->has('activity.bestEfforts', 3)
-                ->where('activity.distanceMeters', 10010),
+                ->component('History')
+                ->where('stats.totalActivities', 1)
+                ->has('activities', 1)
+                ->has('records')
+                ->has('streak.days', 7),
         );
     });
 });

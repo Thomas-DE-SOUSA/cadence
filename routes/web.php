@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Cadence\Activity\Infrastructure\Http\Controller\DeleteActivityController;
 use Cadence\Activity\Infrastructure\Http\Controller\ImportActivityFromTextController;
 use Cadence\Activity\Infrastructure\Http\Controller\ShowActivityController;
-use Cadence\Activity\Infrastructure\Http\Controller\ShowDashboardController;
 use Cadence\Activity\Infrastructure\Http\Controller\ShowEditActivityController;
 use Cadence\Activity\Infrastructure\Http\Controller\ShowHistoryController;
 use Cadence\Activity\Infrastructure\Http\Controller\StoreActivityController;
@@ -13,10 +12,10 @@ use Cadence\Activity\Infrastructure\Http\Controller\UpdateActivityController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', ShowDashboardController::class)->name('dashboard');
+// The dashboard is the gamified activity board.
+Route::get('/', ShowHistoryController::class)->name('dashboard');
 
 // Activity read + manual entry.
-Route::get('/historique', ShowHistoryController::class)->name('history');
 Route::get('/activites/nouvelle', fn () => Inertia::render('ActivityForm'))->name('activities.create');
 Route::post('/activites', StoreActivityController::class)->name('activities.store');
 Route::post('/activites/importer-texte', ImportActivityFromTextController::class)->name('activities.import-text');

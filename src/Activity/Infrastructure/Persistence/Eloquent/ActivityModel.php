@@ -39,6 +39,7 @@ final class ActivityModel extends Model
         'average_pace_seconds_per_km',
         'splits',
         'best_efforts',
+        'track',
         'external_id',
         'version',
     ];
@@ -52,6 +53,7 @@ final class ActivityModel extends Model
         'average_pace_seconds_per_km' => 'float',
         'splits' => 'array',
         'best_efforts' => 'array',
+        'track' => 'array',
         'version' => 'integer',
     ];
 }
