@@ -7,6 +7,7 @@ namespace Cadence\Training\Infrastructure\Http\Controller;
 use Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel;
 use Cadence\Shared\Application\TenantContext;
 use Cadence\Training\Domain\Port\ActivitySummaryProvider;
+use Cadence\Training\Domain\Port\CycleRepository;
 use Cadence\Training\Domain\Port\TrainingProgramRepository;
 use Cadence\Training\Domain\ValueObject\ProgramId;
 use Cadence\Training\Infrastructure\Read\ProgramView;
@@ -18,6 +19,7 @@ final class ShowProgramController
     public function __construct(
         private readonly TrainingProgramRepository $programs,
         private readonly ActivitySummaryProvider $summaries,
+        private readonly CycleRepository $cycles,
         private readonly TenantContext $tenantContext,
     ) {
     }
@@ -48,6 +50,7 @@ final class ShowProgramController
         return Inertia::render('ProgramDetail', [
             'program' => ProgramView::detail($program, $summaries),
             'available' => $available,
+            'cycles' => ProgramView::cycles($this->cycles->forProgram($id, $tenant)),
         ]);
     }
 }

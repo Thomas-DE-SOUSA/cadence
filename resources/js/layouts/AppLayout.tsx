@@ -70,8 +70,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </nav>
 
             {/* Content */}
-            <main className="px-5 pb-24 pt-8 md:ml-60 md:pb-12">
-                <div className="mx-auto max-w-3xl">{children}</div>
+            <main className="px-5 pb-24 pt-8 md:ml-60 md:px-10 md:pb-12 lg:px-14">
+                <div className="mx-auto max-w-6xl">{children}</div>
             </main>
 
             <Toaster position="bottom-right" richColors closeButton theme="dark" />
