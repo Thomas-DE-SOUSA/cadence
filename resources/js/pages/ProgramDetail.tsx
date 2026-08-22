@@ -533,6 +533,9 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                             const style = sessionStyle(s.type);
                                                             const StyleIcon = style.icon;
                                                             const placing = selectedRun !== null && !s.actual;
+                                                            const ran = s.actual !== null;
+                                                            const rest = s.type === 'REST';
+                                                            const done = ran || rest;
                                                             return (
                                                                 <div
                                                                     key={s.date}
@@ -546,14 +549,25 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                                     className={`flex cursor-pointer flex-col rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-neutral-200/70 ${
                                                                         placing
                                                                             ? 'border-dashed border-brand-400 bg-brand-50/50'
-                                                                            : `border-neutral-200 bg-white ${style.border}`
+                                                                            : done
+                                                                              ? 'border-emerald-300 bg-emerald-50/40 ring-1 ring-emerald-200/70'
+                                                                              : `border-neutral-200 bg-white ${style.border}`
                                                                     }`}
                                                                 >
                                                                     <div className="mb-1.5 flex items-center justify-between">
-                                                                        <span className="text-xs font-semibold text-neutral-500">
+                                                                        <span className="flex items-center gap-1 text-xs font-semibold text-neutral-500">
                                                                             {weekdayLabel(s.date)}
+                                                                            {ran ? (
+                                                                                <CheckCircle2 size={13} className="text-emerald-500" />
+                                                                            ) : rest ? (
+                                                                                <Moon size={12} className="text-emerald-500" />
+                                                                            ) : null}
                                                                         </span>
-                                                                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${style.badge}`}>
+                                                                        <span
+                                                                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                                                                                done ? 'border-emerald-200 bg-emerald-50 text-emerald-600' : style.badge
+                                                                            }`}
+                                                                        >
                                                                             <StyleIcon size={11} />
                                                                             {style.label}
                                                                         </span>

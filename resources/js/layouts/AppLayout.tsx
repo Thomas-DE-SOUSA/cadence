@@ -19,7 +19,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const page = usePage();
     const path = page.url.split('?')[0];
     const flash = (page.props.flash as { status?: string } | undefined)?.status;
-    const athlete = page.props.athlete as AthleteSummary | null;
+    const athlete = page.props.topbar as AthleteSummary | null;
 
     useEffect(() => {
         if (flash) {

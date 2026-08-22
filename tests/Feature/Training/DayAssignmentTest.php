@@ -9,8 +9,20 @@ use Cadence\Training\Infrastructure\Persistence\Eloquent\CycleModel;
 use Cadence\Training\Infrastructure\Persistence\Eloquent\TrainingProgramModel;
 use Database\Seeders\ActivitySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 
 uses(RefreshDatabase::class);
+
+/** @return array<string, mixed> the Inertia props for a page GET */
+function inertiaProps(string $url): array
+{
+    $props = [];
+    test()->get($url)->assertInertia(function (AssertableInertia $page) use (&$props): void {
+        $props = $page->toArray()['props'];
+    });
+
+    return $props;
+}
 
 /** @return array{0:string,1:string} program id and cycle id */
 function programWithCycle(): array
@@ -61,7 +73,7 @@ describe('Feature: Day assignment', function (): void {
         expect($program->assigned_activity_ids)->toContain($activityId);
 
         // A placed run leaves the "to place" pool...
-        $available = $this->withHeader('X-Inertia', 'true')->get("/programme/{$programId}")->json('props.available');
+        $available = inertiaProps("/programme/{$programId}")['available'];
         expect(array_column($available, 'id'))->not->toContain($activityId);
 
         // Unlink clears the day and returns the run to the pool.
@@ -69,7 +81,7 @@ describe('Feature: Day assignment', function (): void {
             ->assertRedirect();
         expect(linkedActivityOn($cycleId, '2026-08-25'))->toBeNull();
 
-        $available = $this->withHeader('X-Inertia', 'true')->get("/programme/{$programId}")->json('props.available');
+        $available = inertiaProps("/programme/{$programId}")['available'];
         expect(array_column($available, 'id'))->toContain($activityId);
     });
 
@@ -87,7 +99,7 @@ describe('Feature: Day assignment', function (): void {
         $this->seed(ActivitySeeder::class);
         $activityId = (string) \Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel::query()->value('id');
 
-        $props = $this->withHeader('X-Inertia', 'true')->get("/programme/{$programId}")->json('props');
+        $props = inertiaProps("/programme/{$programId}");
 
         // The run shows on 2026-08-19 automatically, without a manual link…
         $day0 = $props['cycles'][0]['weeks'][0]['sessions'][0];

@@ -40,7 +40,7 @@ final class TrainingServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Route::prefix('programme')->group(function (): void {
+        Route::middleware('web')->prefix('programme')->group(function (): void {
             Route::get('/', ShowProgramsController::class)->name('programs.index');
             Route::get('/nouveau', fn () => Inertia::render('ProgramForm', ['plans' => ProgramView::plans()]))->name('programs.create');
             Route::post('/', CreateProgramController::class)->name('programs.store');

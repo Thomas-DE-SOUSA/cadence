@@ -27,7 +27,7 @@ final class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'app' => ['name' => 'Cadence'],
-            'athlete' => fn (): ?array => $this->athleteSummary(),
+            'topbar' => fn (): ?array => $this->athleteSummary(),
             'flash' => [
                 'status' => fn (): ?string => $request->session()->get('status'),
             ],
