@@ -39,8 +39,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:px-8">
                     {/* Brand */}
                     <Link href="/" className="flex shrink-0 items-center gap-2.5">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-sm font-black text-white shadow-md shadow-brand-500/30">
-                            C
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 shadow-md shadow-brand-500/30">
+                            <svg viewBox="134 102 244 306" className="h-5 w-auto" aria-hidden="true">
+                                <g fill="#ffffff">
+                                    <rect x="150" y="300" width="46" height="90" rx="23" />
+                                    <rect x="233" y="230" width="46" height="160" rx="23" />
+                                    <rect x="316" y="150" width="46" height="240" rx="23" />
+                                </g>
+                                <g fill="#8ff0bd">
+                                    <circle cx="173" cy="285" r="17" />
+                                    <circle cx="256" cy="215" r="17" />
+                                    <circle cx="339" cy="135" r="17" />
+                                </g>
+                            </svg>
                         </span>
                         <span className="hidden whitespace-nowrap text-[15px] font-black tracking-tight text-neutral-900 sm:block">
                             Cadence
