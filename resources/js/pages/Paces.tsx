@@ -175,12 +175,12 @@ export default function Paces({ vdot, basis, zones, racePaces }: Props) {
                                     <Icon size={19} />
                                 </span>
                                 <div className="min-w-0 flex-1">
-                                    <div className="flex items-baseline justify-between gap-2">
-                                        <p className="flex items-center gap-1 font-bold text-neutral-900">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <p className="flex min-w-0 flex-1 items-center gap-1 font-bold leading-tight text-neutral-900">
                                             {meta.name}
                                             <HelpTip label={meta.name} text={meta.help} />
                                         </p>
-                                        <p className="whitespace-nowrap text-lg font-black tabular-nums text-neutral-900">
+                                        <p className="shrink-0 whitespace-nowrap text-base font-black tabular-nums text-neutral-900">
                                             {paceLabel(zone.minSeconds, zone.maxSeconds)}
                                         </p>
                                     </div>
