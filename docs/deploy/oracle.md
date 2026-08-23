@@ -36,8 +36,12 @@ cp .env.production.example .env.production
 # Génère une APP_KEY et colle-la dans .env.production :
 docker run --rm dunglas/frankenphp:1-php8.4 sh -c \
   'php -r "echo \"base64:\".base64_encode(random_bytes(32)).\"\n\";"'
-# -> édite .env.production : APP_KEY=base64:....  et APP_URL=https://<host>.<tailnet>.ts.net
-# (optionnel) ANTHROPIC_API_KEY=... pour activer le coach IA
+# -> édite .env.production :
+#    APP_KEY=base64:....
+#    APP_URL=https://<host>.<tailnet>.ts.net
+#    ASSET_URL=https://<host>.<tailnet>.ts.net   <-- IMPORTANT (même valeur qu'APP_URL)
+#       sans ça, assets en http://127.0.0.1 → bloqués en HTTPS → écran blanc
+#    (optionnel) ANTHROPIC_API_KEY=... pour le coach IA
 nano .env.production
 ```
 
