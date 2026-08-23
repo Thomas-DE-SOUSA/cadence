@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+    image: cadence:prod
+    restart: unless-stopped
+    env_file: .env.production
+    # Bound to localhost only — `tailscale serve` exposes it privately over HTTPS.
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - cadence-data:/data
+
+volumes:
+  cadence-data:
