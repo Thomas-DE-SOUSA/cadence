@@ -11,4 +11,5 @@ parameters:
         - src/Training/Infrastructure/Ai/ClaudeCyclePlanner.php
         - src/Coaching/Infrastructure/Ai/ClaudeCoachChat.php
         - src/Coaching/Infrastructure/Ai/ClaudeCoachStreamer.php
+        - src/Coaching/Infrastructure/Ai/AdvisorStreamer.php
     tmpDir: build/phpstan

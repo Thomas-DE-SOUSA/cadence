@@ -10,14 +10,18 @@ use Cadence\Coaching\Domain\Port\CoachStreamer;
 use Cadence\Coaching\Domain\Port\ConversationRepository;
 use Cadence\Coaching\Domain\Port\ProgramContextProvider;
 use Cadence\Coaching\Domain\Port\SessionAdjuster;
+use Cadence\Coaching\Infrastructure\Ai\AdvisorStreamer;
 use Cadence\Coaching\Infrastructure\Ai\ClaudeCoachChat;
 use Cadence\Coaching\Infrastructure\Ai\ClaudeCoachStreamer;
 use Cadence\Coaching\Infrastructure\Ai\CoachRequestBuilder;
+use Cadence\Coaching\Infrastructure\Http\Controller\AnalyzeGuestGpxController;
 use Cadence\Coaching\Infrastructure\Http\Controller\ApplyProposalController;
 use Cadence\Coaching\Infrastructure\Http\Controller\SendCoachMessageController;
 use Cadence\Coaching\Infrastructure\Http\Controller\ShowCoachThreadController;
+use Cadence\Coaching\Infrastructure\Http\Controller\StreamAdvisorController;
 use Cadence\Coaching\Infrastructure\Http\Controller\StreamCoachController;
 use Cadence\Coaching\Infrastructure\Knowledge\CoachingKnowledge;
+use Inertia\Inertia;
 use Cadence\Coaching\Infrastructure\Persistence\Eloquent\EloquentConversationRepository;
 use Cadence\Coaching\Infrastructure\Provider\EloquentAthleteHistoryProvider;
 use Cadence\Coaching\Infrastructure\Provider\TrainingProgramContextProvider;
@@ -43,6 +47,9 @@ final class CoachingServiceProvider extends ServiceProvider
             (string) config('services.anthropic.key'),
             $builder(),
         ));
+        $this->app->bind(AdvisorStreamer::class, fn (): AdvisorStreamer => new AdvisorStreamer(
+            (string) config('services.anthropic.key'),
+        ));
     }
 
     public function boot(): void
@@ -52,6 +59,13 @@ final class CoachingServiceProvider extends ServiceProvider
             Route::post('/message', SendCoachMessageController::class)->name('programs.coach.message');
             Route::post('/stream', StreamCoachController::class)->name('programs.coach.stream');
             Route::post('/apply', ApplyProposalController::class)->name('programs.coach.apply');
+        });
+
+        // Guest advisory tool ("Conseil") — assess any runner, no persistence.
+        Route::middleware('web')->prefix('conseil')->group(function (): void {
+            Route::get('/', fn () => Inertia::render('Advisor'))->name('advisor');
+            Route::post('/analyser-gpx', AnalyzeGuestGpxController::class)->name('advisor.analyze');
+            Route::post('/diagnostic', StreamAdvisorController::class)->name('advisor.diagnostic');
         });
     }
 }
