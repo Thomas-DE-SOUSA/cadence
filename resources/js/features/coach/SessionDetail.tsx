@@ -118,6 +118,38 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
         }
     }
 
+    // Objectif vs réalisé — only when the day has a linked run and a pace target.
+    const actual = session.actual;
+    const comparison =
+        actual && pace
+            ? (() => {
+                  const actualSeconds = Math.round((actual.distanceMeters / 1000) * actual.averagePaceSecondsPerKm);
+                  const paceDelta = Math.round(actual.averagePaceSecondsPerKm - pace); // <0 = plus rapide
+                  const distDelta = distanceMeters != null ? actual.distanceMeters - distanceMeters : null;
+                  const durDelta = estimatedSeconds != null ? actualSeconds - estimatedSeconds : null;
+                  const easy = zone === 'easy';
+                  const abs = Math.abs(paceDelta);
+                  let tone: 'ok' | 'warn' = 'ok';
+                  let text = 'Allure conforme à la cible 👍';
+                  if (abs > 12) {
+                      if (easy) {
+                          tone = paceDelta < 0 ? 'warn' : 'ok';
+                          text =
+                              paceDelta < 0
+                                  ? `Trop rapide de ${abs} s/km pour une séance facile — le facile doit rester facile pour bien récupérer.`
+                                  : "Un peu plus lent que la cible, mais sur un footing c'est parfait.";
+                      } else {
+                          tone = paceDelta < 0 ? 'ok' : 'warn';
+                          text =
+                              paceDelta < 0
+                                  ? `Plus rapide que la cible de ${abs} s/km — belle intensité.`
+                                  : `En-deçà de la cible de ${abs} s/km — l'intensité visée n'a pas été atteinte.`;
+                      }
+                  }
+                  return { actualSeconds, paceDelta, distDelta, durDelta, tone, text };
+              })()
+            : null;
+
     return (
         <div className="space-y-5">
             <div>
@@ -213,7 +245,58 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
                 </div>
             )}
 
-            {session.actual && (
+            {session.actual && comparison && (
+                <div className="rounded-lg border border-brand-500/30 bg-brand-500/[0.06] p-3">
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-brand-600">Objectif vs réalisé</p>
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="text-left text-[10px] uppercase tracking-wide text-neutral-400">
+                                <th className="font-medium" />
+                                <th className="pb-1 font-medium">Objectif</th>
+                                <th className="pb-1 font-medium">Réalisé</th>
+                                <th className="pb-1 text-right font-medium">Écart</th>
+                            </tr>
+                        </thead>
+                        <tbody className="tabular-nums">
+                            {distanceMeters != null && (
+                                <tr className="border-t border-brand-500/10">
+                                    <td className="py-1 text-neutral-500">Distance</td>
+                                    <td className="py-1 text-neutral-600">{formatKilometers(distanceMeters)} km</td>
+                                    <td className="py-1 font-semibold text-neutral-900">{formatKilometers(session.actual.distanceMeters)} km</td>
+                                    <td className="py-1 text-right text-neutral-500">
+                                        {comparison.distDelta != null
+                                            ? `${comparison.distDelta >= 0 ? '+' : '−'}${formatKilometers(Math.abs(comparison.distDelta))} km`
+                                            : '—'}
+                                    </td>
+                                </tr>
+                            )}
+                            <tr className="border-t border-brand-500/10">
+                                <td className="py-1 text-neutral-500">Allure</td>
+                                <td className="py-1 text-neutral-600">{mmss(pace!)}/km</td>
+                                <td className="py-1 font-semibold text-neutral-900">{mmss(session.actual.averagePaceSecondsPerKm)}/km</td>
+                                <td className={`py-1 text-right font-semibold ${comparison.tone === 'warn' ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                    {`${comparison.paceDelta >= 0 ? '+' : '−'}${Math.abs(comparison.paceDelta)} s`}
+                                </td>
+                            </tr>
+                            {estimatedSeconds != null && (
+                                <tr className="border-t border-brand-500/10">
+                                    <td className="py-1 text-neutral-500">Durée</td>
+                                    <td className="py-1 text-neutral-600">{duration(estimatedSeconds)}</td>
+                                    <td className="py-1 font-semibold text-neutral-900">{duration(comparison.actualSeconds)}</td>
+                                    <td className="py-1 text-right text-neutral-500">
+                                        {comparison.durDelta != null ? `${comparison.durDelta >= 0 ? '+' : '−'}${clock(Math.abs(comparison.durDelta))}` : '—'}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                    <p className={`mt-2 text-xs leading-relaxed ${comparison.tone === 'warn' ? 'text-amber-700' : 'text-emerald-700'}`}>
+                        {comparison.text}
+                    </p>
+                </div>
+            )}
+
+            {session.actual && !comparison && (
                 <div className="rounded-lg border border-brand-500/30 bg-brand-500/[0.06] p-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-600">Réalisé ce jour</p>
                     <p className="mt-0.5 text-sm tabular-nums text-neutral-900">
