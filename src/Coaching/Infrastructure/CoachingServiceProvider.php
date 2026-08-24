@@ -12,8 +12,9 @@ use Cadence\Coaching\Domain\Port\ProgramContextProvider;
 use Cadence\Coaching\Domain\Port\SessionAdjuster;
 use Cadence\Coaching\Infrastructure\Ai\AdvisorStreamer;
 use Cadence\Coaching\Infrastructure\Ai\ClaudeCoachChat;
-use Cadence\Coaching\Infrastructure\Ai\ClaudeCoachStreamer;
 use Cadence\Coaching\Infrastructure\Ai\CoachRequestBuilder;
+use Cadence\Coaching\Infrastructure\Ai\GeminiClient;
+use Cadence\Coaching\Infrastructure\Ai\GeminiCoachStreamer;
 use Cadence\Coaching\Infrastructure\Http\Controller\AnalyzeGuestGpxController;
 use Cadence\Coaching\Infrastructure\Http\Controller\ApplyProposalController;
 use Cadence\Coaching\Infrastructure\Http\Controller\SendCoachMessageController;
@@ -39,17 +40,20 @@ final class CoachingServiceProvider extends ServiceProvider
         $this->app->bind(SessionAdjuster::class, TrainingSessionAdjuster::class);
 
         $builder = fn (): CoachRequestBuilder => new CoachRequestBuilder(new CoachingKnowledge());
+        $gemini = fn (): GeminiClient => new GeminiClient(
+            (string) config('services.gemini.key'),
+            (string) config('services.gemini.model'),
+        );
+
+        // Non-streaming coach kept on Claude (unused by the current UI).
         $this->app->bind(CoachChat::class, fn (): ClaudeCoachChat => new ClaudeCoachChat(
             (string) config('services.anthropic.key'),
             $builder(),
         ));
-        $this->app->bind(CoachStreamer::class, fn (): ClaudeCoachStreamer => new ClaudeCoachStreamer(
-            (string) config('services.anthropic.key'),
-            $builder(),
-        ));
-        $this->app->bind(AdvisorStreamer::class, fn (): AdvisorStreamer => new AdvisorStreamer(
-            (string) config('services.anthropic.key'),
-        ));
+
+        // Coach + advisory now run on Gemini (free tier).
+        $this->app->bind(CoachStreamer::class, fn (): GeminiCoachStreamer => new GeminiCoachStreamer($gemini(), $builder()));
+        $this->app->bind(AdvisorStreamer::class, fn (): AdvisorStreamer => new AdvisorStreamer($gemini()));
     }
 
     public function boot(): void

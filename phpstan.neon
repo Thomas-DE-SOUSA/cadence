@@ -12,4 +12,6 @@ parameters:
         - src/Coaching/Infrastructure/Ai/ClaudeCoachChat.php
         - src/Coaching/Infrastructure/Ai/ClaudeCoachStreamer.php
         - src/Coaching/Infrastructure/Ai/AdvisorStreamer.php
+        - src/Coaching/Infrastructure/Ai/GeminiClient.php
+        - src/Coaching/Infrastructure/Ai/GeminiCoachStreamer.php
     tmpDir: build/phpstan
