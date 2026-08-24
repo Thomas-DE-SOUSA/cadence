@@ -7,11 +7,9 @@ parameters:
         - src
     excludePaths:
         # External LLM boundary: dynamically-typed API responses.
-        - src/Activity/Infrastructure/Ai/ClaudeStravaTextParser.php
-        - src/Training/Infrastructure/Ai/ClaudeCyclePlanner.php
-        - src/Coaching/Infrastructure/Ai/ClaudeCoachChat.php
-        - src/Coaching/Infrastructure/Ai/ClaudeCoachStreamer.php
+        - src/Shared/Infrastructure/Ai/GeminiClient.php
         - src/Coaching/Infrastructure/Ai/AdvisorStreamer.php
-        - src/Coaching/Infrastructure/Ai/GeminiClient.php
         - src/Coaching/Infrastructure/Ai/GeminiCoachStreamer.php
+        - src/Training/Infrastructure/Ai/GeminiCyclePlanner.php
+        - src/Activity/Infrastructure/Ai/GeminiStravaTextParser.php
     tmpDir: build/phpstan

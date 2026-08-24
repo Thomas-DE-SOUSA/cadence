@@ -8,7 +8,7 @@ use Cadence\Training\Domain\Port\ActivitySummaryProvider;
 use Cadence\Training\Domain\Port\CyclePlanner;
 use Cadence\Training\Domain\Port\CycleRepository;
 use Cadence\Training\Domain\Port\TrainingProgramRepository;
-use Cadence\Training\Infrastructure\Ai\ClaudeCyclePlanner;
+use Cadence\Training\Infrastructure\Ai\GeminiCyclePlanner;
 use Cadence\Training\Infrastructure\Http\Controller\AssignActivityController;
 use Cadence\Training\Infrastructure\Http\Controller\AssignSessionActivityController;
 use Cadence\Training\Infrastructure\Http\Controller\CompleteCycleController;
@@ -22,6 +22,7 @@ use Cadence\Training\Infrastructure\Persistence\Eloquent\EloquentCycleRepository
 use Cadence\Training\Infrastructure\Persistence\Eloquent\EloquentTrainingProgramRepository;
 use Cadence\Training\Infrastructure\Provider\EloquentActivitySummaryProvider;
 use Cadence\Training\Infrastructure\Read\ProgramView;
+use Cadence\Shared\Infrastructure\Ai\GeminiClient;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
@@ -33,8 +34,8 @@ final class TrainingServiceProvider extends ServiceProvider
         $this->app->bind(TrainingProgramRepository::class, EloquentTrainingProgramRepository::class);
         $this->app->bind(ActivitySummaryProvider::class, EloquentActivitySummaryProvider::class);
         $this->app->bind(CycleRepository::class, EloquentCycleRepository::class);
-        $this->app->bind(CyclePlanner::class, static fn (): ClaudeCyclePlanner => new ClaudeCyclePlanner(
-            (string) config('services.anthropic.key'),
+        $this->app->bind(CyclePlanner::class, static fn (): GeminiCyclePlanner => new GeminiCyclePlanner(
+            new GeminiClient((string) config('services.gemini.key', ''), (string) config('services.gemini.model')),
         ));
     }
 

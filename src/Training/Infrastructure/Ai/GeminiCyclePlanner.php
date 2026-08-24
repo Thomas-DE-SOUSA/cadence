@@ -4,56 +4,31 @@ declare(strict_types=1);
 
 namespace Cadence\Training\Infrastructure\Ai;
 
+use Cadence\Shared\Infrastructure\Ai\GeminiClient;
 use Cadence\Training\Domain\Port\CyclePlanner;
 use Cadence\Training\Domain\ValueObject\PlannedCycle;
 use Cadence\Training\Domain\ValueObject\PlannedSessionData;
 use Cadence\Training\Domain\ValueObject\PlannerContext;
 use Cadence\Training\Domain\ValueObject\SessionStep;
-use Illuminate\Support\Facades\Http;
 use RuntimeException;
-use Throwable;
 
 /**
- * Designs a training cycle with Claude, day by day, adapting to the athlete's
- * feedback and the previous cycle. Returns a validated structured plan.
+ * Designs a training cycle with Gemini (free tier), day by day, adapting to the
+ * athlete's feedback and the previous cycle. Returns a validated structured plan.
  */
-final class ClaudeCyclePlanner implements CyclePlanner
+final class GeminiCyclePlanner implements CyclePlanner
 {
-    private const MODEL = 'claude-opus-4-8';
-
-    private const ENDPOINT = 'https://api.anthropic.com/v1/messages';
-
-    public function __construct(private readonly string $apiKey)
+    public function __construct(private readonly GeminiClient $client)
     {
     }
 
     public function plan(PlannerContext $context): PlannedCycle
     {
-        if (trim($this->apiKey) === '') {
-            throw new RuntimeException('La clé API Anthropic n\'est pas configurée (ANTHROPIC_API_KEY).');
-        }
-
-        try {
-            $response = Http::withHeaders([
-                'x-api-key' => $this->apiKey,
-                'anthropic-version' => '2023-06-01',
-            ])->timeout(120)->post(self::ENDPOINT, [
-                'model' => self::MODEL,
-                'max_tokens' => 8192,
-                'messages' => [['role' => 'user', 'content' => $this->prompt($context)]],
-            ]);
-        } catch (Throwable $e) {
-            throw new RuntimeException('La génération a échoué : '.$e->getMessage(), 0, $e);
-        }
-
-        if ($response->failed()) {
-            throw new RuntimeException('La génération a échoué (HTTP '.$response->status().').');
-        }
-
-        $text = $response->json('content.0.text');
-        if (! is_string($text)) {
-            throw new RuntimeException('Réponse inattendue de l\'IA.');
-        }
+        $text = $this->client->complete(
+            "Tu es un coach expert en course à pied. Tu réponds UNIQUEMENT avec l'objet JSON demandé.",
+            $this->prompt($context),
+            ['responseMimeType' => 'application/json', 'maxOutputTokens' => 16384],
+        );
 
         return $this->toPlannedCycle($this->decode($text));
     }
@@ -65,7 +40,7 @@ final class ClaudeCyclePlanner implements CyclePlanner
         $decoded = json_decode(trim($clean), true);
 
         if (! is_array($decoded)) {
-            throw new RuntimeException('L\'IA n\'a pas renvoyé de plan valide.');
+            throw new RuntimeException("L'IA n'a pas renvoyé de plan valide.");
         }
 
         return $decoded;
@@ -137,7 +112,7 @@ final class ClaudeCyclePlanner implements CyclePlanner
         $pacesBlock = trim($c->athletePaces) === '' ? '' : "\n        - Allures de l'athlète (À UTILISER pour toutes les allures cibles) : {$c->athletePaces}";
 
         return <<<PROMPT
-        Tu es un coach expert en course à pied. Conçois le PROCHAIN cycle d'entraînement, jour par jour.
+        Conçois le PROCHAIN cycle d'entraînement, jour par jour.
 
         Contexte :
         - Objectif du programme : {$c->goal}
@@ -153,7 +128,7 @@ final class ClaudeCyclePlanner implements CyclePlanner
           "focus": "1 phrase sur l'objectif du cycle",
           "sessions": [
             {
-              "dayOffset": 0,               // entier, 0 = jour de début, jusqu'à {$days}-1
+              "dayOffset": 0,
               "type": "EASY|LONG|THRESHOLD|INTERVALS|RECOVERY|RACE_PACE|CROSS|REST",
               "title": "titre court",
               "description": "résumé court de la séance en 1 phrase",
@@ -163,11 +138,11 @@ final class ClaudeCyclePlanner implements CyclePlanner
               "steps": [
                 {
                   "label": "Échauffement|Seuil|Fractionné|Bloc|Récup|Retour au calme|Lignes droites|…",
-                  "repeat": 1,                     // >1 pour un bloc répété (ex. 2×8 min → repeat=2)
-                  "distanceMeters": int|null,      // par répétition
-                  "durationSeconds": int|null,     // par répétition
-                  "paceSecondsPerKm": int|null,    // allure de l'effort
-                  "recoverySeconds": int|null,     // récup APRÈS chaque répétition (si repeat>1)
+                  "repeat": 1,
+                  "distanceMeters": int|null,
+                  "durationSeconds": int|null,
+                  "paceSecondsPerKm": int|null,
+                  "recoverySeconds": int|null,
                   "note": "précision courte, ex. 'progressif'"
                 }
               ]
@@ -178,7 +153,7 @@ final class ClaudeCyclePlanner implements CyclePlanner
         Règles :
         - Une entrée par jour pour les {$days} jours (inclure les jours de repos avec type REST, sans steps).
         - DÉCOUPE chaque séance qui court en `steps` : échauffement, corps (blocs répétés avec récup), retour au calme. Un footing continu = 1 seul step (durée + allure). Un jour de repos = steps vide.
-        - Utilise IMPÉRATIVEMENT les allures de l'athlète ci-dessus pour chaque `paceSecondsPerKm` (échauffement/récup en E, seuil en T, VMA en I, etc.). N'invente pas d'allures.
+        - Utilise IMPÉRATIVEMENT les allures de l'athlète ci-dessus pour chaque `paceSecondsPerKm`. N'invente pas d'allures.
         - Progression cohérente, principe hard/easy, majorité du volume en E. Allures en secondes par km (ex. 4:00/km = 240).
         PROMPT;
     }

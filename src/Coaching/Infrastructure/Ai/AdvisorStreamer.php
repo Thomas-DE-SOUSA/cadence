@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cadence\Coaching\Infrastructure\Ai;
 
+use Cadence\Shared\Infrastructure\Ai\GeminiClient;
+
 /**
  * Streams the guest-advisory diagnostic from Google Gemini (free tier) over SSE,
  * forwarding each text delta. Free-form Markdown reply, no tools.

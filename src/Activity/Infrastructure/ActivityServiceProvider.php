@@ -6,9 +6,10 @@ namespace Cadence\Activity\Infrastructure;
 
 use Cadence\Activity\Application\Port\StravaTextParser;
 use Cadence\Activity\Domain\Port\ActivityRepository;
-use Cadence\Activity\Infrastructure\Ai\ClaudeStravaTextParser;
+use Cadence\Activity\Infrastructure\Ai\GeminiStravaTextParser;
 use Cadence\Activity\Infrastructure\Http\Controller\RecordActivityController;
 use Cadence\Activity\Infrastructure\Persistence\Eloquent\EloquentActivityRepository;
+use Cadence\Shared\Infrastructure\Ai\GeminiClient;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,8 +20,8 @@ final class ActivityServiceProvider extends ServiceProvider
         $this->app->bind(ActivityRepository::class, EloquentActivityRepository::class);
         $this->app->bind(
             StravaTextParser::class,
-            fn (): ClaudeStravaTextParser => new ClaudeStravaTextParser(
-                (string) config('services.anthropic.key', ''),
+            fn (): GeminiStravaTextParser => new GeminiStravaTextParser(
+                new GeminiClient((string) config('services.gemini.key', ''), (string) config('services.gemini.model')),
             ),
         );
     }
