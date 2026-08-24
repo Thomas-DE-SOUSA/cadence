@@ -18,7 +18,7 @@ final class GeminiClient
 
     public function __construct(
         private readonly string $apiKey,
-        private readonly string $model = 'gemini-2.0-flash',
+        private readonly string $model = 'gemini-3.6-flash',
     ) {
     }
 
@@ -38,7 +38,7 @@ final class GeminiClient
         $body = [
             'systemInstruction' => ['parts' => [['text' => $system]]],
             'contents' => $contents,
-            'generationConfig' => ['maxOutputTokens' => 4096, 'temperature' => 0.7],
+            'generationConfig' => ['maxOutputTokens' => 8192, 'temperature' => 0.7],
         ];
         if ($tools !== []) {
             $body['tools'] = $tools;
