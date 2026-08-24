@@ -14,7 +14,9 @@ import {
     GripVertical,
     Layers,
     Leaf,
+    ListChecks,
     Lock,
+    MessageSquare,
     Moon,
     RefreshCw,
     Route,
@@ -218,6 +220,12 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
     const [selectedRun, setSelectedRun] = useState<string | null>(null);
     const [openDay, setOpenDay] = useState<{ cycleId: string; date: string } | null>(null);
     const [aiOpen, setAiOpen] = useState(false);
+    // On mobile the session detail and the coach share one panel via a toggle.
+    const [mobileTab, setMobileTab] = useState<'details' | 'coach'>('details');
+
+    useEffect(() => {
+        if (openDay) setMobileTab('details');
+    }, [openDay]);
 
     const openSession = openDay
         ? cycles.find((c) => c.id === openDay.cycleId)?.weeks.flatMap((w) => w.sessions).find((s) => s.date === openDay.date) ?? null
@@ -651,18 +659,46 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                 title={openSession ? `${weekdayLabel(openSession.date)} · ${formatDate(openSession.date)}` : ''}
             >
                 {openSession && openDay && (
-                    <div className="grid h-full grid-cols-1 overflow-y-auto md:grid-cols-2 md:overflow-hidden">
-                        <div className="border-b border-neutral-200 p-5 md:overflow-y-auto md:border-b-0 md:border-r">
-                            <SessionDetail session={openSession} paces={athlete?.paces ?? null} />
+                    <div className="flex h-full flex-col">
+                        {/* Mobile toggle between the session detail and the coach */}
+                        <div className="flex shrink-0 gap-1 border-b border-neutral-200 bg-white p-2 md:hidden">
+                            <button
+                                onClick={() => setMobileTab('details')}
+                                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold transition-colors ${
+                                    mobileTab === 'details' ? 'bg-brand-500 text-white' : 'text-neutral-500 hover:bg-neutral-100'
+                                }`}
+                            >
+                                <ListChecks size={16} /> Séance
+                            </button>
+                            <button
+                                onClick={() => setMobileTab('coach')}
+                                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold transition-colors ${
+                                    mobileTab === 'coach' ? 'bg-brand-500 text-white' : 'text-neutral-500 hover:bg-neutral-100'
+                                }`}
+                            >
+                                <MessageSquare size={16} /> Coach
+                            </button>
                         </div>
-                        <div className="flex flex-col bg-neutral-50 p-5 md:h-full md:min-h-0">
-                            <CoachThread
-                                key={`${openDay.cycleId}-${openDay.date}`}
-                                programId={program.id}
-                                cycleId={openDay.cycleId}
-                                date={openDay.date}
-                                onApplied={() => router.reload({ only: ['cycles'] })}
-                            />
+
+                        <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2">
+                            <div
+                                className={`min-h-0 overflow-y-auto border-neutral-200 p-5 md:block md:border-r ${
+                                    mobileTab === 'details' ? 'block' : 'hidden'
+                                }`}
+                            >
+                                <SessionDetail session={openSession} paces={athlete?.paces ?? null} />
+                            </div>
+                            <div
+                                className={`min-h-0 flex-col bg-neutral-50 p-5 md:flex ${mobileTab === 'coach' ? 'flex' : 'hidden'}`}
+                            >
+                                <CoachThread
+                                    key={`${openDay.cycleId}-${openDay.date}`}
+                                    programId={program.id}
+                                    cycleId={openDay.cycleId}
+                                    date={openDay.date}
+                                    onApplied={() => router.reload({ only: ['cycles'] })}
+                                />
+                            </div>
                         </div>
                     </div>
                 )}
