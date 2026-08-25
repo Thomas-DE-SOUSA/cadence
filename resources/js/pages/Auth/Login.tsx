@@ -2,6 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { LogIn } from 'lucide-react';
 import { GuestLayout } from '@/layouts/GuestLayout';
+import { PasswordInput } from '@/components/PasswordInput';
 
 export default function Login() {
     const form = useForm({ email: '', password: '', remember: false });
@@ -36,8 +37,7 @@ export default function Login() {
 
                 <label className="block">
                     <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Mot de passe</span>
-                    <input
-                        type="password"
+                    <PasswordInput
                         value={form.data.password}
                         onChange={(e) => form.setData('password', e.target.value)}
                         autoComplete="current-password"

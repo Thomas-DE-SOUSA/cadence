@@ -4,6 +4,7 @@ import { Calendar, CheckCircle2, Gauge, Heart, HeartPulse, Lock, Target, User } 
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
 import { HelpTip } from '@/components/HelpTip';
+import { PasswordInput } from '@/components/PasswordInput';
 
 interface HrZone {
     key: string;
@@ -369,8 +370,7 @@ export default function Profile({ profile, derived }: Props) {
                 >
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <Field label="Mot de passe actuel">
-                            <input
-                                type="password"
+                            <PasswordInput
                                 autoComplete="current-password"
                                 value={passwordForm.data.current_password}
                                 onChange={(e) => passwordForm.setData('current_password', e.target.value)}
@@ -381,8 +381,7 @@ export default function Profile({ profile, derived }: Props) {
                             )}
                         </Field>
                         <Field label="Nouveau mot de passe">
-                            <input
-                                type="password"
+                            <PasswordInput
                                 autoComplete="new-password"
                                 value={passwordForm.data.password}
                                 onChange={(e) => passwordForm.setData('password', e.target.value)}
@@ -393,8 +392,7 @@ export default function Profile({ profile, derived }: Props) {
                             )}
                         </Field>
                         <Field label="Confirme le nouveau">
-                            <input
-                                type="password"
+                            <PasswordInput
                                 autoComplete="new-password"
                                 value={passwordForm.data.password_confirmation}
                                 onChange={(e) => passwordForm.setData('password_confirmation', e.target.value)}

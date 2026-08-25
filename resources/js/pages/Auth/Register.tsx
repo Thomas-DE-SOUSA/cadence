@@ -2,6 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { UserPlus } from 'lucide-react';
 import { GuestLayout } from '@/layouts/GuestLayout';
+import { PasswordInput } from '@/components/PasswordInput';
 
 export default function Register() {
     const form = useForm({ name: '', email: '', password: '', password_confirmation: '' });
@@ -49,8 +50,7 @@ export default function Register() {
 
                 <label className="block">
                     <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Mot de passe</span>
-                    <input
-                        type="password"
+                    <PasswordInput
                         value={form.data.password}
                         onChange={(e) => form.setData('password', e.target.value)}
                         autoComplete="new-password"
@@ -62,8 +62,7 @@ export default function Register() {
 
                 <label className="block">
                     <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Confirme le mot de passe</span>
-                    <input
-                        type="password"
+                    <PasswordInput
                         value={form.data.password_confirmation}
                         onChange={(e) => form.setData('password_confirmation', e.target.value)}
                         autoComplete="new-password"
