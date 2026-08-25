@@ -1,6 +1,6 @@
-import { Link, usePage } from '@inertiajs/react';
-import { useEffect, type ReactNode } from 'react';
-import { Plus } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { ChevronDown, LogOut, Plus, User as UserIcon } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { navItems } from '@/lib/nav';
 
@@ -9,6 +9,71 @@ interface AthleteSummary {
     initial: string;
     raceName: string | null;
     raceDaysLeft: number | null;
+}
+
+interface AuthUser {
+    name: string;
+    email: string;
+    initial: string;
+}
+
+function AccountMenu({ user, athlete }: { user: AuthUser | null; athlete: AthleteSummary | null }) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    const initial = user?.initial ?? athlete?.initial ?? '?';
+    const name = user?.name || athlete?.name || 'Mon compte';
+
+    useEffect(() => {
+        if (!open) return;
+        const onClick = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', onClick);
+        return () => document.removeEventListener('mousedown', onClick);
+    }, [open]);
+
+    return (
+        <div className="relative" ref={ref}>
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white py-1 pl-1 pr-1 shadow-sm transition-colors hover:border-brand-200 hover:bg-brand-50/40 lg:pr-2"
+                title={name}
+            >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-neutral-700 to-neutral-900 text-xs font-bold text-white">
+                    {initial}
+                </span>
+                <span className="hidden max-w-[8rem] truncate text-sm font-semibold text-neutral-700 lg:inline">{name}</span>
+                <ChevronDown size={15} className={`hidden text-neutral-400 transition-transform lg:block ${open ? 'rotate-180' : ''}`} />
+            </button>
+
+            {open && (
+                <div className="absolute right-0 top-full z-40 mt-2 w-60 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl shadow-neutral-300/40">
+                    <div className="border-b border-neutral-100 px-4 py-3">
+                        <p className="truncate text-sm font-bold text-neutral-900">{name}</p>
+                        {user?.email && <p className="truncate text-xs text-neutral-400">{user.email}</p>}
+                    </div>
+                    <Link
+                        href="/profil"
+                        onClick={() => setOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+                    >
+                        <UserIcon size={16} className="text-neutral-400" /> Profil
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setOpen(false);
+                            router.post('/logout');
+                        }}
+                        className="flex w-full items-center gap-2.5 border-t border-neutral-100 px-4 py-2.5 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                    >
+                        <LogOut size={16} /> Déconnexion
+                    </button>
+                </div>
+            )}
+        </div>
+    );
 }
 
 function isActive(currentPath: string, href: string): boolean {
@@ -20,6 +85,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const path = page.url.split('?')[0];
     const flash = (page.props.flash as { status?: string } | undefined)?.status;
     const athlete = page.props.topbar as AthleteSummary | null;
+    const user = (page.props.auth as { user?: AuthUser | null } | undefined)?.user ?? null;
 
     useEffect(() => {
         if (flash) {
@@ -95,18 +161,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                             <Plus size={17} />
                             <span className="hidden sm:inline">Activité</span>
                         </Link>
-                        <Link
-                            href="/profil"
-                            className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white py-1 pl-1 pr-1 shadow-sm transition-colors hover:border-brand-200 hover:bg-brand-50/40 lg:pr-3"
-                            title={athlete?.name ?? 'Profil'}
-                        >
-                            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-neutral-700 to-neutral-900 text-xs font-bold text-white">
-                                {athlete?.initial ?? '?'}
-                            </span>
-                            <span className="hidden max-w-[8rem] truncate text-sm font-semibold text-neutral-700 lg:inline">
-                                {athlete?.name ?? 'Profil'}
-                            </span>
-                        </Link>
+                        <AccountMenu user={user} athlete={athlete} />
                     </div>
                 </div>
             </header>

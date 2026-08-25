@@ -9,7 +9,7 @@ use Cadence\Shared\Clock\Clock;
 use Cadence\Shared\Clock\SystemClock;
 use Cadence\Shared\Identifier\IdGenerator;
 use Cadence\Shared\Identifier\UuidGenerator;
-use Cadence\Shared\Infrastructure\FixedTenantContext;
+use Cadence\Shared\Infrastructure\AuthTenantContext;
 use Cadence\Shared\Infrastructure\LaravelEventPublisher;
 use Cadence\Shared\Infrastructure\LogAuditTrail;
 use Illuminate\Support\ServiceProvider;
@@ -27,9 +27,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(IdGenerator::class, UuidGenerator::class);
         $this->app->bind(EventPublisher::class, LaravelEventPublisher::class);
         $this->app->bind(AuditTrail::class, LogAuditTrail::class);
+        // Tenant is resolved from the authenticated user (each account owns a
+        // private tenant). Bound per-resolution so it always reads the current
+        // request's auth state.
         $this->app->bind(
             TenantContext::class,
-            fn (): FixedTenantContext => new FixedTenantContext(
+            fn (): AuthTenantContext => new AuthTenantContext(
+                $this->app->make(\Illuminate\Contracts\Auth\Factory::class),
                 (string) config('cadence.default_tenant', 'tenant-thomas'),
             ),
         );

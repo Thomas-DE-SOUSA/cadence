@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
-import { Calendar, CheckCircle2, Gauge, Heart, HeartPulse, Target, User } from 'lucide-react';
+import { Calendar, CheckCircle2, Gauge, Heart, HeartPulse, Lock, Target, User } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
 import { HelpTip } from '@/components/HelpTip';
@@ -106,6 +106,16 @@ export default function Profile({ profile, derived }: Props) {
     function submit(e: FormEvent) {
         e.preventDefault();
         form.post('/profil', { preserveScroll: true });
+    }
+
+    const passwordForm = useForm({ current_password: '', password: '', password_confirmation: '' });
+
+    function submitPassword(e: FormEvent) {
+        e.preventDefault();
+        passwordForm.post('/profil/mot-de-passe', {
+            preserveScroll: true,
+            onSuccess: () => passwordForm.reset(),
+        });
     }
 
     const displayName = form.data.display_name.trim() || 'Ton profil';
@@ -346,6 +356,67 @@ export default function Profile({ profile, derived }: Props) {
                         {form.processing ? 'Enregistrement…' : 'Enregistrer le profil'}
                     </button>
                 </div>
+            </form>
+
+            {/* Security — change password */}
+            <form onSubmit={submitPassword} className="animate-fade-up mt-5" style={{ animationDelay: '200ms' }}>
+                <Card
+                    title={
+                        <span className="inline-flex items-center gap-1.5">
+                            <Lock size={15} className="text-neutral-400" /> Sécurité
+                        </span>
+                    }
+                >
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <Field label="Mot de passe actuel">
+                            <input
+                                type="password"
+                                autoComplete="current-password"
+                                value={passwordForm.data.current_password}
+                                onChange={(e) => passwordForm.setData('current_password', e.target.value)}
+                                className={inputClass}
+                            />
+                            {passwordForm.errors.current_password && (
+                                <span className="mt-1 block text-xs font-medium text-red-600">{passwordForm.errors.current_password}</span>
+                            )}
+                        </Field>
+                        <Field label="Nouveau mot de passe">
+                            <input
+                                type="password"
+                                autoComplete="new-password"
+                                value={passwordForm.data.password}
+                                onChange={(e) => passwordForm.setData('password', e.target.value)}
+                                className={inputClass}
+                            />
+                            {passwordForm.errors.password && (
+                                <span className="mt-1 block text-xs font-medium text-red-600">{passwordForm.errors.password}</span>
+                            )}
+                        </Field>
+                        <Field label="Confirme le nouveau">
+                            <input
+                                type="password"
+                                autoComplete="new-password"
+                                value={passwordForm.data.password_confirmation}
+                                onChange={(e) => passwordForm.setData('password_confirmation', e.target.value)}
+                                className={inputClass}
+                            />
+                        </Field>
+                    </div>
+                    <div className="mt-4 flex items-center justify-end gap-3">
+                        {passwordForm.recentlySuccessful && (
+                            <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+                                <CheckCircle2 size={16} /> Modifié
+                            </span>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={passwordForm.processing}
+                            className="rounded-lg border border-neutral-300 px-5 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-50 disabled:opacity-50"
+                        >
+                            {passwordForm.processing ? 'Modification…' : 'Changer le mot de passe'}
+                        </button>
+                    </div>
+                </Card>
             </form>
         </>
     );

@@ -27,10 +27,30 @@ final class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'app' => ['name' => 'Cadence'],
+            'auth' => ['user' => $this->authUser($request)],
             'topbar' => fn (): ?array => $this->athleteSummary(),
             'flash' => [
                 'status' => fn (): ?string => $request->session()->get('status'),
             ],
+        ];
+    }
+
+    /**
+     * @return array{name:string,email:string,initial:string}|null
+     */
+    private function authUser(Request $request): ?array
+    {
+        $user = $request->user();
+        if ($user === null) {
+            return null;
+        }
+
+        $name = trim((string) $user->name);
+
+        return [
+            'name' => $name,
+            'email' => (string) $user->email,
+            'initial' => mb_strtoupper(mb_substr($name !== '' ? $name : '?', 0, 1)),
         ];
     }
 

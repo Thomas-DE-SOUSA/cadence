@@ -54,7 +54,7 @@ final class CoachingServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Route::prefix('programme/{id}/coach')->group(function (): void {
+        Route::middleware(['web', 'auth'])->prefix('programme/{id}/coach')->group(function (): void {
             Route::get('/thread', ShowCoachThreadController::class)->name('programs.coach.thread');
             Route::post('/message', SendCoachMessageController::class)->name('programs.coach.message');
             Route::post('/stream', StreamCoachController::class)->name('programs.coach.stream');
@@ -62,7 +62,7 @@ final class CoachingServiceProvider extends ServiceProvider
         });
 
         // Guest advisory tool ("Conseil") — assess any runner, no persistence.
-        Route::middleware('web')->prefix('conseil')->group(function (): void {
+        Route::middleware(['web', 'auth'])->prefix('conseil')->group(function (): void {
             Route::get('/', fn () => Inertia::render('Advisor'))->name('advisor');
             Route::post('/analyser-gpx', AnalyzeGuestGpxController::class)->name('advisor.analyze');
             Route::post('/diagnostic', StreamAdvisorController::class)->name('advisor.diagnostic');
