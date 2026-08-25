@@ -72,6 +72,7 @@ interface SessionStep {
 
 interface PlannedSession {
     date: string;
+    suggestedDate: string | null;
     type: string;
     title: string;
     description: string;
@@ -85,6 +86,9 @@ interface PlannedSession {
 
 interface CycleWeek {
     label: string;
+    startDate: string;
+    done: number;
+    total: number;
     sessions: PlannedSession[];
 }
 
@@ -531,13 +535,27 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
 
                                     {!isCollapsed && (
                                         <div className="mt-5 space-y-5">
-                                            {cycle.weeks.map((week) => (
+                                            {cycle.weeks.map((week) => {
+                                                const complete = week.total > 0 && week.done >= week.total;
+                                                return (
                                                 <div key={week.label}>
-                                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                                                        {week.label}
-                                                    </p>
+                                                    <div className="mb-2 flex items-center justify-between gap-2">
+                                                        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                                                            {week.label}
+                                                        </p>
+                                                        <span
+                                                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${
+                                                                complete ? 'bg-emerald-50 text-emerald-600' : 'bg-neutral-100 text-neutral-500'
+                                                            }`}
+                                                        >
+                                                            {complete && <CheckCircle2 size={12} />}
+                                                            {week.done}/{week.total} séance{week.total > 1 ? 's' : ''}
+                                                        </span>
+                                                    </div>
                                                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                                                        {week.sessions.map((s) => {
+                                                        {week.sessions
+                                                            .filter((s) => s.type !== 'REST' || s.suggestedDate)
+                                                            .map((s, i) => {
                                                             const style = sessionStyle(s.type);
                                                             const StyleIcon = style.icon;
                                                             const placing = selectedRun !== null && !s.actual;
@@ -564,7 +582,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                                 >
                                                                     <div className="mb-1.5 flex items-center justify-between">
                                                                         <span className="flex items-center gap-1 text-xs font-semibold text-neutral-500">
-                                                                            {weekdayLabel(s.date)}
+                                                                            {s.suggestedDate ? weekdayLabel(s.suggestedDate) : `Séance ${i + 1}`}
                                                                             {ran ? (
                                                                                 <CheckCircle2 size={13} className="text-emerald-500" />
                                                                             ) : rest ? (
@@ -632,7 +650,8 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                         })}
                                                     </div>
                                                 </div>
-                                            ))}
+                                                );
+                                            })}
 
                                             {cycle.id === activeCycleId && (
                                                 <button
@@ -656,7 +675,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                 open={openSession !== null}
                 onClose={() => setOpenDay(null)}
                 size="full"
-                title={openSession ? `${weekdayLabel(openSession.date)} · ${formatDate(openSession.date)}` : ''}
+                title={openSession ? (openSession.suggestedDate ? `${weekdayLabel(openSession.suggestedDate)} · ${openSession.title}` : openSession.title) : ''}
             >
                 {openSession && openDay && (
                     <div className="flex h-full flex-col">

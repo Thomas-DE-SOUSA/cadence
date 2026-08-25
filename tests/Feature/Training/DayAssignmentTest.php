@@ -85,8 +85,8 @@ describe('Feature: Day assignment', function (): void {
         expect(array_column($available, 'id'))->toContain($activityId);
     });
 
-    it('auto-attaches a run to the day matching its date', function (): void {
-        // Plan starts on the seeded run's date (2026-08-19), so day 0 matches it.
+    it('auto-fills a training slot from any run in the week (flexible schedule)', function (): void {
+        // The plan's day 0 is a rest day; the seeded run is on 2026-08-19.
         $this->post('/programme', [
             'name' => 'Prépa Odysséa',
             'plan_key' => 'sub40-10k',
@@ -100,12 +100,14 @@ describe('Feature: Day assignment', function (): void {
         $activityId = (string) \Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel::query()->value('id');
 
         $props = inertiaProps("/programme/{$programId}");
+        $week0 = $props['cycles'][0]['weeks'][0];
 
-        // The run shows on 2026-08-19 automatically, without a manual link…
-        $day0 = $props['cycles'][0]['weeks'][0]['sessions'][0];
-        expect($day0['date'])->toBe('2026-08-19');
-        expect($day0['actual']['id'])->toBe($activityId);
-        expect($day0['manual'])->toBeFalse();
+        // The run counts toward the week regardless of the exact weekday, filling
+        // the first TRAINING slot (a rest day is never "done" by a run).
+        $training = array_values(array_filter($week0['sessions'], fn (array $s): bool => $s['type'] !== 'REST'));
+        expect($training[0]['actual']['id'])->toBe($activityId);
+        expect($training[0]['manual'])->toBeFalse();
+        expect($week0['done'])->toBe(1);
 
         // …and it is not offered in the "to place" pool.
         expect(array_column($props['available'], 'id'))->not->toContain($activityId);

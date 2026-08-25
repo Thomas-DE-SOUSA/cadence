@@ -31,7 +31,13 @@ final class WeekPlanView
                 if (! is_array($session)) {
                     continue;
                 }
-                $date = substr((string) ($session['date'] ?? ''), 0, 10);
+                // Only fixed-schedule sessions carry a suggested day; flexible
+                // athletes have no fixed rest/run day to mark on the dashboard.
+                $suggested = $session['suggested_date'] ?? null;
+                if (! is_string($suggested) || $suggested === '') {
+                    continue;
+                }
+                $date = substr($suggested, 0, 10);
                 $type = isset($session['type']) ? (string) $session['type'] : '';
                 if ($type !== '' && $date >= $from && $date <= $to) {
                     $out[$date] = $type;

@@ -8,12 +8,15 @@ use Cadence\Training\Domain\Enum\SessionType;
 use Cadence\Training\Domain\ValueObject\SessionStep;
 
 /**
- * One planned training session on a given day. `steps` is the structured
- * breakdown (warm-up / reps / cool-down); `activityId` links the actual run.
+ * One planned training session. `date` is the internal week anchor (cycle start
+ * + offset) used to group sessions into weeks and to key manual links.
+ * `suggestedDate` is what the UI shows: a soft day hint for athletes on a fixed
+ * schedule, or null for flexible athletes who train on no fixed day. `steps` is
+ * the structured breakdown; `activityId` links a manually-attached run.
  *
  * @phpstan-import-type SessionStepSnapshot from SessionStep
  *
- * @phpstan-type PlannedSessionSnapshot array{date:string,type:string,title:string,description:string,target_distance_meters:int|null,target_duration_seconds:int|null,target_pace_seconds_per_km:int|null,steps:list<SessionStepSnapshot>,activity_id:string|null}
+ * @phpstan-type PlannedSessionSnapshot array{date:string,suggested_date?:string|null,type:string,title:string,description:string,target_distance_meters:int|null,target_duration_seconds:int|null,target_pace_seconds_per_km:int|null,steps:list<SessionStepSnapshot>,activity_id:string|null}
  */
 final class PlannedSession
 {
@@ -30,6 +33,7 @@ final class PlannedSession
         public readonly ?int $targetPaceSecondsPerKm,
         public readonly array $steps = [],
         public readonly ?string $activityId = null,
+        public readonly ?string $suggestedDate = null,
     ) {
     }
 
@@ -45,6 +49,7 @@ final class PlannedSession
             $this->targetPaceSecondsPerKm,
             $this->steps,
             $activityId,
+            $this->suggestedDate,
         );
     }
 
@@ -53,6 +58,7 @@ final class PlannedSession
     {
         return [
             'date' => $this->date,
+            'suggested_date' => $this->suggestedDate,
             'type' => $this->type->value,
             'title' => $this->title,
             'description' => $this->description,
@@ -77,6 +83,9 @@ final class PlannedSession
             $s['target_pace_seconds_per_km'],
             array_map(static fn (array $row): SessionStep => SessionStep::fromSnapshot($row), $s['steps']),
             $s['activity_id'] ?? null,
+            // Older cycles predate suggested_date: fall back to the anchor date
+            // so fixed-schedule athletes keep their day hint.
+            array_key_exists('suggested_date', $s) ? $s['suggested_date'] : $s['date'],
         );
     }
 }

@@ -43,6 +43,7 @@ final class Cycle
         PlannedCycle $plan,
         string $startDate,
         int $phaseIndex = 0,
+        bool $suggestDays = true,
     ): self {
         $start = new DateTimeImmutable($startDate);
         $sessions = [];
@@ -50,8 +51,9 @@ final class Cycle
 
         foreach ($plan->sessions as $s) {
             $offset = max(0, $s->dayOffset);
+            $date = $start->modify("+{$offset} days")->format('Y-m-d');
             $sessions[] = new PlannedSession(
-                $start->modify("+{$offset} days")->format('Y-m-d'),
+                $date,
                 SessionType::tryFrom($s->type) ?? SessionType::EASY,
                 $s->title,
                 $s->description,
@@ -59,6 +61,10 @@ final class Cycle
                 $s->targetDurationSeconds,
                 $s->targetPaceSecondsPerKm,
                 $s->steps,
+                null,
+                // Fixed-schedule athletes keep a visible day hint; flexible ones
+                // (no preferred days) get no suggested day — just "this week".
+                $suggestDays ? $date : null,
             );
             $maxOffset = max($maxOffset, $offset);
         }
@@ -118,7 +124,7 @@ final class Cycle
             if ($s->date === $date) {
                 $changed = true;
 
-                return new PlannedSession($date, $type, $title, $description, $targetDistanceMeters, $targetDurationSeconds, $targetPaceSecondsPerKm, [], $s->activityId);
+                return new PlannedSession($date, $type, $title, $description, $targetDistanceMeters, $targetDurationSeconds, $targetPaceSecondsPerKm, [], $s->activityId, $s->suggestedDate);
             }
 
             return $s;

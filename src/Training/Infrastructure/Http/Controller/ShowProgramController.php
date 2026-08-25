@@ -48,8 +48,6 @@ final class ShowProgramController
 
         /** @var array<string, array<string, mixed>> $activityLookup keyed by id */
         $activityLookup = [];
-        /** @var array<string, array<string, mixed>> $activityByDate keyed by Y-m-d */
-        $activityByDate = [];
         foreach ($allActivities as $m) {
             $stats = [
                 'id' => $m->id,
@@ -59,35 +57,45 @@ final class ShowProgramController
                 'averagePaceSecondsPerKm' => (float) $m->average_pace_seconds_per_km,
             ];
             $activityLookup[$m->id] = $stats;
-            $day = substr((string) $m->occurred_at, 0, 10);
-            $activityByDate[$day] ??= $stats;
         }
 
-        // A run belongs to a day automatically when it falls on that date; a
-        // manual link overrides the match. Both feed the coach evaluation.
-        $planDates = [];
+        // A run belongs to the plan when it falls within a cycle's date span
+        // (flexible: any weekday counts toward that week) or is manually pinned
+        // to a slot. Both feed the coach evaluation.
+        $spans = [];
         $manualLinks = [];
         foreach ($cycles as $cycle) {
-            foreach ($cycle->toSnapshot()['sessions'] as $session) {
-                $planDates[$session['date']] = true;
+            $cs = $cycle->toSnapshot();
+            $spans[] = [substr((string) $cs['start_date'], 0, 10), substr((string) $cs['end_date'], 0, 10)];
+            foreach ($cs['sessions'] as $session) {
                 if ($session['activity_id'] !== null) {
                     $manualLinks[$session['activity_id']] = true;
                 }
             }
         }
 
+        $inPlan = static function (string $date) use ($spans): bool {
+            foreach ($spans as [$from, $to]) {
+                if ($date >= $from && $date <= $to) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
         $effectiveAssigned = $program->assignedActivityIds();
         foreach ($allActivities as $m) {
-            if (isset($planDates[substr((string) $m->occurred_at, 0, 10)])) {
+            if ($inPlan(substr((string) $m->occurred_at, 0, 10))) {
                 $effectiveAssigned[] = $m->id;
             }
         }
         $summaries = $this->summaries->summariesFor($tenant, array_values(array_unique($effectiveAssigned)));
 
-        // The pool holds runs not shown on any day: neither matching a plan date
-        // nor manually linked.
+        // The pool holds runs not counted by the plan: outside every cycle span
+        // and not manually linked.
         $available = $allActivities
-            ->reject(fn (ActivityModel $m): bool => isset($planDates[substr((string) $m->occurred_at, 0, 10)]) || isset($manualLinks[$m->id]))
+            ->reject(fn (ActivityModel $m): bool => $inPlan(substr((string) $m->occurred_at, 0, 10)) || isset($manualLinks[$m->id]))
             ->map(fn (ActivityModel $m): array => [
                 'id' => $m->id,
                 'occurredAt' => (string) $m->occurred_at,
@@ -106,7 +114,7 @@ final class ShowProgramController
         return Inertia::render('ProgramDetail', [
             'program' => ProgramView::detail($program, $summaries),
             'available' => $available,
-            'cycles' => ProgramView::cycles($cycles, $activityLookup, $activityByDate),
+            'cycles' => ProgramView::cycles($cycles, $activityLookup),
             'roadmap' => ProgramView::roadmap($planKey, $cycles),
             'canGenerate' => $canGenerate,
             'activeCycleId' => $latest !== null && ! $latest->isCompleted() ? $latest->id()->value : null,

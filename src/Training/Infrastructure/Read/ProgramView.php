@@ -80,58 +80,121 @@ final class ProgramView
     }
 
     /**
-     * Maps cycles to the view, grouping planned sessions by 7-day week. Each day
-     * shows the run logged on that date automatically; a manual link overrides
-     * the date match (and is the only case the UI lets you detach).
+     * Maps cycles to the view, grouping planned sessions into 7-day weeks from
+     * the cycle start. Training slots fill flexibly: any run logged within a
+     * week auto-fills that week's open (non-rest) slots in order — the weekday
+     * is irrelevant, matching an athlete who trains on no fixed day. A manual
+     * link pins a run to a slot and takes precedence.
      *
      * @param list<Cycle> $cycles
      * @param array<string, array<string, mixed>> $activityLookup keyed by activity id
-     * @param array<string, array<string, mixed>> $activityByDate keyed by Y-m-d
      *
      * @return list<array<string, mixed>>
      */
-    public static function cycles(array $cycles, array $activityLookup = [], array $activityByDate = []): array
+    public static function cycles(array $cycles, array $activityLookup = []): array
     {
-        return array_map(static function (Cycle $cycle) use ($activityLookup, $activityByDate): array {
+        // Bucket every run by day for fast per-week lookup.
+        /** @var array<string, list<array<string, mixed>>> $runsByDate */
+        $runsByDate = [];
+        foreach ($activityLookup as $stats) {
+            $day = substr((string) ($stats['occurredAt'] ?? ''), 0, 10);
+            if ($day !== '') {
+                $runsByDate[$day][] = $stats;
+            }
+        }
+
+        return array_map(static function (Cycle $cycle) use ($activityLookup, $runsByDate): array {
             $s = $cycle->toSnapshot();
             $start = new \DateTimeImmutable($s['start_date']);
 
-            // Group by 7-day training week from the cycle start, so weeks stay
-            // even (7/7) instead of splitting on calendar-week boundaries.
+            // Runs the athlete manually pinned to a slot anywhere in this cycle
+            // are removed from the auto-fill pool.
+            /** @var array<string, true> $manualIds */
+            $manualIds = [];
+            foreach ($s['sessions'] as $session) {
+                if (($session['activity_id'] ?? null) !== null) {
+                    $manualIds[(string) $session['activity_id']] = true;
+                }
+            }
+
             /** @var array<int, list<array<string, mixed>>> $weeks */
             $weeks = [];
             foreach ($s['sessions'] as $session) {
                 $days = (int) $start->diff(new \DateTimeImmutable($session['date']))->days;
-                $manualId = $session['activity_id'] ?? null;
-                $manual = $manualId !== null ? ($activityLookup[$manualId] ?? null) : null;
-                $auto = $manual === null ? ($activityByDate[$session['date']] ?? null) : null;
-                $weeks[intdiv($days, 7)][] = [
-                    'date' => $session['date'],
-                    'type' => $session['type'],
-                    'title' => $session['title'],
-                    'description' => $session['description'],
-                    'targetDistanceMeters' => $session['target_distance_meters'],
-                    'targetDurationSeconds' => $session['target_duration_seconds'],
-                    'targetPaceSecondsPerKm' => $session['target_pace_seconds_per_km'],
-                    'steps' => array_map(static fn (array $st): array => [
-                        'label' => $st['label'],
-                        'repeat' => $st['repeat'],
-                        'distanceMeters' => $st['distance_meters'],
-                        'durationSeconds' => $st['duration_seconds'],
-                        'paceSecondsPerKm' => $st['pace_seconds_per_km'],
-                        'recoverySeconds' => $st['recovery_seconds'],
-                        'note' => $st['note'],
-                    ], $session['steps']),
-                    'actual' => $manual ?? $auto,
-                    'manual' => $manual !== null,
-                ];
+                $weeks[intdiv($days, 7)][] = $session;
             }
             ksort($weeks);
 
             $grouped = [];
             $index = 1;
-            foreach ($weeks as $sessions) {
-                $grouped[] = ['label' => 'Semaine '.$index, 'sessions' => $sessions];
+            foreach ($weeks as $weekIndex => $weekSessions) {
+                $weekStart = $start->modify('+'.($weekIndex * 7).' days');
+
+                // Pool of runs done during this week, earliest first, minus the
+                // ones already pinned by hand.
+                $pool = [];
+                for ($d = 0; $d < 7; $d++) {
+                    $day = $weekStart->modify("+{$d} days")->format('Y-m-d');
+                    foreach ($runsByDate[$day] ?? [] as $stats) {
+                        if (! isset($manualIds[(string) $stats['id']])) {
+                            $pool[] = $stats;
+                        }
+                    }
+                }
+
+                $poolIndex = 0;
+                $done = 0;
+                $total = 0;
+                $sessions = [];
+                foreach ($weekSessions as $session) {
+                    $isRest = $session['type'] === 'REST';
+                    $manualId = $session['activity_id'] ?? null;
+                    $manual = $manualId !== null ? ($activityLookup[$manualId] ?? null) : null;
+
+                    $auto = null;
+                    if (! $isRest && $manual === null && isset($pool[$poolIndex])) {
+                        $auto = $pool[$poolIndex];
+                        $poolIndex++;
+                    }
+                    $actual = $manual ?? $auto;
+
+                    if (! $isRest) {
+                        $total++;
+                        if ($actual !== null) {
+                            $done++;
+                        }
+                    }
+
+                    $sessions[] = [
+                        'date' => $session['date'],
+                        'suggestedDate' => $session['suggested_date'] ?? null,
+                        'type' => $session['type'],
+                        'title' => $session['title'],
+                        'description' => $session['description'],
+                        'targetDistanceMeters' => $session['target_distance_meters'],
+                        'targetDurationSeconds' => $session['target_duration_seconds'],
+                        'targetPaceSecondsPerKm' => $session['target_pace_seconds_per_km'],
+                        'steps' => array_map(static fn (array $st): array => [
+                            'label' => $st['label'],
+                            'repeat' => $st['repeat'],
+                            'distanceMeters' => $st['distance_meters'],
+                            'durationSeconds' => $st['duration_seconds'],
+                            'paceSecondsPerKm' => $st['pace_seconds_per_km'],
+                            'recoverySeconds' => $st['recovery_seconds'],
+                            'note' => $st['note'],
+                        ], $session['steps']),
+                        'actual' => $actual,
+                        'manual' => $manual !== null,
+                    ];
+                }
+
+                $grouped[] = [
+                    'label' => 'Semaine '.$index,
+                    'startDate' => $weekStart->format('Y-m-d'),
+                    'done' => $done,
+                    'total' => $total,
+                    'sessions' => $sessions,
+                ];
                 $index++;
             }
 
