@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind the Tailscale HTTPS proxy the app is reached on http://localhost:8000
+        // with X-Forwarded-Proto: https. Trust it so Laravel sees the real https
+        // scheme — otherwise redirects (e.g. post-login) point at http://localhost:8000.
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
