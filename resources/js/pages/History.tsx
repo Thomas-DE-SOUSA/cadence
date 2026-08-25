@@ -210,7 +210,7 @@ export default function History({ stats, streak, records, achievements, activiti
                                 <li key={a.id}>
                                     <Link
                                         href={`/activites/${a.id}`}
-                                        className="flex items-stretch gap-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm shadow-neutral-200/50 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg hover:shadow-neutral-300/40"
+                                        className="group flex items-stretch gap-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm shadow-neutral-200/50 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg hover:shadow-neutral-300/40"
                                     >
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center justify-between">
@@ -252,6 +252,10 @@ export default function History({ stats, streak, records, achievements, activiti
                                                 <RouteMap track={a.track} className="h-full w-full" />
                                             </div>
                                         )}
+                                        <ChevronRight
+                                            size={20}
+                                            className="shrink-0 self-center text-neutral-300 transition-colors group-hover:text-brand-500"
+                                        />
                                     </Link>
                                 </li>
                             ))}
@@ -310,16 +314,20 @@ export default function History({ stats, streak, records, achievements, activiti
                         ) : (
                             <ul className="space-y-2">
                                 {records.map((r) => (
-                                    <li key={r.distanceMeters} className="flex items-center gap-3 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-2.5">
-                                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                                            <Trophy size={15} />
-                                        </span>
-                                        <div className="flex-1">
-                                            <p className="text-sm font-bold text-neutral-900">{r.label}</p>
-                                            <p className="text-[11px] text-neutral-500">{formatPace(r.paceSecondsPerKm)}</p>
-                                        </div>
-                                        <Link href={`/activites/${r.activityId}`} className="text-sm font-bold tabular-nums text-amber-700 hover:text-amber-800">
-                                            {formatDuration(r.durationSeconds)}
+                                    <li key={r.distanceMeters}>
+                                        <Link
+                                            href={`/activites/${r.activityId}`}
+                                            className="group flex items-center gap-3 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-2.5 transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-sm"
+                                        >
+                                            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                                                <Trophy size={15} />
+                                            </span>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-bold text-neutral-900">{r.label}</p>
+                                                <p className="text-[11px] text-neutral-500">{formatPace(r.paceSecondsPerKm)}</p>
+                                            </div>
+                                            <span className="text-sm font-bold tabular-nums text-amber-700">{formatDuration(r.durationSeconds)}</span>
+                                            <ChevronRight size={16} className="shrink-0 text-amber-300 transition-colors group-hover:text-amber-600" />
                                         </Link>
                                     </li>
                                 ))}

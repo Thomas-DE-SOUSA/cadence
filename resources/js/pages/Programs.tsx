@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { Plus, Target } from 'lucide-react';
+import { ChevronRight, Plus, Target } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { formatDate } from '@/features/activity/domain/format';
 
@@ -51,7 +51,7 @@ export default function Programs({ programs }: Props) {
                         <li key={p.id}>
                             <Link
                                 href={`/programme/${p.id}`}
-                                className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-5 py-4 transition-colors hover:border-neutral-300"
+                                className="group flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-5 py-4 shadow-sm shadow-neutral-200/50 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md hover:shadow-neutral-200/60"
                             >
                                 <div>
                                     <div className="flex items-center gap-2 font-medium text-neutral-900">
@@ -65,11 +65,14 @@ export default function Programs({ programs }: Props) {
                                         {p.targetRaceDate ? ` · ${formatDate(p.targetRaceDate)}` : ''} · {p.assignedCount} sortie(s)
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1.5 text-sm">
-                                    <Target size={15} className="text-brand-600" />
-                                    <span className="tabular-nums text-neutral-800">
-                                        {p.achievedCount}/{p.objectivesCount}
+                                <div className="flex items-center gap-3 text-sm">
+                                    <span className="flex items-center gap-1.5">
+                                        <Target size={15} className="text-brand-600" />
+                                        <span className="tabular-nums text-neutral-800">
+                                            {p.achievedCount}/{p.objectivesCount}
+                                        </span>
                                     </span>
+                                    <ChevronRight size={18} className="shrink-0 text-neutral-300 transition-colors group-hover:text-brand-500" />
                                 </div>
                             </Link>
                         </li>
