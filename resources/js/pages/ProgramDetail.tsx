@@ -226,9 +226,13 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
     const [aiOpen, setAiOpen] = useState(false);
     // On mobile the session detail and the coach share one panel via a toggle.
     const [mobileTab, setMobileTab] = useState<'details' | 'coach'>('details');
+    const [moveDate, setMoveDate] = useState('');
 
     useEffect(() => {
-        if (openDay) setMobileTab('details');
+        if (openDay) {
+            setMobileTab('details');
+            setMoveDate('');
+        }
     }, [openDay]);
 
     const openSession = openDay
@@ -255,6 +259,15 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
         e.preventDefault();
         const id = e.dataTransfer.getData('text/plain');
         if (id) assignDay(cycleId, date, id);
+    }
+
+    function rescheduleSession(cycleId: string, fromDate: string, toDate: string) {
+        if (!toDate || toDate === fromDate) return;
+        router.post(
+            `/programme/${program.id}/cycles/${cycleId}/jour/deplacer`,
+            { from: fromDate, to: toDate },
+            { preserveScroll: true, onSuccess: () => setOpenDay(null) },
+        );
     }
 
     function completeCycle(cycleId: string) {
@@ -705,6 +718,30 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                     mobileTab === 'details' ? 'block' : 'hidden'
                                 }`}
                             >
+                                <div className="mb-4 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+                                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                                        Jour prévu {openSession.suggestedDate ? '' : '(libre)'}
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="date"
+                                            value={moveDate || (openSession.suggestedDate ?? openSession.date)}
+                                            onChange={(e) => setMoveDate(e.target.value)}
+                                            className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => rescheduleSession(openDay.cycleId, openSession.date, moveDate || (openSession.suggestedDate ?? openSession.date))}
+                                            disabled={!moveDate || moveDate === (openSession.suggestedDate ?? openSession.date)}
+                                            className="shrink-0 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-40"
+                                        >
+                                            Déplacer
+                                        </button>
+                                    </div>
+                                    <p className="mt-1.5 text-[11px] text-neutral-400">
+                                        Indicatif : tu peux courir n'importe quel jour de la semaine, ça comptera quand même.
+                                    </p>
+                                </div>
                                 <SessionDetail session={openSession} paces={athlete?.paces ?? null} />
                             </div>
                             <div

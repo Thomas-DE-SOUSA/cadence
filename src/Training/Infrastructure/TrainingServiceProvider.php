@@ -11,6 +11,7 @@ use Cadence\Training\Domain\Port\TrainingProgramRepository;
 use Cadence\Training\Infrastructure\Ai\GeminiCyclePlanner;
 use Cadence\Training\Infrastructure\Http\Controller\AssignActivityController;
 use Cadence\Training\Infrastructure\Http\Controller\AssignSessionActivityController;
+use Cadence\Training\Infrastructure\Http\Controller\RescheduleSessionController;
 use Cadence\Training\Infrastructure\Http\Controller\CompleteCycleController;
 use Cadence\Training\Infrastructure\Http\Controller\CreateProgramController;
 use Cadence\Training\Infrastructure\Http\Controller\GenerateCycleController;
@@ -52,6 +53,7 @@ final class TrainingServiceProvider extends ServiceProvider
             Route::post('/{id}/cycles/{cycleId}/terminer', CompleteCycleController::class)->name('programs.complete-cycle');
             Route::post('/{id}/cycles/{cycleId}/refaire', RegenerateCycleController::class)->name('programs.regenerate-cycle');
             Route::post('/{id}/cycles/{cycleId}/jour', AssignSessionActivityController::class)->name('programs.assign-day');
+            Route::post('/{id}/cycles/{cycleId}/jour/deplacer', RescheduleSessionController::class)->name('programs.reschedule-day');
         });
     }
 }

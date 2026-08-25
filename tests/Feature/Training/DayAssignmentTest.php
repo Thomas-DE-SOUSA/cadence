@@ -113,6 +113,26 @@ describe('Feature: Day assignment', function (): void {
         expect(array_column($props['available'], 'id'))->not->toContain($activityId);
     });
 
+    it('reschedules a planned session to another day', function (): void {
+        [$programId, $cycleId] = programWithCycle(); // sub40-10k, starts 2026-08-24
+
+        // Day 1 (EASY) sits on 2026-08-25; move it to a free day next week.
+        $this->post("/programme/{$programId}/cycles/{$cycleId}/jour/deplacer", [
+            'from' => '2026-08-25',
+            'to' => '2026-08-31',
+        ])->assertRedirect();
+
+        /** @var list<array<string, mixed>> $sessions */
+        $sessions = CycleModel::query()->find($cycleId)->sessions;
+        $dates = array_column($sessions, 'date');
+        expect($dates)->toContain('2026-08-31');
+        expect($dates)->not->toContain('2026-08-25');
+
+        // The moved session also carries the new suggested day.
+        $moved = collect($sessions)->firstWhere('date', '2026-08-31');
+        expect($moved['suggested_date'])->toBe('2026-08-31');
+    });
+
     it('preserves day-links when regenerating the cycle', function (): void {
         // Fall back to the deterministic blueprint (same dates), so the link survives.
         $this->app->bind(CyclePlanner::class, fn (): CyclePlanner => new class implements CyclePlanner

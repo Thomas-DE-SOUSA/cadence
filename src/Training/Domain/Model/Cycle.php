@@ -28,7 +28,7 @@ final class Cycle
         private readonly string $name,
         private readonly string $focus,
         private readonly string $startDate,
-        private readonly string $endDate,
+        private string $endDate,
         private readonly int $phaseIndex,
         private CycleStatus $status,
         private array $sessions,
@@ -131,6 +131,46 @@ final class Cycle
         }, $this->sessions);
 
         if ($changed) {
+            $this->version++;
+        }
+    }
+
+    /**
+     * Move a planned session to another day. Updates its suggested day and keeps
+     * any linked run; the end date grows if the session moves past it.
+     */
+    public function rescheduleSession(string $fromDate, string $toDate): void
+    {
+        $changed = false;
+        $this->sessions = array_map(static function (PlannedSession $s) use ($fromDate, $toDate, &$changed): PlannedSession {
+            if ($s->date === $fromDate) {
+                $changed = true;
+
+                return new PlannedSession(
+                    $toDate,
+                    $s->type,
+                    $s->title,
+                    $s->description,
+                    $s->targetDistanceMeters,
+                    $s->targetDurationSeconds,
+                    $s->targetPaceSecondsPerKm,
+                    $s->steps,
+                    $s->activityId,
+                    $toDate,
+                );
+            }
+
+            return $s;
+        }, $this->sessions);
+
+        if ($changed) {
+            $end = substr($this->startDate, 0, 10);
+            foreach ($this->sessions as $s) {
+                if ($s->date > $end) {
+                    $end = $s->date;
+                }
+            }
+            $this->endDate = $end;
             $this->version++;
         }
     }
