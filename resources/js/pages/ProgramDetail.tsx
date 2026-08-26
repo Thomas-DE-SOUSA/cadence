@@ -310,7 +310,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
             </Link>
 
             {/* Header */}
-            <div className="animate-fade-up mb-6 overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-brand-50/40 p-5 shadow-sm shadow-neutral-200/60">
+            <div className="animate-fade-up mb-4 overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-brand-50/40 p-5 shadow-sm shadow-neutral-200/60">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{program.name}</h1>
@@ -343,14 +343,16 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                 </div>
             </div>
 
-            {/* Section nav — avoids one long scroll */}
-            <div className="mb-5 flex gap-1 rounded-xl border border-neutral-200 bg-white p-1 shadow-sm shadow-neutral-200/50">
+            {/* Section nav — underline tabs, flush under the header */}
+            <div className="mb-5 flex gap-1 border-b border-neutral-200 sm:gap-2">
                 {SECTION_TABS.map((t) => (
                     <button
                         key={t.key}
                         onClick={() => setSection(t.key)}
-                        className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                            section === t.key ? 'bg-brand-500 text-white shadow-sm' : 'text-neutral-500 hover:bg-neutral-100'
+                        className={`-mb-px flex items-center gap-1.5 border-b-2 px-3 pb-2.5 pt-1 text-sm font-semibold transition-colors ${
+                            section === t.key
+                                ? 'border-brand-500 text-brand-600'
+                                : 'border-transparent text-neutral-400 hover:text-neutral-700'
                         }`}
                     >
                         <t.icon size={16} /> {t.label}
