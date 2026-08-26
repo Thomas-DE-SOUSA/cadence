@@ -12,4 +12,5 @@ parameters:
         - src/Coaching/Infrastructure/Ai/GeminiCoachStreamer.php
         - src/Training/Infrastructure/Ai/GeminiCyclePlanner.php
         - src/Activity/Infrastructure/Ai/GeminiStravaTextParser.php
+        - src/Activity/Infrastructure/Ai/GeminiActivityPhotoParser.php
     tmpDir: build/phpstan

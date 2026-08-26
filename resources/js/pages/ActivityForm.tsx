@@ -1,7 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import type { DragEvent, FormEvent, ReactNode } from 'react';
-import { ArrowLeft, MapPin, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Camera, MapPin, UploadCloud } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
 
@@ -34,8 +34,10 @@ export default function ActivityForm() {
 
     const pasteForm = useForm({ text: '', occurred_at: '' });
     const gpxForm = useForm<{ gpx: File | null }>({ gpx: null });
+    const photoForm = useForm<{ photo: File | null; occurred_at: string }>({ photo: null, occurred_at: '' });
     const [dragging, setDragging] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
+    const photoRef = useRef<HTMLInputElement>(null);
 
     function submitPaste(event: FormEvent) {
         event.preventDefault();
@@ -46,6 +48,12 @@ export default function ActivityForm() {
         if (!file) return;
         gpxForm.setData('gpx', file);
         gpxForm.post('/activites/importer-gpx', { forceFormData: true });
+    }
+
+    function uploadPhoto(file: File | undefined) {
+        if (!file) return;
+        photoForm.transform((d) => ({ photo: file, occurred_at: d.occurred_at }));
+        photoForm.post('/activites/importer-photo', { forceFormData: true });
     }
 
     function onDrop(e: DragEvent<HTMLButtonElement>) {
@@ -150,7 +158,41 @@ export default function ActivityForm() {
                         </button>
                     </form>
                     <p className="mt-2 text-xs text-neutral-500">
-                        Claude lit le texte et remplit automatiquement distance, temps, splits et meilleurs efforts.
+                        L'IA lit le texte et remplit automatiquement distance, temps, splits et meilleurs efforts.
+                    </p>
+                </Card>
+            </div>
+
+            <div className="mb-6">
+                <Card title="Depuis une photo (IA)">
+                    {photoForm.errors.photo && <p className="mb-2 text-sm text-red-600">{photoForm.errors.photo}</p>}
+                    <input
+                        ref={photoRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={(e) => uploadPhoto(e.target.files?.[0])}
+                    />
+                    <div className="mb-3">
+                        <span className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Date (optionnel — sinon lue/devinée)</span>
+                        <input
+                            type="date"
+                            value={photoForm.data.occurred_at}
+                            onChange={(e) => photoForm.setData('occurred_at', e.target.value)}
+                            className={inputClass}
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => photoRef.current?.click()}
+                        disabled={photoForm.processing}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
+                    >
+                        <Camera size={17} /> {photoForm.processing ? 'Lecture de la photo…' : 'Prendre / choisir une photo'}
+                    </button>
+                    <p className="mt-2 text-xs text-neutral-500">
+                        Photographie l'écran de ta montre, du tapis ou d'une appli — l'IA lit distance, temps et dénivelé.
                     </p>
                 </Card>
             </div>

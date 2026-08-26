@@ -73,6 +73,30 @@ final class GeminiClient
         return trim($text);
     }
 
+    /** Blocking multimodal call: a text prompt + one inline image, returns text (JSON mode friendly). */
+    public function completeVision(string $system, string $user, string $imageBase64, string $mimeType, array $generationConfig = []): string
+    {
+        $this->guardKey();
+
+        $response = $this->post($this->model.':generateContent', [
+            'systemInstruction' => ['parts' => [['text' => $system]]],
+            'contents' => [['role' => 'user', 'parts' => [
+                ['text' => $user],
+                ['inlineData' => ['mimeType' => $mimeType, 'data' => $imageBase64]],
+            ]]],
+            'generationConfig' => array_merge(['maxOutputTokens' => 4096, 'temperature' => 0.2], $generationConfig),
+        ], false);
+
+        $text = '';
+        foreach ((array) $response->json('candidates.0.content.parts') as $part) {
+            if (is_array($part) && is_string($part['text'] ?? null)) {
+                $text .= $part['text'];
+            }
+        }
+
+        return trim($text);
+    }
+
     private function guardKey(): void
     {
         if (trim($this->apiKey) === '') {

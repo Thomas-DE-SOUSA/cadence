@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\ShowRegisterController;
 use App\Http\Controllers\Auth\UpdatePasswordController;
 use Cadence\Activity\Infrastructure\Http\Controller\DeleteActivityController;
 use Cadence\Activity\Infrastructure\Http\Controller\ImportActivityFromGpxController;
+use Cadence\Activity\Infrastructure\Http\Controller\ImportActivityFromPhotoController;
 use Cadence\Activity\Infrastructure\Http\Controller\ImportActivityFromTextController;
 use Cadence\Activity\Infrastructure\Http\Controller\ShowActivityController;
 use Cadence\Activity\Infrastructure\Http\Controller\ShowEditActivityController;
@@ -44,6 +45,7 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/activites', StoreActivityController::class)->name('activities.store');
     Route::post('/activites/importer-texte', ImportActivityFromTextController::class)->name('activities.import-text');
     Route::post('/activites/importer-gpx', ImportActivityFromGpxController::class)->name('activities.import-gpx');
+    Route::post('/activites/importer-photo', ImportActivityFromPhotoController::class)->name('activities.import-photo');
     Route::get('/activites/{id}/modifier', ShowEditActivityController::class)->name('activities.edit');
     Route::get('/activites/{id}', ShowActivityController::class)->name('activities.show');
     Route::put('/activites/{id}', UpdateActivityController::class)->name('activities.update');
