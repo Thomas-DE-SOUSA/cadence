@@ -147,6 +147,11 @@ html.dark {
     --color-red-500: #f87171;
     --color-red-600: #f87171;
 
+    --color-rose-50: #2a1620;
+    --color-rose-100: #371a26;
+    --color-rose-600: #fb7185;
+    --color-rose-700: #fda4af;
+
     --color-indigo-50: #1a1b30;
     --color-indigo-100: #1f2140;
     --color-indigo-400: #a5b4fc;

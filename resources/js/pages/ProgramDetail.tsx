@@ -155,8 +155,8 @@ interface SessionStyle {
 const SESSION_STYLES: Record<string, SessionStyle> = {
     EASY: { label: 'Footing', icon: Footprints, badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', border: 'hover:border-emerald-300' },
     LONG: { label: 'Sortie longue', icon: Route, badge: 'bg-sky-50 text-sky-700 border-sky-200', border: 'hover:border-sky-300' },
-    THRESHOLD: { label: 'Seuil', icon: Gauge, badge: 'bg-orange-50 text-orange-700 border-orange-200', border: 'hover:border-orange-300' },
-    INTERVALS: { label: 'Fractionné', icon: Zap, badge: 'bg-red-50 text-red-700 border-red-200', border: 'hover:border-red-300' },
+    THRESHOLD: { label: 'Seuil', icon: Gauge, badge: 'bg-amber-50 text-amber-700 border-amber-200', border: 'hover:border-amber-300' },
+    INTERVALS: { label: 'Fractionné', icon: Zap, badge: 'bg-rose-50 text-rose-700 border-rose-200', border: 'hover:border-rose-300' },
     RECOVERY: { label: 'Récupération', icon: Leaf, badge: 'bg-teal-50 text-teal-700 border-teal-200', border: 'hover:border-teal-300' },
     RACE_PACE: { label: 'Allure course', icon: Timer, badge: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200', border: 'hover:border-fuchsia-300' },
     RACE: { label: 'Course', icon: Trophy, badge: 'bg-brand-50 text-brand-700 border-brand-200', border: 'hover:border-brand-300' },
