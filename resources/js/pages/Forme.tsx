@@ -1,7 +1,7 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import type { ComponentType, ReactNode } from 'react';
-import { Activity, BatteryCharging, HeartPulse, ShieldAlert, TrendingUp } from 'lucide-react';
+import { Activity, BatteryCharging, BatteryLow, HeartPulse, Scale, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
 import { HelpTip } from '@/components/HelpTip';
@@ -22,6 +22,17 @@ interface SeriesPoint {
     tsb: number;
 }
 
+interface Adaptation {
+    verdict: 'progress' | 'hold' | 'rebalance' | 'deload';
+    headline: string;
+    reasons: string[];
+    suggestions: string[];
+    consigne: string;
+    done: number;
+    planned: number;
+    cycleName: string;
+}
+
 interface Props {
     load: {
         hasData: boolean;
@@ -32,6 +43,68 @@ interface Props {
         series?: SeriesPoint[];
         zones?: { easy: number; moderate: number; hard: number; total: number };
     };
+    adaptation?: Adaptation | null;
+}
+
+const VERDICT: Record<Adaptation['verdict'], { label: string; icon: ComponentType<{ size?: number; className?: string }>; ring: string; tint: string; chip: string }> = {
+    progress: { label: 'Progresser', icon: TrendingUp, ring: 'border-brand-200', tint: 'text-brand-600', chip: 'bg-brand-500' },
+    hold: { label: 'Consolider', icon: Activity, ring: 'border-sky-200', tint: 'text-sky-600', chip: 'bg-sky-500' },
+    rebalance: { label: 'Rééquilibrer', icon: Scale, ring: 'border-amber-200', tint: 'text-amber-600', chip: 'bg-amber-500' },
+    deload: { label: 'Alléger', icon: BatteryLow, ring: 'border-rose-200', tint: 'text-rose-600', chip: 'bg-rose-500' },
+};
+
+function RecommendationCard({ a }: { a: Adaptation }) {
+    const v = VERDICT[a.verdict];
+    const Icon = v.icon;
+
+    const applyToProgram = () => {
+        try {
+            sessionStorage.setItem('cadence.adaptationConsigne', a.consigne);
+        } catch {
+            /* storage may be unavailable */
+        }
+        router.visit('/programme');
+    };
+
+    return (
+        <div className={`animate-fade-up mb-4 rounded-2xl border bg-white p-5 shadow-sm shadow-neutral-200/60 ${v.ring}`}>
+            <div className="flex items-start gap-3">
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white ${v.chip}`}>
+                    <Icon size={20} />
+                </span>
+                <div className="min-w-0 flex-1">
+                    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
+                        <Sparkles size={12} /> Reco de la semaine · {a.done}/{a.planned} séances
+                    </p>
+                    <p className={`mt-0.5 text-lg font-bold ${v.tint}`}>{a.headline}</p>
+
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                        {a.reasons.map((r) => (
+                            <span key={r} className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-500">
+                                {r}
+                            </span>
+                        ))}
+                    </div>
+
+                    <ul className="mt-3 space-y-1">
+                        {a.suggestions.map((s) => (
+                            <li key={s} className="flex items-start gap-2 text-sm text-neutral-600">
+                                <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${v.chip}`} />
+                                {s}
+                            </li>
+                        ))}
+                    </ul>
+
+                    <button
+                        onClick={applyToProgram}
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+                    >
+                        <Sparkles size={15} /> Générer le prochain cycle en tenant compte
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 function StatCell({
@@ -151,7 +224,7 @@ function pct(part: number, total: number): number {
     return total > 0 ? Math.round((part / total) * 100) : 0;
 }
 
-export default function Forme({ load }: Props) {
+export default function Forme({ load, adaptation }: Props) {
     if (!load.hasData || !load.series || !load.zones) {
         return (
             <>
@@ -180,6 +253,8 @@ export default function Forme({ load }: Props) {
                 <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Forme &amp; charge</h1>
                 <p className="mt-1 text-sm text-neutral-500">Ta fraîcheur, ta charge d'entraînement et ton équilibre 80/20.</p>
             </div>
+
+            {adaptation && <RecommendationCard a={adaptation} />}
 
             {/* Stat strip */}
             <div className="animate-fade-up mb-4 grid grid-cols-4 divide-x divide-neutral-100 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm shadow-neutral-200/60">

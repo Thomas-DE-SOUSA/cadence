@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Cadence\Coaching\Infrastructure\Http\Controller;
 
 use Cadence\Coaching\Application\FitnessAssessmentService;
+use Cadence\Coaching\Domain\Service\AdaptationAnalyzer;
 use Cadence\Coaching\Domain\Service\TrainingLoadCalculator;
+use Cadence\Coaching\Infrastructure\Read\AdaptationView;
 use Cadence\Coaching\Infrastructure\Read\TrainingLoadView;
 use Cadence\Shared\Application\TenantContext;
 use Cadence\Shared\Clock\Clock;
@@ -31,6 +33,10 @@ final class ShowFitnessController
             ? ['hasData' => false]
             : TrainingLoadView::build($tenant->value, $snapshot, $today, new TrainingLoadCalculator());
 
-        return Inertia::render('Forme', ['load' => $load]);
+        $adaptation = ($load['hasData'] ?? false) === true
+            ? AdaptationView::build($tenant->value, $load, new AdaptationAnalyzer())
+            : null;
+
+        return Inertia::render('Forme', ['load' => $load, 'adaptation' => $adaptation]);
     }
 }

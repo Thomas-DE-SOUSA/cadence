@@ -241,6 +241,22 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
         }
     }, [openDay]);
 
+    // Arriving from the Forme recommendation: pre-fill the generator consigne.
+    useEffect(() => {
+        let consigne: string | null = null;
+        try {
+            consigne = sessionStorage.getItem('cadence.adaptationConsigne');
+            if (consigne) sessionStorage.removeItem('cadence.adaptationConsigne');
+        } catch {
+            /* storage may be unavailable */
+        }
+        if (consigne) {
+            ai.setData('ressenti', consigne);
+            setAiOpen(true);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const openSession = openDay
         ? cycles.find((c) => c.id === openDay.cycleId)?.weeks.flatMap((w) => w.sessions).find((s) => s.date === openDay.date) ?? null
         : null;
