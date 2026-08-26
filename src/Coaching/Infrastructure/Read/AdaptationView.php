@@ -61,6 +61,7 @@ final class AdaptationView
             (float) ($load['acwr'] ?? 0),
             (int) ($load['form'] ?? 0),
             $easyPct,
+            ($load['reliable'] ?? true) === true,
         );
 
         return [

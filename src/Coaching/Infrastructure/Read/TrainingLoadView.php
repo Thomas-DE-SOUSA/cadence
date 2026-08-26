@@ -66,8 +66,12 @@ final class TrainingLoadView
         }
         $zones = $calc->intensityDistribution($segments, $marathon, $threshold);
 
+        // Load/ACWR need a real chronic base; flag when history is still thin.
+        $historyDays = (new DateTimeImmutable($first))->diff(new DateTimeImmutable($today))->days;
+
         return [
             'hasData' => true,
+            'reliable' => $historyDays >= 21,
             'form' => (int) round($last['tsb']),
             'fitness' => (int) round($last['ctl']),
             'fatigue' => (int) round($last['atl']),

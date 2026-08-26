@@ -36,6 +36,7 @@ interface Adaptation {
 interface Props {
     load: {
         hasData: boolean;
+        reliable?: boolean;
         form?: number;
         fitness?: number;
         fatigue?: number;
@@ -255,6 +256,13 @@ export default function Forme({ load, adaptation }: Props) {
             </div>
 
             {adaptation && <RecommendationCard a={adaptation} />}
+
+            {load.reliable === false && (
+                <p className="animate-fade-up mb-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                    ⏳ Charge &amp; forme <strong>en calibration</strong> : encore peu d'historique. Le ratio de charge et la forme
+                    se stabilisent après ~3 semaines de sorties — d'ici là, on se fie surtout à ton assiduité et à ton 80/20.
+                </p>
+            )}
 
             {/* Stat strip */}
             <div className="animate-fade-up mb-4 grid grid-cols-4 divide-x divide-neutral-100 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm shadow-neutral-200/60">

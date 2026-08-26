@@ -13,23 +13,29 @@ use Cadence\Coaching\Domain\ValueObject\AdaptationReport;
  */
 final class AdaptationAnalyzer
 {
-    public function analyze(int $doneCount, int $plannedCount, float $acwr, int $tsb, int $easyPct): AdaptationReport
+    public function analyze(int $doneCount, int $plannedCount, float $acwr, int $tsb, int $easyPct, bool $reliableLoad = true): AdaptationReport
     {
         $compliance = $plannedCount > 0 ? (int) round(100 * $doneCount / $plannedCount) : 0;
 
         $reasons = [];
         $reasons[] = "Assiduité : {$doneCount}/{$plannedCount} séances ({$compliance}%)";
-        if ($acwr > 0.0) {
-            $reasons[] = 'Ratio de charge '.number_format($acwr, 2, ',', '');
+        if ($reliableLoad) {
+            if ($acwr > 0.0) {
+                $reasons[] = 'Ratio de charge '.number_format($acwr, 2, ',', '');
+            }
+            $reasons[] = 'Forme '.($tsb > 0 ? '+' : '').$tsb;
+        } else {
+            $reasons[] = 'Charge en calibration (peu d’historique)';
         }
-        $reasons[] = 'Forme '.($tsb > 0 ? '+' : '').$tsb;
         if ($easyPct > 0) {
             $reasons[] = "{$easyPct}% facile".($easyPct < 75 ? ' (sous 80/20)' : '');
         }
 
-        $overloaded = $acwr > 1.4 || $tsb < -25 || ($plannedCount > 0 && $compliance < 55);
+        // Load signals (ACWR / form) are only trusted once there's a real
+        // chronic base — otherwise a cold start spuriously reads as overload.
+        $overloaded = $reliableLoad && ($acwr > 1.4 || $tsb < -25);
         $tooIntense = $easyPct > 0 && $easyPct < 72;
-        $fresh = $compliance >= 85 && $acwr >= 0.8 && $acwr <= 1.3 && ($easyPct === 0 || $easyPct >= 75);
+        $fresh = $reliableLoad && $compliance >= 85 && $acwr >= 0.8 && $acwr <= 1.3 && ($easyPct === 0 || $easyPct >= 75);
 
         if ($overloaded) {
             return new AdaptationReport(

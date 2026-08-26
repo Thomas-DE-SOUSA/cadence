@@ -37,6 +37,19 @@ describe('AdaptationAnalyzer', function (): void {
         expect($r->verdict)->toBe('hold');
     });
 
+    it('ignores a cold-start load spike when history is thin', function (): void {
+        // High ACWR but load not yet reliable + too much intensity -> rebalance, not deload.
+        $r = $this->analyzer->analyze(5, 5, 3.11, -27, 69, reliableLoad: false);
+        expect($r->verdict)->toBe('rebalance');
+        expect($r->reasons)->toContain('Charge en calibration (peu d’historique)');
+    });
+
+    it('does not over-progress on unreliable load', function (): void {
+        // Compliant + balanced but load unreliable -> hold, never "progress".
+        $r = $this->analyzer->analyze(5, 5, 3.11, -27, 82, reliableLoad: false);
+        expect($r->verdict)->toBe('hold');
+    });
+
     it('always explains itself and carries a planner consigne', function (): void {
         $r = $this->analyzer->analyze(5, 6, 1.0, 0, 78);
         expect($r->reasons)->not->toBeEmpty();
