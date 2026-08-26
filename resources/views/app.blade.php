@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#f6f5f3">
     <meta name="mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="/manifest.webmanifest">
-    <link rel="icon" href="/icon.svg?v=2" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.svg?v=2">
+    <link rel="manifest" href="/manifest.webmanifest?v=3">
+    <link rel="icon" href="/icon-v2.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon-v2.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
