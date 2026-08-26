@@ -285,11 +285,8 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
             ai.post(`/programme/${program.id}/cycles/${activeCycleId}/refaire`, { preserveScroll: true, onSuccess: () => setAiOpen(false) });
     }
 
-    function removeAssigned(activityId: string) {
-        router.post(`/programme/${program.id}/retirer`, { activity_id: activityId }, { preserveScroll: true });
-    }
-
     const achieved = program.objectives.filter((o) => o.achieved).length;
+    const totalMeters = program.activities.reduce((sum, a) => sum + a.distanceMeters, 0);
     const aiError = (ai.errors as Record<string, string>).cycle ?? (ai.errors as Record<string, string>).ressenti;
     const aiAction = activeCycleId ? 'refaire' : canGenerate ? 'generate' : null;
 
@@ -332,9 +329,10 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                     )}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-x-8 gap-y-4 border-t border-neutral-200/70 pt-4">
+                    <Stat value={program.activities.length} label="Courses" icon={Activity} tint="bg-sky-100 text-sky-600" />
+                    <Stat value={formatKilometers(totalMeters)} label="Kilomètres" icon={Route} tint="bg-emerald-100 text-emerald-600" />
                     <Stat value={cycles.length} label="Cycles" icon={Layers} tint="bg-brand-100 text-brand-600" />
-                    <Stat value={`${achieved}/${program.objectives.length}`} label="Objectifs" icon={Target} tint="bg-emerald-100 text-emerald-600" />
-                    <Stat value={program.activities.length} label="Sorties" icon={Activity} tint="bg-sky-100 text-sky-600" />
+                    <Stat value={`${achieved}/${program.objectives.length}`} label="Objectifs" icon={Target} tint="bg-violet-100 text-violet-600" />
                     {athlete && <Stat value={<CountUp value={athlete.vdot} />} label="VDOT" icon={Gauge} tint="bg-brand-100 text-brand-600" />}
                 </div>
             </div>
@@ -419,11 +417,11 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                         )}
                     </Card>
 
-                    <Card title="Sorties">
+                    <Card title="Sorties à placer">
                         {available.length > 0 && (
-                            <div className="mb-4">
+                            <div>
                                 <p className="mb-2 text-xs text-neutral-400">
-                                    À placer — glissez sur un jour du plan (ou touchez la sortie puis le jour).
+                                    Sorties hors des semaines du plan — glisse-les sur un jour (ou touche la sortie puis le jour).
                                 </p>
                                 <div className="flex flex-col gap-2">
                                     {available.map((a) => (
@@ -445,30 +443,10 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                 </div>
                             </div>
                         )}
-                        {program.activities.length === 0 ? (
-                            available.length === 0 && <p className="text-sm text-neutral-400">Aucune sortie rattachée.</p>
-                        ) : (
-                            <ul className="divide-y divide-neutral-100">
-                                {program.activities.map((a) => (
-                                    <li key={a.id} className="flex items-center justify-between py-2.5">
-                                        <Link href={`/activites/${a.id}`} className="text-sm text-neutral-800 hover:text-brand-600">
-                                            {formatDate(a.occurredAt)} · {formatKilometers(a.distanceMeters)} km
-                                        </Link>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-xs tabular-nums text-neutral-500">
-                                                {formatDuration(a.movingSeconds)} · {formatPace(a.averagePaceSecondsPerKm)}
-                                            </span>
-                                            <button
-                                                onClick={() => removeAssigned(a.id)}
-                                                className="cursor-pointer text-neutral-300 hover:text-red-500"
-                                                aria-label="Retirer"
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
+                        {available.length === 0 && (
+                            <p className="text-sm text-neutral-400">
+                                Tes sorties se rattachent automatiquement à la bonne semaine du plan — rien à placer.
+                            </p>
                         )}
                     </Card>
                 </div>
@@ -521,8 +499,9 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                     ) : (
                         cycles.map((cycle) => {
                             const isCollapsed = collapsed.has(cycle.id);
+                            const isDone = cycle.status === 'completed';
                             return (
-                                <Card key={cycle.id}>
+                                <Card key={cycle.id} className={isDone ? 'border-emerald-200 bg-emerald-50/40' : undefined}>
                                     <button
                                         onClick={() => toggleCycle(cycle.id)}
                                         className="flex w-full cursor-pointer items-start justify-between gap-3 text-left"
