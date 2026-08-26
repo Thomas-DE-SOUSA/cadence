@@ -12,11 +12,13 @@ final class DisciplineResolver
     /** @param array<string, mixed> $snapshot a TrainingProgram snapshot */
     public static function forSnapshot(array $snapshot): Discipline
     {
+        // The RACE distance drives the discipline — not volume/session-count goals
+        // (a "150 km on the block" target must not read as an ultra).
         $distance = 0;
         $objectives = $snapshot['objectives'] ?? [];
         if (is_array($objectives)) {
             foreach ($objectives as $o) {
-                if (is_array($o)) {
+                if (is_array($o) && in_array($o['type'] ?? '', ['RACE_TIME', 'PACE_OVER_DISTANCE'], true)) {
                     $distance = max($distance, (int) ($o['target_distance_meters'] ?? 0));
                 }
             }

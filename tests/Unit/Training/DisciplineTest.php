@@ -3,6 +3,34 @@
 declare(strict_types=1);
 
 use Cadence\Training\Domain\Enum\Discipline;
+use Cadence\Training\Domain\Service\DisciplineResolver;
+
+describe('DisciplineResolver::forSnapshot', function (): void {
+    it('reads the discipline from the RACE objective, not from a volume goal', function (): void {
+        // A "150 km on the block" TOTAL_VOLUME target must not read as an ultra.
+        $snapshot = [
+            'goal' => 'Passer sous 40 min au 10 km',
+            'target_race_name' => 'Odysséa Paris 10 km',
+            'objectives' => [
+                ['type' => 'RACE_TIME', 'target_distance_meters' => 10000],
+                ['type' => 'TOTAL_VOLUME', 'target_distance_meters' => 150000],
+                ['type' => 'PACE_OVER_DISTANCE', 'target_distance_meters' => 5000],
+            ],
+        ];
+
+        expect(DisciplineResolver::forSnapshot($snapshot))->toBe(Discipline::ROUTE_10K);
+    });
+
+    it('reads an ultra from a long RACE objective', function (): void {
+        $snapshot = [
+            'goal' => 'Finir l\'UTMB',
+            'target_race_name' => 'UTMB',
+            'objectives' => [['type' => 'RACE_TIME', 'target_distance_meters' => 170000]],
+        ];
+
+        expect(DisciplineResolver::forSnapshot($snapshot))->toBe(Discipline::ULTRA_TRAIL);
+    });
+});
 
 describe('Discipline::infer', function (): void {
     it('reads an ultra-trail from the race or distance', function (): void {
