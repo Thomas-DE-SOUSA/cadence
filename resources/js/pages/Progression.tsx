@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ComponentType, ReactNode } from 'react';
 import { Activity, ChevronRight, Flag, Gauge, Sparkles, Target, TrendingUp, Trophy } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
@@ -90,15 +90,33 @@ function GoalDigits({ pct }: { pct: number }) {
     return <>{Math.round(useCountUp(pct))}</>;
 }
 
-/** Compact progression curve: best effort per run over time, with the goal line. */
+/**
+ * Best-effort-per-run curve over time, with the goal line. Sized in real pixels
+ * from the measured container width, so it fills the width with no distortion.
+ */
 function ProgressionChart({ series }: { series: Series }) {
+    const wrapRef = useRef<HTMLDivElement>(null);
+    const [width, setWidth] = useState(760);
+
+    useEffect(() => {
+        const el = wrapRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver((entries) => {
+            const w = entries[0]?.contentRect.width;
+            if (w) setWidth(w);
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
+
     const { points, targetSeconds } = series;
-    const W = 760;
-    const H = 210;
-    const padX = 40;
-    const padTop = 26;
+    const W = Math.max(width, 300);
+    const H = 260;
+    const padL = 12;
+    const padR = 12;
+    const padTop = 34;
     const padBottom = 30;
-    const plotW = W - padX * 2;
+    const plotW = W - padL - padR;
     const plotH = H - padTop - padBottom;
 
     const values = points.map((p) => p.seconds);
@@ -107,72 +125,78 @@ function ProgressionChart({ series }: { series: Series }) {
     const maxV = Math.max(...values);
     const span = Math.max(maxV - minV, 1);
 
-    // Smaller time = better = higher on the chart.
-    const y = (sec: number) => padTop + ((sec - minV) / span) * plotH;
-    const x = (i: number) => (points.length === 1 ? padX + plotW / 2 : padX + (i / (points.length - 1)) * plotW);
+    // Smaller time = better = higher on the chart. 8% headroom top & bottom.
+    const y = (sec: number) => padTop + (0.08 + (0.84 * (sec - minV)) / span) * plotH;
+    const x = (i: number) => (points.length === 1 ? padL + plotW / 2 : padL + (i / (points.length - 1)) * plotW);
 
     const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(p.seconds).toFixed(1)}`).join(' ');
     const areaPath =
         points.length > 1
-            ? `${linePath} L ${x(points.length - 1).toFixed(1)} ${(H - padBottom).toFixed(1)} L ${padX} ${(H - padBottom).toFixed(1)} Z`
+            ? `${linePath} L ${x(points.length - 1).toFixed(1)} ${(H - padBottom).toFixed(1)} L ${x(0).toFixed(1)} ${(H - padBottom).toFixed(1)} Z`
             : '';
     const targetY = targetSeconds ? y(targetSeconds) : null;
 
     return (
-        <svg viewBox={`0 0 ${W} ${H}`} className="h-52 w-full" preserveAspectRatio="none">
-            <defs>
-                <linearGradient id="prog-area" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stopColor="#1c855a" stopOpacity="0.18" />
-                    <stop offset="1" stopColor="#1c855a" stopOpacity="0" />
-                </linearGradient>
-            </defs>
-            {targetY !== null && (
-                <>
-                    <line x1={padX} y1={targetY} x2={W - padX} y2={targetY} stroke="#f59e0b" strokeWidth={2} strokeDasharray="6 5" />
-                    <text x={W - padX} y={targetY - 7} textAnchor="end" className="fill-amber-500 text-[13px] font-semibold">
-                        Objectif {formatDuration(targetSeconds!)}
-                    </text>
-                </>
-            )}
-            {areaPath && <path d={areaPath} fill="url(#prog-area)" />}
-            {points.length > 1 && (
-                <path d={linePath} fill="none" stroke="#1c855a" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-            )}
-            {points.map((p, i) => (
-                <g key={p.date + i}>
-                    <circle cx={x(i)} cy={y(p.seconds)} r={4.5} fill="#1c855a" stroke="#fff" strokeWidth={2} />
-                    <text x={x(i)} y={y(p.seconds) - 11} textAnchor="middle" className="fill-neutral-800 text-[13px] font-bold">
-                        {formatDuration(p.seconds)}
-                    </text>
-                    <text x={x(i)} y={H - 10} textAnchor="middle" className="fill-neutral-400 text-[12px]">
-                        {shortDate(p.date)}
-                    </text>
-                </g>
-            ))}
-        </svg>
+        <div ref={wrapRef} className="w-full">
+            <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="block">
+                <defs>
+                    <linearGradient id="prog-area" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stopColor="#1c855a" stopOpacity="0.16" />
+                        <stop offset="1" stopColor="#1c855a" stopOpacity="0" />
+                    </linearGradient>
+                </defs>
+
+                {/* baseline */}
+                <line x1={padL} y1={H - padBottom} x2={W - padR} y2={H - padBottom} stroke="#f1f1f2" strokeWidth={1} />
+
+                {targetY !== null && (
+                    <>
+                        <line x1={padL} y1={targetY} x2={W - padR} y2={targetY} stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 5" />
+                        <text x={W - padR} y={targetY - 6} textAnchor="end" fontSize={12} className="fill-amber-500 font-semibold">
+                            Objectif {formatDuration(targetSeconds!)}
+                        </text>
+                    </>
+                )}
+
+                {areaPath && <path d={areaPath} fill="url(#prog-area)" />}
+                {points.length > 1 && (
+                    <path d={linePath} fill="none" stroke="#1c855a" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+                )}
+
+                {points.map((p, i) => (
+                    <g key={p.date + i}>
+                        <circle cx={x(i)} cy={y(p.seconds)} r={4.5} fill="#1c855a" stroke="#fff" strokeWidth={2} />
+                        <text x={x(i)} y={y(p.seconds) - 12} textAnchor="middle" fontSize={13} className="fill-neutral-800 font-bold">
+                            {formatDuration(p.seconds)}
+                        </text>
+                        <text x={x(i)} y={H - 10} textAnchor="middle" fontSize={12} className="fill-neutral-400">
+                            {shortDate(p.date)}
+                        </text>
+                    </g>
+                ))}
+            </svg>
+        </div>
     );
 }
 
-function MiniStat({
+function StatCell({
     icon: Icon,
     tint,
     value,
     label,
     help,
 }: {
-    icon: ComponentType<{ size?: number }>;
+    icon: ComponentType<{ size?: number; className?: string }>;
     tint: string;
     value: string;
     label: string;
     help?: string;
 }) {
     return (
-        <div className="rounded-xl border border-neutral-200 bg-white p-3 shadow-sm shadow-neutral-200/50">
-            <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${tint}`}>
-                <Icon size={16} />
-            </span>
-            <p className="mt-2 text-lg font-extrabold leading-none tabular-nums text-neutral-900">{value}</p>
-            <p className="mt-1 flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-neutral-400">
+        <div className="flex flex-col items-center gap-1 px-2 py-4 text-center">
+            <p className="text-xl font-extrabold leading-none tabular-nums text-neutral-900 sm:text-2xl">{value}</p>
+            <p className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-neutral-400">
+                <Icon size={11} className={tint} />
                 {label}
                 {help && <HelpTip label={label} text={help} size={12} />}
             </p>
@@ -265,12 +289,15 @@ export default function Progression({ goal, records, series, focusDistance, proj
                 </div>
             )}
 
-            {/* Stat tiles — compact */}
-            <div className="animate-fade-up mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4" style={{ animationDelay: '60ms' }}>
-                <MiniStat icon={Gauge} tint="bg-brand-100 text-brand-600" value={vdot !== null ? `${vdot}` : '—'} label="VDOT estimé" help={VDOT_HELP} />
-                <MiniStat icon={Trophy} tint="bg-amber-100 text-amber-600" value={`${records.length}`} label="Records" />
-                <MiniStat icon={Activity} tint="bg-sky-100 text-sky-600" value={`${stats.runs}`} label="Sorties" />
-                <MiniStat icon={Flag} tint="bg-emerald-100 text-emerald-600" value={`${formatKilometers(stats.totalDistanceMeters)}`} label="Km au total" />
+            {/* Stats — one-line strip in a single card */}
+            <div
+                className="animate-fade-up mb-4 grid grid-cols-4 divide-x divide-neutral-100 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm shadow-neutral-200/60"
+                style={{ animationDelay: '60ms' }}
+            >
+                <StatCell icon={Gauge} tint="text-brand-500" value={vdot !== null ? `${vdot}` : '—'} label="VDOT" help={VDOT_HELP} />
+                <StatCell icon={Trophy} tint="text-amber-500" value={`${records.length}`} label="Records" />
+                <StatCell icon={Activity} tint="text-sky-500" value={`${stats.runs}`} label="Sorties" />
+                <StatCell icon={Flag} tint="text-emerald-500" value={`${formatKilometers(stats.totalDistanceMeters)}`} label="Km" />
             </div>
 
             {/* Projection — slim banner */}
