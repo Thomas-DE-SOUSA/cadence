@@ -58,6 +58,7 @@ final readonly class CoachTurnService
             $programDay->targetVdot,
             $this->summariseRecent($this->history->recentFor($tenant)),
             $programDay->day,
+            $this->history->analysisFor($tenant),
         );
 
         return new CoachTurn($conversation->id(), $coachContext, $conversation->messages());

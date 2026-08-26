@@ -99,7 +99,7 @@ final class AthleteBrief
             }
         }
 
-        return implode("\n        ", $lines);
+        return implode("\n", $lines);
     }
 
     private static function pace(int $secondsPerKm): string

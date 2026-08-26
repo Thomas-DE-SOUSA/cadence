@@ -20,12 +20,19 @@ final class CoachRequestBuilder
 
     public function system(CoachContext $context): string
     {
-        return implode("\n\n", [
+        $sections = [
             $this->knowledge->systemFoundation(),
             "# L'athlète et l'objectif\n".$this->athleteBlock($context),
-            "# Le jour discuté\n".$this->dayBlock($context->day),
-            $this->rules(),
-        ]);
+        ];
+
+        if (trim($context->analysis) !== '') {
+            $sections[] = "# Analyse récente (garde-la en tête, et sers toujours l'objectif)\n".$context->analysis;
+        }
+
+        $sections[] = "# Le jour discuté\n".$this->dayBlock($context->day);
+        $sections[] = $this->rules();
+
+        return implode("\n\n", $sections);
     }
 
     /**

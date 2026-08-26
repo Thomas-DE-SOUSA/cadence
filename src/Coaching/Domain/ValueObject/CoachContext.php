@@ -15,6 +15,7 @@ final readonly class CoachContext
         public ?float $targetVdot,
         public string $recentSummary,
         public PlannedDay $day,
+        public string $analysis = '',
     ) {
     }
 }
