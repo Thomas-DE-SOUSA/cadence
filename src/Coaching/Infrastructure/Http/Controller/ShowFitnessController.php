@@ -34,7 +34,7 @@ final class ShowFitnessController
             : TrainingLoadView::build($tenant->value, $snapshot, $today, new TrainingLoadCalculator());
 
         $adaptation = ($load['hasData'] ?? false) === true
-            ? AdaptationView::build($tenant->value, $load, new AdaptationAnalyzer())
+            ? AdaptationView::build($tenant->value, $load, $today, new AdaptationAnalyzer())
             : null;
 
         return Inertia::render('Forme', ['load' => $load, 'adaptation' => $adaptation]);

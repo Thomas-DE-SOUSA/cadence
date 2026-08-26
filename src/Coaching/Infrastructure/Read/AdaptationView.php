@@ -7,6 +7,7 @@ namespace Cadence\Coaching\Infrastructure\Read;
 use Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel;
 use Cadence\Coaching\Domain\Service\AdaptationAnalyzer;
 use Cadence\Training\Infrastructure\Persistence\Eloquent\CycleModel;
+use DateTimeImmutable;
 
 /** Builds the weekly adaptation recommendation from the current cycle + load. */
 final class AdaptationView
@@ -16,7 +17,7 @@ final class AdaptationView
      *
      * @return array<string, mixed>|null
      */
-    public static function build(string $tenantId, array $load, AdaptationAnalyzer $analyzer): ?array
+    public static function build(string $tenantId, array $load, string $today, AdaptationAnalyzer $analyzer): ?array
     {
         $cycle = CycleModel::query()->where('tenant_id', $tenantId)->orderByDesc('start_date')->first();
         if ($cycle === null) {
@@ -34,13 +35,20 @@ final class AdaptationView
             return null;
         }
 
-        $from = substr((string) $cycle->start_date, 0, 10);
-        $to = substr((string) $cycle->end_date, 0, 10);
+        // Sessions expected per week (so a just-started cycle isn't read as 0%).
+        $start = new DateTimeImmutable(substr((string) $cycle->start_date, 0, 10));
+        $end = new DateTimeImmutable(substr((string) $cycle->end_date, 0, 10));
+        $weeks = max(1, (int) round(($start->diff($end)->days + 1) / 7));
+        $plannedPerWeek = max(1, (int) round($planned / $weeks));
+
+        // Compliance on a rolling 7-day window.
+        $weekAgo = (new DateTimeImmutable($today))->modify('-6 days')->format('Y-m-d');
         $runs = ActivityModel::query()
             ->where('tenant_id', $tenantId)
-            ->whereBetween('occurred_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->whereBetween('occurred_at', [$weekAgo.' 00:00:00', $today.' 23:59:59'])
             ->count();
-        $done = min($runs, $planned);
+        $done = min($runs, $plannedPerWeek);
+        $planned = $plannedPerWeek;
 
         /** @var array{easy?:int,total?:int} $zones */
         $zones = is_array($load['zones'] ?? null) ? $load['zones'] : [];
