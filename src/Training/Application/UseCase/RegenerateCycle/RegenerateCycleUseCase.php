@@ -10,6 +10,7 @@ use Cadence\Shared\Clock\Clock;
 use Cadence\Shared\Domain\TenantId;
 use Cadence\Training\Domain\Exception\CycleNotFound;
 use Cadence\Training\Domain\Model\Cycle;
+use Cadence\Training\Domain\Service\DisciplineResolver;
 use Cadence\Training\Domain\Plan\PhaseMaterializer;
 use Cadence\Training\Domain\Plan\TrainingPlanCatalog;
 use Cadence\Training\Domain\Port\ActivitySummaryProvider;
@@ -94,6 +95,7 @@ final readonly class RegenerateCycleUseCase
             blueprint: $blueprintCycle !== null ? $this->renderBlueprint($blueprintCycle) : '',
             athletePaces: $athletePaces,
             athleteState: $athleteState,
+            disciplinePlaybook: DisciplineResolver::forSnapshot($snapshot ?? [])->playbook(),
         );
 
         try {

@@ -7,6 +7,7 @@ namespace Cadence\Training\Application\UseCase\GenerateCycle;
 use Cadence\Shared\Application\AuditTrail;
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Clock\Clock;
+use Cadence\Training\Domain\Service\DisciplineResolver;
 use Cadence\Shared\Domain\TenantId;
 use Cadence\Shared\Identifier\IdGenerator;
 use Cadence\Training\Domain\Exception\CycleGenerationNotAllowed;
@@ -120,6 +121,7 @@ final readonly class GenerateCycleUseCase
             blueprint: $blueprintCycle !== null ? $this->renderBlueprint($blueprintCycle) : '',
             athletePaces: $input->athletePaces,
             athleteState: $input->athleteState,
+            disciplinePlaybook: DisciplineResolver::forSnapshot($snapshot)->playbook(),
         );
 
         try {

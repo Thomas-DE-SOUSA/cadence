@@ -112,12 +112,15 @@ final class GeminiCyclePlanner implements CyclePlanner
         $state = trim($c->athleteState) === '' ? '' :
             "\n\n## État actuel de l'athlète — ANALYSE à respecter pour CHAQUE séance\n{$c->athleteState}";
 
+        $discipline = trim($c->disciplinePlaybook) === '' ? '' :
+            "\n\n## Discipline & méthode — adapte TOUTE ta logique à ça\n{$c->disciplinePlaybook}";
+
         return <<<PROMPT
         Tu es le coach personnel de cet athlète. Conçois son PROCHAIN cycle d'entraînement, jour par jour, et réponds en JSON strict.
 
         ## Objectif — priorité absolue (ne le perds JAMAIS de vue)
         {$c->goal}
-        Course cible : {$c->targetRaceName} (le {$c->targetRaceDate}). CHAQUE séance doit rapprocher de cet objectif.
+        Course cible : {$c->targetRaceName} (le {$c->targetRaceDate}). CHAQUE séance doit rapprocher de cet objectif.{$discipline}
 
         ## Cadre du cycle
         - Démarre le {$c->startDate} · {$c->weeks} semaine(s) = {$days} jours → EXACTEMENT une entrée par jour.
@@ -156,8 +159,9 @@ final class GeminiCyclePlanner implements CyclePlanner
         ## Règles (impératives)
         - EXACTEMENT une entrée par jour sur {$days} jours ; jour de repos = type REST avec `steps` vide.
         - Découpe chaque séance courue en `steps` : échauffement → corps (blocs répétés avec récup) → retour au calme. Un footing continu = 1 seul step. `repeat` pour les blocs (ex. 5×1000 m → repeat 5).
-        - `paceSecondsPerKm` = TOUJOURS une des allures perso ci-dessus, en secondes/km (ex. 4:00/km = 240). N'invente aucune allure.
-        - Progression cohérente, alternance dur/facile, ~80 % du volume en facile (E) et une minorité vraiment dure (polarisé, pas de zone grise).
+        - Allures : en ROUTE, `paceSecondsPerKm` = TOUJOURS une des allures perso ci-dessus (s/km, ex. 4:00/km = 240), jamais inventée. En TRAIL/ULTRA (voir Discipline), raisonne en DURÉE + D+ + effort : mets `paceSecondsPerKm` à null quand l'allure n'a pas de sens, et précise l'effort/le D+ dans `note`.
+        - Respecte la Discipline & méthode ci-dessus (structure, leviers, terrain) — un ultra ne se planifie pas comme un 10 km.
+        - Progression cohérente, alternance dur/facile, ~80 % du volume en facile et une minorité vraiment dure (polarisé, pas de zone grise).
         - Adapte volume et intensité à l'ANALYSE ci-dessus (dernières sorties, forme, reco) ; ne planifie jamais « dans le vide » et sers toujours l'objectif.
         PROMPT;
     }

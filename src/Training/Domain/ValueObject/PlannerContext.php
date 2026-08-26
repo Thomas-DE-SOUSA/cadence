@@ -21,6 +21,7 @@ final class PlannerContext
         public readonly string $blueprint = '',
         public readonly string $athletePaces = '',
         public readonly string $athleteState = '',
+        public readonly string $disciplinePlaybook = '',
     ) {
     }
 }
