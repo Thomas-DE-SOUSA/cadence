@@ -110,12 +110,20 @@ function ProgressionChart({ series }: { series: Series }) {
     }, []);
 
     const { points, targetSeconds } = series;
-    const W = Math.max(width, 300);
     const H = 260;
-    const padL = 12;
-    const padR = 12;
+    const padL = 16;
+    const padR = 16;
     const padTop = 34;
     const padBottom = 30;
+
+    // Each point keeps a minimum breathing room; if the whole series is wider
+    // than the card, the chart scrolls horizontally (into the past).
+    const containerW = Math.max(width, 300);
+    const minStep = 84;
+    const neededW = padL + padR + Math.max(points.length - 1, 1) * minStep;
+    const W = Math.max(containerW, neededW);
+    const scrollable = W > containerW + 1;
+
     const plotW = W - padL - padR;
     const plotH = H - padTop - padBottom;
 
@@ -129,6 +137,12 @@ function ProgressionChart({ series }: { series: Series }) {
     const y = (sec: number) => padTop + (0.08 + (0.84 * (sec - minV)) / span) * plotH;
     const x = (i: number) => (points.length === 1 ? padL + plotW / 2 : padL + (i / (points.length - 1)) * plotW);
 
+    // Keep the latest run in view by default (scroll to the far right).
+    useEffect(() => {
+        const el = wrapRef.current;
+        if (el) el.scrollLeft = el.scrollWidth;
+    }, [W, series.distanceMeters, points.length]);
+
     const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(p.seconds).toFixed(1)}`).join(' ');
     const areaPath =
         points.length > 1
@@ -137,45 +151,50 @@ function ProgressionChart({ series }: { series: Series }) {
     const targetY = targetSeconds ? y(targetSeconds) : null;
 
     return (
-        <div ref={wrapRef} className="w-full">
-            <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="block">
-                <defs>
-                    <linearGradient id="prog-area" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0" stopColor="#1c855a" stopOpacity="0.16" />
-                        <stop offset="1" stopColor="#1c855a" stopOpacity="0" />
-                    </linearGradient>
-                </defs>
+        <>
+            <div ref={wrapRef} className="w-full overflow-x-auto">
+                <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="block">
+                    <defs>
+                        <linearGradient id="prog-area" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stopColor="#1c855a" stopOpacity="0.16" />
+                            <stop offset="1" stopColor="#1c855a" stopOpacity="0" />
+                        </linearGradient>
+                    </defs>
 
-                {/* baseline */}
-                <line x1={padL} y1={H - padBottom} x2={W - padR} y2={H - padBottom} stroke="#f1f1f2" strokeWidth={1} />
+                    {/* baseline */}
+                    <line x1={padL} y1={H - padBottom} x2={W - padR} y2={H - padBottom} stroke="#f1f1f2" strokeWidth={1} />
 
-                {targetY !== null && (
-                    <>
-                        <line x1={padL} y1={targetY} x2={W - padR} y2={targetY} stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 5" />
-                        <text x={W - padR} y={targetY - 6} textAnchor="end" fontSize={12} className="fill-amber-500 font-semibold">
-                            Objectif {formatDuration(targetSeconds!)}
-                        </text>
-                    </>
-                )}
+                    {targetY !== null && (
+                        <>
+                            <line x1={padL} y1={targetY} x2={W - padR} y2={targetY} stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 5" />
+                            <text x={W - padR} y={targetY - 6} textAnchor="end" fontSize={12} className="fill-amber-500 font-semibold">
+                                Objectif {formatDuration(targetSeconds!)}
+                            </text>
+                        </>
+                    )}
 
-                {areaPath && <path d={areaPath} fill="url(#prog-area)" />}
-                {points.length > 1 && (
-                    <path d={linePath} fill="none" stroke="#1c855a" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-                )}
+                    {areaPath && <path d={areaPath} fill="url(#prog-area)" />}
+                    {points.length > 1 && (
+                        <path d={linePath} fill="none" stroke="#1c855a" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+                    )}
 
-                {points.map((p, i) => (
-                    <g key={p.date + i}>
-                        <circle cx={x(i)} cy={y(p.seconds)} r={4.5} fill="#1c855a" stroke="#fff" strokeWidth={2} />
-                        <text x={x(i)} y={y(p.seconds) - 12} textAnchor="middle" fontSize={13} className="fill-neutral-800 font-bold">
-                            {formatDuration(p.seconds)}
-                        </text>
-                        <text x={x(i)} y={H - 10} textAnchor="middle" fontSize={12} className="fill-neutral-400">
-                            {shortDate(p.date)}
-                        </text>
-                    </g>
-                ))}
-            </svg>
-        </div>
+                    {points.map((p, i) => (
+                        <g key={p.date + i}>
+                            <circle cx={x(i)} cy={y(p.seconds)} r={4.5} fill="#1c855a" stroke="#fff" strokeWidth={2} />
+                            <text x={x(i)} y={y(p.seconds) - 12} textAnchor="middle" fontSize={13} className="fill-neutral-800 font-bold">
+                                {formatDuration(p.seconds)}
+                            </text>
+                            <text x={x(i)} y={H - 10} textAnchor="middle" fontSize={12} className="fill-neutral-400">
+                                {shortDate(p.date)}
+                            </text>
+                        </g>
+                    ))}
+                </svg>
+            </div>
+            {scrollable && (
+                <p className="mt-1 text-center text-[11px] text-neutral-400">← fais défiler pour parcourir l'historique →</p>
+            )}
+        </>
     );
 }
 
