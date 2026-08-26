@@ -349,7 +349,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                     <button
                         key={t.key}
                         onClick={() => setSection(t.key)}
-                        className={`-mb-px flex items-center gap-1.5 border-b-2 px-3 pb-2.5 pt-1 text-sm font-semibold transition-colors ${
+                        className={`-mb-px flex flex-1 items-center justify-center gap-1.5 border-b-2 px-3 pb-2.5 pt-1 text-sm font-semibold transition-colors ${
                             section === t.key
                                 ? 'border-brand-500 text-brand-600'
                                 : 'border-transparent text-neutral-400 hover:text-neutral-700'
