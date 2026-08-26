@@ -1,9 +1,10 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ChevronDown, LogOut, Plus, User as UserIcon } from 'lucide-react';
+import { ChevronDown, LogOut, Palette, Plus, User as UserIcon } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { navItems } from '@/lib/nav';
 import { BrandMark } from '@/components/BrandMark';
+import { ThemePicker } from '@/components/ThemePicker';
 
 interface AthleteSummary {
     name: string;
@@ -18,7 +19,15 @@ interface AuthUser {
     initial: string;
 }
 
-function AccountMenu({ user, athlete }: { user: AuthUser | null; athlete: AthleteSummary | null }) {
+function AccountMenu({
+    user,
+    athlete,
+    onOpenTheme,
+}: {
+    user: AuthUser | null;
+    athlete: AthleteSummary | null;
+    onOpenTheme: () => void;
+}) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
     const initial = user?.initial ?? athlete?.initial ?? '?';
@@ -65,6 +74,16 @@ function AccountMenu({ user, athlete }: { user: AuthUser | null; athlete: Athlet
                         type="button"
                         onClick={() => {
                             setOpen(false);
+                            onOpenTheme();
+                        }}
+                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+                    >
+                        <Palette size={16} className="text-neutral-400" /> Thème
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setOpen(false);
                             router.post('/logout');
                         }}
                         className="flex w-full items-center gap-2.5 border-t border-neutral-100 px-4 py-2.5 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
@@ -87,6 +106,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const flash = (page.props.flash as { status?: string } | undefined)?.status;
     const athlete = page.props.topbar as AthleteSummary | null;
     const user = (page.props.auth as { user?: AuthUser | null } | undefined)?.user ?? null;
+    const [themeOpen, setThemeOpen] = useState(false);
 
     useEffect(() => {
         if (flash) {
@@ -151,7 +171,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                             <Plus size={17} />
                             <span className="hidden sm:inline">Activité</span>
                         </Link>
-                        <AccountMenu user={user} athlete={athlete} />
+                        <AccountMenu user={user} athlete={athlete} onOpenTheme={() => setThemeOpen(true)} />
                     </div>
                 </div>
             </header>
@@ -182,6 +202,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <main className="px-4 pb-24 pt-24 sm:px-6 md:px-8 md:pb-14 lg:px-10">
                 <div className="mx-auto max-w-7xl">{children}</div>
             </main>
+
+            <ThemePicker open={themeOpen} onClose={() => setThemeOpen(false)} />
 
             <Toaster position="bottom-right" richColors closeButton theme="light" />
         </div>

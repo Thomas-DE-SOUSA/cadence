@@ -12,6 +12,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <title inertia>Cadence</title>
+    <script>
+        // Apply the saved theme before paint to avoid a flash of the wrong theme.
+        (function () {
+            try {
+                var t = localStorage.getItem('theme') || 'system';
+                var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (dark) document.documentElement.classList.add('dark');
+            } catch (e) {}
+        })();
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     @inertiaHead
 </head>
