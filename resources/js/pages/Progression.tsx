@@ -223,8 +223,6 @@ function StatCell({
     );
 }
 
-const medalTint = ['bg-amber-100 text-amber-600', 'bg-slate-100 text-slate-500', 'bg-orange-100 text-orange-500'];
-
 export default function Progression({ goal, records, series, focusDistance, projection, vdot, stats }: Props) {
     const [selected, setSelected] = useState(focusDistance);
     const chart = series.find((s) => s.distanceMeters === selected) ?? series[0];
@@ -394,29 +392,31 @@ export default function Progression({ goal, records, series, focusDistance, proj
                             </span>
                         }
                     >
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                            {records.map((r, i) => (
-                                <Link
-                                    key={r.distanceMeters}
-                                    href={`/activites/${r.activityId}`}
-                                    className="group rounded-xl border border-neutral-200 bg-white p-3 transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md hover:shadow-neutral-200/60"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">{r.label}</span>
-                                        <span className={`flex h-6 w-6 items-center justify-center rounded-full ${medalTint[Math.min(i, 2)]}`}>
-                                            <Trophy size={13} />
+                        <ul className="-my-2 divide-y divide-neutral-100">
+                            {records.map((r) => (
+                                <li key={r.distanceMeters}>
+                                    <Link
+                                        href={`/activites/${r.activityId}`}
+                                        className="group -mx-2 flex items-center gap-3.5 rounded-lg px-2 py-3 transition-colors hover:bg-neutral-50"
+                                    >
+                                        <span className="flex h-11 w-14 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-sm font-bold tabular-nums text-brand-700">
+                                            {r.label}
                                         </span>
-                                    </div>
-                                    <p className="mt-1.5 text-2xl font-black tabular-nums text-neutral-900">{formatDuration(r.durationSeconds)}</p>
-                                    <p className="mt-0.5 flex items-center gap-1 text-xs text-neutral-500">
-                                        <span className="tabular-nums">{formatPace(r.paceSecondsPerKm)}</span>
-                                        <span className="text-neutral-300">·</span>
-                                        <span>{shortDate(r.occurredAt)}</span>
-                                        <ChevronRight size={13} className="ml-auto text-neutral-300 transition-colors group-hover:text-brand-500" />
-                                    </p>
-                                </Link>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-xl font-black leading-none tabular-nums text-neutral-900">
+                                                {formatDuration(r.durationSeconds)}
+                                            </p>
+                                            <p className="mt-1 text-xs text-neutral-500">
+                                                <span className="tabular-nums">{formatPace(r.paceSecondsPerKm)}</span> /km
+                                                <span className="mx-1 text-neutral-300">·</span>
+                                                {shortDate(r.occurredAt)}
+                                            </p>
+                                        </div>
+                                        <ChevronRight size={18} className="shrink-0 text-neutral-300 transition-colors group-hover:text-brand-500" />
+                                    </Link>
+                                </li>
                             ))}
-                        </div>
+                        </ul>
                     </Card>
                 </div>
             )}
