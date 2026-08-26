@@ -95,13 +95,67 @@ button:not(:disabled),
 }
 
 /* ============================================================
-   Dark theme — a global remap of the neutral/white palette so
-   the whole app flips without touching every component.
+   Dark theme — a design-token remap.
+   Tailwind v4 utilities read var(--color-*), so overriding the
+   tokens under .dark flips text, borders, SVG fills and gradients
+   in ONE place. `white` stays white (it doubles as on-color text);
+   its surface use is remapped in the few rules at the bottom.
    ============================================================ */
 @custom-variant dark (&:where(.dark, .dark *));
 
 html.dark {
     color-scheme: dark;
+
+    /* Neutral scale, inverted: surfaces dark, text light. */
+    --color-neutral-50: #14161b;
+    --color-neutral-100: #21252e;
+    --color-neutral-200: #2b303a;
+    --color-neutral-300: #495059;
+    --color-neutral-400: #868d99;
+    --color-neutral-500: #a1a7b1;
+    --color-neutral-600: #b9bec7;
+    --color-neutral-700: #ced2d9;
+    --color-neutral-800: #e1e4e9;
+    --color-neutral-900: #edeff3;
+
+    /* Accent chips: dark tinted backgrounds (-50/-100) + readable accent text (-600/-700). */
+    --color-brand-50: #142b20;
+    --color-brand-100: #163a2a;
+    --color-brand-600: #43b184;
+    --color-brand-700: #6dbd97;
+
+    --color-emerald-50: #12251d;
+    --color-emerald-100: #163120;
+    --color-emerald-600: #34d399;
+    --color-emerald-700: #6ee7b7;
+
+    --color-amber-50: #2a2214;
+    --color-amber-100: #362b16;
+    --color-amber-600: #fbbf24;
+    --color-amber-700: #fcd34d;
+
+    --color-sky-50: #10222e;
+    --color-sky-100: #142e3e;
+    --color-sky-600: #38bdf8;
+
+    --color-violet-50: #1e1a33;
+    --color-violet-100: #241d40;
+    --color-violet-600: #a78bfa;
+
+    --color-red-50: #2a1618;
+    --color-red-100: #37191c;
+    --color-red-500: #f87171;
+    --color-red-600: #f87171;
+
+    --color-indigo-50: #1a1b30;
+    --color-indigo-100: #1f2140;
+    --color-indigo-400: #a5b4fc;
+
+    --color-orange-50: #2a1c12;
+    --color-orange-100: #35230f;
+
+    --color-slate-50: #14161b;
+    --color-slate-100: #23272f;
 }
 
 html.dark body {
@@ -112,113 +166,22 @@ html.dark body {
     color: #e6e8ec;
 }
 
-/* Surfaces */
+/* `white` as a SURFACE → dark (text-white must stay white for on-color labels). */
 .dark .bg-white { background-color: #181b21; }
 .dark .bg-white\/85 { background-color: rgba(20, 23, 28, 0.85); }
 .dark .bg-white\/90 { background-color: rgba(20, 23, 28, 0.9); }
 .dark .bg-white\/95 { background-color: rgba(20, 23, 28, 0.95); }
-.dark .bg-neutral-50,
-.dark .bg-neutral-50\/70,
-.dark .bg-neutral-50\/60,
-.dark .bg-neutral-50\/50 { background-color: #14161b; }
-.dark .bg-neutral-100,
-.dark .bg-neutral-100\/60 { background-color: #23272f; }
-.dark .bg-neutral-200 { background-color: #2b313b; }
-
-/* Hover surfaces */
-.dark .hover\:bg-neutral-50:hover { background-color: #1d2128; }
-.dark .hover\:bg-neutral-100:hover { background-color: #262b34; }
-.dark .hover\:bg-neutral-200:hover { background-color: #2f3540; }
-
-/* Text scale */
-.dark .text-neutral-900 { color: #eceef2; }
-.dark .text-neutral-800 { color: #e1e4ea; }
-.dark .text-neutral-700 { color: #d1d5dd; }
-.dark .text-neutral-600 { color: #bbc0c9; }
-.dark .text-neutral-500 { color: #9aa0ab; }
-.dark .text-neutral-400 { color: #7b828d; }
-.dark .text-neutral-300 { color: #5b616b; }
-
-/* Borders, rings, dividers */
-.dark .border-neutral-100 { border-color: #23272e; }
-.dark .border-neutral-200,
-.dark .border-neutral-200\/80,
-.dark .border-neutral-200\/70 { border-color: #2b313b; }
-.dark .border-neutral-300 { border-color: #3a414c; }
-.dark .hover\:border-neutral-300:hover { border-color: #454c58; }
-.dark .hover\:border-brand-200:hover { border-color: #1f6b49; }
-.dark .hover\:border-brand-300:hover { border-color: #2a7d57; }
-.dark .ring-neutral-200 { --tw-ring-color: #2b313b; }
-.dark .divide-neutral-100 > :not([hidden]) ~ :not([hidden]) { border-color: #23272e; }
-.dark .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) { border-color: #2b313b; }
-
-/* Gradient surfaces that fade white -> brand tint */
 .dark .from-white { --tw-gradient-from: #181b21 var(--tw-gradient-from-position); }
-.dark .to-white { --tw-gradient-to: #181b21 var(--tw-gradient-to-position); }
-.dark .to-brand-50\/40 { --tw-gradient-to: rgba(20, 38, 30, 0.55) var(--tw-gradient-to-position); }
-.dark .to-brand-50\/50 { --tw-gradient-to: rgba(20, 38, 30, 0.6) var(--tw-gradient-to-position); }
-.dark .to-brand-50\/70 { --tw-gradient-to: rgba(20, 38, 30, 0.7) var(--tw-gradient-to-position); }
-.dark .from-brand-50\/50 { --tw-gradient-from: rgba(20, 38, 30, 0.5) var(--tw-gradient-from-position); }
-.dark .from-neutral-50 { --tw-gradient-from: #14161b var(--tw-gradient-from-position); }
 .dark .via-white { --tw-gradient-via: #181b21 var(--tw-gradient-via-position); }
-.dark .to-brand-50\/60 { --tw-gradient-to: rgba(20, 38, 30, 0.6) var(--tw-gradient-to-position); }
-.dark .bg-brand-200\/40 { background-color: rgba(28, 133, 90, 0.22); }
-.dark .bg-brand-100\/50 { background-color: rgba(28, 133, 90, 0.2); }
+.dark .to-white { --tw-gradient-to: #181b21 var(--tw-gradient-to-position); }
 
-/* Accent tint chips — subtle on dark */
-.dark .bg-brand-50,
-.dark .bg-brand-50\/40,
-.dark .bg-brand-50\/50 { background-color: rgba(28, 133, 90, 0.16); }
-.dark .hover\:bg-brand-50\/40:hover,
-.dark .hover\:bg-brand-50\/50:hover { background-color: rgba(28, 133, 90, 0.22); }
-.dark .bg-brand-100 { background-color: rgba(28, 133, 90, 0.24); }
-.dark .bg-emerald-50,
-.dark .bg-emerald-50\/40,
-.dark .bg-emerald-50\/30 { background-color: rgba(16, 185, 129, 0.14); }
-.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.22); }
-.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.14); }
-.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.22); }
-.dark .bg-sky-100 { background-color: rgba(14, 165, 233, 0.22); }
-.dark .bg-violet-50,
-.dark .bg-violet-50\/60 { background-color: rgba(139, 92, 246, 0.16); }
-.dark .bg-violet-100 { background-color: rgba(139, 92, 246, 0.24); }
-.dark .bg-red-50,
-.dark .hover\:bg-red-50:hover { background-color: rgba(239, 68, 68, 0.16); }
-.dark .bg-indigo-50 { background-color: rgba(99, 102, 241, 0.18); }
+/* Intentionally-dark neutrals (avatar, goal header) — keep them dark. */
+.dark .bg-neutral-900 { background-color: #0e1014; }
+.dark .from-neutral-900 { --tw-gradient-from: #0c0e12 var(--tw-gradient-from-position); }
+.dark .to-neutral-900 { --tw-gradient-to: #0c0e12 var(--tw-gradient-to-position); }
+.dark .from-neutral-700 { --tw-gradient-from: #2b303a var(--tw-gradient-from-position); }
+.dark .to-neutral-700 { --tw-gradient-to: #2b303a var(--tw-gradient-to-position); }
 
-/* Accent text lightened for contrast on dark */
-.dark .text-brand-600 { color: #43b184; }
-.dark .text-brand-700 { color: #6dbd97; }
-.dark .text-emerald-600,
-.dark .text-emerald-700 { color: #34d399; }
-.dark .text-amber-600,
-.dark .text-amber-700 { color: #fbbf24; }
-.dark .text-violet-600 { color: #a78bfa; }
-.dark .text-sky-600 { color: #38bdf8; }
-.dark .text-red-600,
-.dark .text-red-500 { color: #f87171; }
-.dark .text-indigo-400 { color: #a5b4fc; }
-
-/* Accent chip borders */
-.dark .border-brand-200,
-.dark .border-brand-200\/70,
-.dark .border-brand-300 { border-color: rgba(28, 133, 90, 0.4); }
-.dark .border-emerald-200,
-.dark .border-emerald-300 { border-color: rgba(16, 185, 129, 0.35); }
-.dark .border-amber-200,
-.dark .border-amber-300 { border-color: rgba(245, 158, 11, 0.35); }
-.dark .border-violet-200 { border-color: rgba(139, 92, 246, 0.35); }
-.dark .border-indigo-200 { border-color: rgba(99, 102, 241, 0.35); }
-
-/* Form controls */
-.dark input,
-.dark select,
-.dark textarea { color: #eceef2; }
 .dark input::placeholder,
 .dark textarea::placeholder { color: #6b7280; }
 
-/* Soften heavy neutral shadows on dark */
-.dark .shadow-sm,
-.dark .shadow-md,
-.dark .shadow-lg,
-.dark .shadow-xl { --tw-shadow-color: rgba(0, 0, 0, 0.5); }
