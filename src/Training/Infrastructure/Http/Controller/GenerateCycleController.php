@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Cadence\Training\Infrastructure\Http\Controller;
 
 use Cadence\Coaching\Application\FitnessAssessmentService;
+use Cadence\Coaching\Infrastructure\Read\AthleteBrief;
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Application\TenantContext;
+use Cadence\Shared\Clock\Clock;
 use Cadence\Training\Application\UseCase\GenerateCycle\GenerateCycleUseCase;
 use Cadence\Training\Domain\Exception\CycleGenerationNotAllowed;
 use Cadence\Training\Domain\Exception\ProgramNotFound;
@@ -20,16 +22,18 @@ final class GenerateCycleController
         private readonly GenerateCycleUseCase $useCase,
         private readonly FitnessAssessmentService $fitness,
         private readonly TenantContext $tenantContext,
+        private readonly Clock $clock,
     ) {
     }
 
     public function __invoke(GenerateCycleRequest $request, string $id): RedirectResponse
     {
         $tenant = $this->tenantContext->current();
+        $state = AthleteBrief::build($tenant->value, $this->fitness->forTenant($tenant), $this->clock->now()->format('Y-m-d'));
 
         try {
             $this->useCase->execute(
-                $request->toInput($id, $this->fitness->pacesSummaryFor($tenant)),
+                $request->toInput($id, $this->fitness->pacesSummaryFor($tenant), $state),
                 new ExecutionContext($tenant),
             );
         } catch (ProgramNotFound) {

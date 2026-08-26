@@ -111,16 +111,24 @@ final class GeminiCyclePlanner implements CyclePlanner
 
         $pacesBlock = trim($c->athletePaces) === '' ? '' : "\n        - Allures de l'athlète (À UTILISER pour toutes les allures cibles) : {$c->athletePaces}";
 
+        $stateBlock = trim($c->athleteState) === '' ? '' : <<<STATE
+
+
+        ÉTAT ACTUEL DE L'ATHLÈTE — à garder EN PERMANENCE en tête pour CHAQUE séance :
+        {$c->athleteState}
+        STATE;
+
         return <<<PROMPT
         Conçois le PROCHAIN cycle d'entraînement, jour par jour.
 
+        🎯 OBJECTIF PRIORITAIRE (ne le perds JAMAIS de vue) : {$c->goal}
+        Course cible : {$c->targetRaceName} (date : {$c->targetRaceDate}). Chaque séance doit rapprocher de cet objectif.
+
         Contexte :
-        - Objectif du programme : {$c->goal}
-        - Course cible : {$c->targetRaceName} (date : {$c->targetRaceDate})
         - Début du cycle : {$c->startDate}, durée : {$c->weeks} semaine(s) ({$days} jours).
         - Ressenti de l'athlète : {$c->ressenti}
-        - Performances récentes : {$c->recentPerformance}{$pacesBlock}
-        - {$c->previousCycle}{$phaseBlock}
+        - Performances récentes (assignées) : {$c->recentPerformance}{$pacesBlock}
+        - {$c->previousCycle}{$phaseBlock}{$stateBlock}
 
         Réponds avec UNIQUEMENT un objet JSON (aucun texte, aucune balise markdown) de cette forme EXACTE :
         {
@@ -155,6 +163,7 @@ final class GeminiCyclePlanner implements CyclePlanner
         - DÉCOUPE chaque séance qui court en `steps` : échauffement, corps (blocs répétés avec récup), retour au calme. Un footing continu = 1 seul step (durée + allure). Un jour de repos = steps vide.
         - Utilise IMPÉRATIVEMENT les allures de l'athlète ci-dessus pour chaque `paceSecondsPerKm`. N'invente pas d'allures.
         - Progression cohérente, principe hard/easy, majorité du volume en E. Allures en secondes par km (ex. 4:00/km = 240).
+        - ADAPTE le volume et l'intensité à l'ÉTAT ACTUEL ci-dessus (dernières sorties réelles, forme, recommandation) — ne planifie jamais « dans le vide », et sers toujours l'objectif prioritaire.
         PROMPT;
     }
 }

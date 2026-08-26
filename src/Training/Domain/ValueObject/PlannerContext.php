@@ -20,6 +20,7 @@ final class PlannerContext
         public readonly string $phaseFocus = '',
         public readonly string $blueprint = '',
         public readonly string $athletePaces = '',
+        public readonly string $athleteState = '',
     ) {
     }
 }

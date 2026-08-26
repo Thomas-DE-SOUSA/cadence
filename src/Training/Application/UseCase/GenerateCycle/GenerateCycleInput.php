@@ -12,6 +12,7 @@ final readonly class GenerateCycleInput
         public int $weeks,
         public string $ressenti,
         public string $athletePaces = '',
+        public string $athleteState = '',
     ) {
     }
 }

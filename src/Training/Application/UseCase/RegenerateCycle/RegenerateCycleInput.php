@@ -12,6 +12,7 @@ final readonly class RegenerateCycleInput
         public string $ressenti = '',
         public string $startDate = '',
         public string $athletePaces = '',
+        public string $athleteState = '',
     ) {
     }
 }

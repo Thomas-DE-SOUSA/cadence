@@ -23,7 +23,7 @@ final class RegenerateCycleRequest extends FormRequest
         ];
     }
 
-    public function toInput(string $programId, string $cycleId, string $athletePaces = ''): RegenerateCycleInput
+    public function toInput(string $programId, string $cycleId, string $athletePaces = '', string $athleteState = ''): RegenerateCycleInput
     {
         $startDate = $this->validated('start_date');
 
@@ -33,6 +33,7 @@ final class RegenerateCycleRequest extends FormRequest
             ressenti: (string) ($this->validated('ressenti') ?? ''),
             startDate: is_string($startDate) ? $startDate : '',
             athletePaces: $athletePaces,
+            athleteState: $athleteState,
         );
     }
 }

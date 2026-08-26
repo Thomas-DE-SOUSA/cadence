@@ -119,6 +119,7 @@ final readonly class GenerateCycleUseCase
             phaseFocus: $phase !== null ? $phase->focus : '',
             blueprint: $blueprintCycle !== null ? $this->renderBlueprint($blueprintCycle) : '',
             athletePaces: $input->athletePaces,
+            athleteState: $input->athleteState,
         );
 
         try {
