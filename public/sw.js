@@ -1,11 +1,17 @@
-const CACHE = 'cadence-v1';
+const CACHE = 'cadence-v2';
 
 self.addEventListener('install', () => {
     self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-    event.waitUntil(self.clients.claim());
+    // Purge caches from previous versions so stale assets (e.g. the old logo) go.
+    event.waitUntil(
+        caches
+            .keys()
+            .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+            .then(() => self.clients.claim()),
+    );
 });
 
 // Network-first with a cache fallback: fresh data online, shell still loads offline.
