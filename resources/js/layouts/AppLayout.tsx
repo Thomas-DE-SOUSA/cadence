@@ -119,7 +119,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                                 </g>
                             </svg>
                         </span>
-                        <span className="hidden whitespace-nowrap text-[15px] font-black tracking-tight text-neutral-900 sm:block">
+                        <span className="whitespace-nowrap text-[15px] font-black tracking-tight text-neutral-900">
                             Cadence
                         </span>
                     </Link>
