@@ -215,6 +215,12 @@ function CountUp({ value, decimals = 0 }: { value: number; decimals?: number }) 
     return <>{useCountUp(value).toFixed(decimals)}</>;
 }
 
+const SECTION_TABS = [
+    { key: 'cycle' as const, label: 'Cycle', icon: Layers },
+    { key: 'objectifs' as const, label: 'Objectifs', icon: Target },
+    { key: 'profil' as const, label: 'Profil', icon: Gauge },
+];
+
 export default function ProgramDetail({ program, available, cycles, roadmap, canGenerate, activeCycleId, athlete }: Props) {
     const ai = useForm({ start_date: '', weeks: 3, ressenti: '' });
     const [collapsed, setCollapsed] = useState<Set<string>>(
@@ -226,6 +232,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
     // On mobile the session detail and the coach share one panel via a toggle.
     const [mobileTab, setMobileTab] = useState<'details' | 'coach'>('details');
     const [moveDate, setMoveDate] = useState('');
+    const [section, setSection] = useState<'cycle' | 'objectifs' | 'profil'>('cycle');
 
     useEffect(() => {
         if (openDay) {
@@ -336,9 +343,23 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-                {/* Left rail */}
-                <div className="animate-fade-up space-y-5 lg:col-span-4" style={{ animationDelay: '60ms' }}>
+            {/* Section nav — avoids one long scroll */}
+            <div className="mb-5 flex gap-1 rounded-xl border border-neutral-200 bg-white p-1 shadow-sm shadow-neutral-200/50">
+                {SECTION_TABS.map((t) => (
+                    <button
+                        key={t.key}
+                        onClick={() => setSection(t.key)}
+                        className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                            section === t.key ? 'bg-brand-500 text-white shadow-sm' : 'text-neutral-500 hover:bg-neutral-100'
+                        }`}
+                    >
+                        <t.icon size={16} /> {t.label}
+                    </button>
+                ))}
+            </div>
+
+            {section === 'profil' && (
+                <div className="animate-fade-up space-y-5">
                     {athlete && (
                         <Card title="Profil coureur (estimé)">
                             <div className="flex items-end justify-between">
@@ -384,7 +405,14 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                             </p>
                         </Card>
                     )}
+                    {!athlete && (
+                        <p className="text-sm text-neutral-400">Profil indisponible — enregistre quelques sorties pour l'estimer.</p>
+                    )}
+                </div>
+            )}
 
+            {section === 'objectifs' && (
+                <div className="animate-fade-up space-y-5">
                     <Card title={`Objectifs — ${achieved}/${program.objectives.length}`}>
                         {program.objectives.length === 0 ? (
                             <p className="text-sm text-neutral-400">Aucun objectif défini.</p>
@@ -415,11 +443,11 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                             </ul>
                         )}
                     </Card>
-
                 </div>
+            )}
 
-                {/* Main — the plan */}
-                <div className="animate-fade-up space-y-5 lg:col-span-8" style={{ animationDelay: '130ms' }}>
+            {section === 'cycle' && (
+                <div className="animate-fade-up space-y-5">
                     {roadmap.length > 0 && (
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                             {roadmap.map((phase) => {
@@ -627,7 +655,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                         })
                     )}
                 </div>
-            </div>
+            )}
 
             {/* Day detail + coach */}
             <Modal
