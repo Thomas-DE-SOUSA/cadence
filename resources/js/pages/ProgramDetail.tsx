@@ -11,7 +11,6 @@ import {
     Flag,
     Footprints,
     Gauge,
-    GripVertical,
     Layers,
     Leaf,
     ListChecks,
@@ -417,38 +416,6 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                         )}
                     </Card>
 
-                    <Card title="Sorties à placer">
-                        {available.length > 0 && (
-                            <div>
-                                <p className="mb-2 text-xs text-neutral-400">
-                                    Sorties hors des semaines du plan — glisse-les sur un jour (ou touche la sortie puis le jour).
-                                </p>
-                                <div className="flex flex-col gap-2">
-                                    {available.map((a) => (
-                                        <button
-                                            key={a.id}
-                                            draggable
-                                            onDragStart={(e) => e.dataTransfer.setData('text/plain', a.id)}
-                                            onClick={() => setSelectedRun((cur) => (cur === a.id ? null : a.id))}
-                                            className={`flex cursor-grab items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors active:cursor-grabbing ${
-                                                selectedRun === a.id
-                                                    ? 'border-brand-400 bg-brand-50 text-brand-700'
-                                                    : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300'
-                                            }`}
-                                        >
-                                            <GripVertical size={14} className="shrink-0 text-neutral-300" />
-                                            {formatDate(a.occurredAt)} · {formatKilometers(a.distanceMeters)} km
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        {available.length === 0 && (
-                            <p className="text-sm text-neutral-400">
-                                Tes sorties se rattachent automatiquement à la bonne semaine du plan — rien à placer.
-                            </p>
-                        )}
-                    </Card>
                 </div>
 
                 {/* Main — the plan */}
@@ -501,7 +468,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                             const isCollapsed = collapsed.has(cycle.id);
                             const isDone = cycle.status === 'completed';
                             return (
-                                <Card key={cycle.id} className={isDone ? 'border-emerald-200 bg-emerald-50/40' : undefined}>
+                                <Card key={cycle.id} className={isDone ? 'border-emerald-300 bg-emerald-50' : undefined}>
                                     <button
                                         onClick={() => toggleCycle(cycle.id)}
                                         className="flex w-full cursor-pointer items-start justify-between gap-3 text-left"
