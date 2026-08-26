@@ -30,6 +30,7 @@ export interface Activity {
     elapsedSeconds: number;
     elevationGainMeters: number;
     averagePaceSecondsPerKm: number;
+    gapSecondsPerKm: number | null;
     splits: Split[];
     bestEfforts: BestEffort[];
     track: [number, number][] | null;

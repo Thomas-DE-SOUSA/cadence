@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cadence\Activity\Infrastructure\Read;
 
+use Cadence\Activity\Domain\Service\GradeAdjustedPaceCalculator;
 use Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel;
 
 /**
@@ -31,10 +32,17 @@ final class ActivityView
         /** @var list<array<string, mixed>> $splits */
         $splits = $model->splits;
 
+        $gapSegments = array_map(static fn (array $s): array => [
+            'distanceMeters' => (int) $s['distance_meters'],
+            'durationSeconds' => (int) $s['duration_seconds'],
+            'elevationMeters' => (int) $s['elevation_meters'],
+        ], $splits);
+
         return [
             ...self::summary($model),
             'elapsedSeconds' => $model->elapsed_seconds,
             'elevationGainMeters' => $model->elevation_gain_meters,
+            'gapSecondsPerKm' => (new GradeAdjustedPaceCalculator())->overall($gapSegments),
             'splits' => array_map(static fn (array $s): array => [
                 'index' => (int) $s['index'],
                 'distanceMeters' => (int) $s['distance_meters'],

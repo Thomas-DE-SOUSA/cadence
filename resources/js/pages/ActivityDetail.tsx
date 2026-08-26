@@ -111,6 +111,15 @@ export default function ActivityDetail({ activity }: Props) {
                         accent
                         help="Ton rythme moyen, en minutes par kilomètre (min/km). Plus le chiffre est bas, plus tu cours vite."
                     />
+                    {activity.gapSecondsPerKm !== null && Math.abs(activity.gapSecondsPerKm - activity.averagePaceSecondsPerKm) >= 4 && (
+                        <HeroStat
+                            icon={Gauge}
+                            label="Allure GAP"
+                            tint="bg-violet-100 text-violet-600"
+                            value={formatPace(activity.gapSecondsPerKm)}
+                            help="Allure ajustée au dénivelé (GAP) : l'allure sur plat qui aurait demandé le même effort. En côte, elle est plus rapide que ton allure réelle."
+                        />
+                    )}
                     <HeroStat
                         icon={Mountain}
                         label="Dénivelé +"
