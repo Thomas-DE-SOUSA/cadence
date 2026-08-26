@@ -101,36 +101,31 @@ final class GeminiCyclePlanner implements CyclePlanner
     {
         $days = $c->weeks * 7;
 
-        $phaseBlock = trim($c->blueprint) === '' ? '' : <<<PHASE
+        $pacesLine = trim($c->athletePaces) === ''
+            ? '(non renseignées — reste cohérent avec un coureur de ce niveau)'
+            : $c->athletePaces;
 
-        Cette phase du plan expert est ta BASE — adapte-la (volume, intensité) au ressenti et aux performances, sans en changer la nature :
-        - Phase : {$c->phaseName} — {$c->phaseFocus}
-        - Plan de référence :
-        {$c->blueprint}
-        PHASE;
+        $base = trim($c->blueprint) === '' ? '' :
+            "\n\n## Plan expert de la phase — base à adapter (garde sa NATURE, ajuste volume/intensité)\n"
+            ."Phase : {$c->phaseName} — {$c->phaseFocus}\n{$c->blueprint}";
 
-        $pacesBlock = trim($c->athletePaces) === '' ? '' : "\n        - Allures de l'athlète (À UTILISER pour toutes les allures cibles) : {$c->athletePaces}";
-
-        $stateBlock = trim($c->athleteState) === '' ? '' : <<<STATE
-
-
-        ÉTAT ACTUEL DE L'ATHLÈTE — à garder EN PERMANENCE en tête pour CHAQUE séance :
-        {$c->athleteState}
-        STATE;
+        $state = trim($c->athleteState) === '' ? '' :
+            "\n\n## État actuel de l'athlète — ANALYSE à respecter pour CHAQUE séance\n{$c->athleteState}";
 
         return <<<PROMPT
-        Conçois le PROCHAIN cycle d'entraînement, jour par jour.
+        Tu es le coach personnel de cet athlète. Conçois son PROCHAIN cycle d'entraînement, jour par jour, et réponds en JSON strict.
 
-        🎯 OBJECTIF PRIORITAIRE (ne le perds JAMAIS de vue) : {$c->goal}
-        Course cible : {$c->targetRaceName} (date : {$c->targetRaceDate}). Chaque séance doit rapprocher de cet objectif.
+        ## Objectif — priorité absolue (ne le perds JAMAIS de vue)
+        {$c->goal}
+        Course cible : {$c->targetRaceName} (le {$c->targetRaceDate}). CHAQUE séance doit rapprocher de cet objectif.
 
-        Contexte :
-        - Début du cycle : {$c->startDate}, durée : {$c->weeks} semaine(s) ({$days} jours).
-        - Ressenti de l'athlète : {$c->ressenti}
-        - Performances récentes (assignées) : {$c->recentPerformance}{$pacesBlock}
-        - {$c->previousCycle}{$phaseBlock}{$stateBlock}
+        ## Cadre du cycle
+        - Démarre le {$c->startDate} · {$c->weeks} semaine(s) = {$days} jours → EXACTEMENT une entrée par jour.
+        - Ressenti saisi par l'athlète : {$c->ressenti}
+        - Allures perso (à utiliser telles quelles, ne JAMAIS inventer) : {$pacesLine}
+        - {$c->previousCycle}{$base}{$state}
 
-        Réponds avec UNIQUEMENT un objet JSON (aucun texte, aucune balise markdown) de cette forme EXACTE :
+        ## Format de sortie — réponds UNIQUEMENT avec cet objet JSON (aucun texte, aucune balise markdown)
         {
           "name": "nom court du cycle (ex. C2 Développement)",
           "focus": "1 phrase sur l'objectif du cycle",
@@ -158,12 +153,12 @@ final class GeminiCyclePlanner implements CyclePlanner
           ]
         }
 
-        Règles :
-        - Une entrée par jour pour les {$days} jours (inclure les jours de repos avec type REST, sans steps).
-        - DÉCOUPE chaque séance qui court en `steps` : échauffement, corps (blocs répétés avec récup), retour au calme. Un footing continu = 1 seul step (durée + allure). Un jour de repos = steps vide.
-        - Utilise IMPÉRATIVEMENT les allures de l'athlète ci-dessus pour chaque `paceSecondsPerKm`. N'invente pas d'allures.
-        - Progression cohérente, principe hard/easy, majorité du volume en E. Allures en secondes par km (ex. 4:00/km = 240).
-        - ADAPTE le volume et l'intensité à l'ÉTAT ACTUEL ci-dessus (dernières sorties réelles, forme, recommandation) — ne planifie jamais « dans le vide », et sers toujours l'objectif prioritaire.
+        ## Règles (impératives)
+        - EXACTEMENT une entrée par jour sur {$days} jours ; jour de repos = type REST avec `steps` vide.
+        - Découpe chaque séance courue en `steps` : échauffement → corps (blocs répétés avec récup) → retour au calme. Un footing continu = 1 seul step. `repeat` pour les blocs (ex. 5×1000 m → repeat 5).
+        - `paceSecondsPerKm` = TOUJOURS une des allures perso ci-dessus, en secondes/km (ex. 4:00/km = 240). N'invente aucune allure.
+        - Progression cohérente, alternance dur/facile, ~80 % du volume en facile (E) et une minorité vraiment dure (polarisé, pas de zone grise).
+        - Adapte volume et intensité à l'ANALYSE ci-dessus (dernières sorties, forme, reco) ; ne planifie jamais « dans le vide » et sers toujours l'objectif.
         PROMPT;
     }
 }
