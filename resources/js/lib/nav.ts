@@ -1,4 +1,4 @@
-import { CalendarDays, Gauge, LayoutDashboard, Lightbulb, TrendingUp, type LucideIcon } from 'lucide-react';
+import { Activity, CalendarDays, Gauge, LayoutDashboard, Lightbulb, TrendingUp, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
     label: string;
@@ -11,6 +11,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
     { label: 'Tableau de bord', href: '/', icon: LayoutDashboard },
     { label: 'Progression', href: '/progression', icon: TrendingUp },
+    { label: 'Forme', href: '/forme', icon: Activity },
     { label: 'Programme', href: '/programme', icon: CalendarDays },
     { label: 'Allures', href: '/allures', icon: Gauge },
     { label: 'Conseil', href: '/conseil', icon: Lightbulb },

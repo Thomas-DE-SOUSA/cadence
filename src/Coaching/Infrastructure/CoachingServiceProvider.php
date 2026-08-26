@@ -18,6 +18,7 @@ use Cadence\Coaching\Infrastructure\Http\Controller\AnalyzeGuestGpxController;
 use Cadence\Coaching\Infrastructure\Http\Controller\ApplyProposalController;
 use Cadence\Coaching\Infrastructure\Http\Controller\SendCoachMessageController;
 use Cadence\Coaching\Infrastructure\Http\Controller\ShowCoachThreadController;
+use Cadence\Coaching\Infrastructure\Http\Controller\ShowFitnessController;
 use Cadence\Coaching\Infrastructure\Http\Controller\StreamAdvisorController;
 use Cadence\Coaching\Infrastructure\Http\Controller\StreamCoachController;
 use Cadence\Coaching\Infrastructure\Knowledge\CoachingKnowledge;
@@ -60,6 +61,9 @@ final class CoachingServiceProvider extends ServiceProvider
             Route::post('/stream', StreamCoachController::class)->name('programs.coach.stream');
             Route::post('/apply', ApplyProposalController::class)->name('programs.coach.apply');
         });
+
+        // Fitness / training-load insights.
+        Route::middleware(['web', 'auth'])->get('/forme', ShowFitnessController::class)->name('fitness');
 
         // Guest advisory tool ("Conseil") — assess any runner, no persistence.
         Route::middleware(['web', 'auth'])->prefix('conseil')->group(function (): void {
