@@ -6,8 +6,11 @@ namespace Cadence\Coaching\Infrastructure\Read;
 
 use Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel;
 use Cadence\Coaching\Domain\Service\AdaptationAnalyzer;
+use Cadence\Coaching\Domain\Service\ReadinessAssessor;
 use Cadence\Coaching\Domain\Service\TrainingLoadCalculator;
 use Cadence\Coaching\Domain\ValueObject\FitnessSnapshot;
+use Cadence\Coaching\Domain\ValueObject\WellnessCheckIn;
+use Cadence\Coaching\Infrastructure\Persistence\Eloquent\WellnessCheckInModel;
 use DateTimeImmutable;
 
 /**
@@ -57,10 +60,20 @@ final class AthleteBrief
         }
 
         if ($runs->isEmpty()) {
-            return 'ANALYSE : aucune sortie récente enregistrée — démarre prudemment.';
+            $wellness = self::wellnessLine($tenantId, $today);
+
+            return 'ANALYSE : aucune sortie récente enregistrée — démarre prudemment.'
+                .($wellness !== '' ? "\n".$wellness : '');
         }
 
         $lines = ['ANALYSE de l’historique récent (4 semaines) :'];
+
+        // Subjective check-in first — sensations/pain must never be missed by the
+        // brain, and a limiting pain trumps every load number below.
+        $wellness = self::wellnessLine($tenantId, $today);
+        if ($wellness !== '') {
+            $lines[] = $wellness;
+        }
 
         $trend = $volPrev7 <= 0.0 ? '' : ($vol7 > $volPrev7 * 1.1 ? ', en hausse' : ($vol7 < $volPrev7 * 0.9 ? ', en baisse' : ', stable'))
             .($volPrev7 > 0 ? ' vs '.round($volPrev7).' km la semaine d’avant' : '');
@@ -100,6 +113,65 @@ final class AthleteBrief
         }
 
         return implode("\n", $lines);
+    }
+
+    /** The athlete's latest subjective check-in (within 3 days), turned into a directive for the brain. */
+    private static function wellnessLine(string $tenantId, string $today): string
+    {
+        $since = (new DateTimeImmutable($today))->modify('-2 days')->format('Y-m-d');
+
+        $model = WellnessCheckInModel::query()
+            ->where('tenant_id', $tenantId)
+            ->where('check_date', '>=', $since)
+            ->orderByDesc('check_date')
+            ->first();
+
+        if (! $model instanceof WellnessCheckInModel) {
+            return '';
+        }
+
+        $checkIn = new WellnessCheckIn(
+            $model->check_date,
+            $model->sleep,
+            $model->energy,
+            $model->legs,
+            $model->motivation,
+            $model->pain_level,
+            $model->pain_location,
+            $model->note,
+        );
+        $readiness = (new ReadinessAssessor())->assess($checkIn);
+
+        $when = $checkIn->date === $today ? 'aujourd’hui' : 'récent';
+        $sensations = sprintf('sommeil %d/5, énergie %d/5, jambes %d/5, motivation %d/5', $checkIn->sleep, $checkIn->energy, $checkIn->legs, $checkIn->motivation);
+
+        if ($checkIn->limitsRunning()) {
+            $where = $checkIn->painLocation !== '' ? ' au niveau : '.$checkIn->painLocation : '';
+            return sprintf(
+                '- 🚨 RESSENTI %s — DOULEUR LIMITANTE%s. PRIORITÉ ABSOLUE : pas de séance dure, prévois repos/récupération ou allège fortement. Ne planifie AUCUNE intensité tant que ça n’est pas résolu. (%s)',
+                $when,
+                $where,
+                $sensations,
+            );
+        }
+
+        $pain = match ($checkIn->painLevel) {
+            2 => ' Gêne modérée'.($checkIn->painLocation !== '' ? ' ('.$checkIn->painLocation.')' : '').' à surveiller — reste prudent sur l’intensité.',
+            1 => ' Petite gêne'.($checkIn->painLocation !== '' ? ' ('.$checkIn->painLocation.')' : '').' signalée.',
+            default => '',
+        };
+        $note = trim($checkIn->note) !== '' ? ' Note de l’athlète : « '.trim($checkIn->note).' ».' : '';
+
+        return sprintf(
+            '- RESSENTI %s — readiness %s (%d/100) : %s. %s.%s%s Tiens compte de ces sensations pour doser la charge du jour.',
+            $when,
+            $readiness->level->label(),
+            $readiness->score,
+            $sensations,
+            $readiness->headline,
+            $pain,
+            $note,
+        );
     }
 
     private static function pace(int $secondsPerKm): string

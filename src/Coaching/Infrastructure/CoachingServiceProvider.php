@@ -10,6 +10,7 @@ use Cadence\Coaching\Domain\Port\CoachStreamer;
 use Cadence\Coaching\Domain\Port\ConversationRepository;
 use Cadence\Coaching\Domain\Port\ProgramContextProvider;
 use Cadence\Coaching\Domain\Port\SessionAdjuster;
+use Cadence\Coaching\Domain\Port\WellnessCheckInRepository;
 use Cadence\Coaching\Infrastructure\Ai\AdvisorStreamer;
 use Cadence\Coaching\Infrastructure\Ai\CoachRequestBuilder;
 use Cadence\Coaching\Infrastructure\Ai\GeminiCoachStreamer;
@@ -23,7 +24,9 @@ use Cadence\Coaching\Infrastructure\Http\Controller\StreamAdvisorController;
 use Cadence\Coaching\Infrastructure\Http\Controller\StreamCoachController;
 use Cadence\Coaching\Infrastructure\Knowledge\CoachingKnowledge;
 use Inertia\Inertia;
+use Cadence\Coaching\Infrastructure\Http\Controller\SubmitWellnessCheckInController;
 use Cadence\Coaching\Infrastructure\Persistence\Eloquent\EloquentConversationRepository;
+use Cadence\Coaching\Infrastructure\Persistence\Eloquent\EloquentWellnessCheckInRepository;
 use Cadence\Coaching\Infrastructure\Provider\EloquentAthleteHistoryProvider;
 use Cadence\Coaching\Infrastructure\Provider\TrainingProgramContextProvider;
 use Cadence\Coaching\Infrastructure\Provider\TrainingSessionAdjuster;
@@ -38,6 +41,7 @@ final class CoachingServiceProvider extends ServiceProvider
         $this->app->bind(ConversationRepository::class, EloquentConversationRepository::class);
         $this->app->bind(ProgramContextProvider::class, TrainingProgramContextProvider::class);
         $this->app->bind(SessionAdjuster::class, TrainingSessionAdjuster::class);
+        $this->app->bind(WellnessCheckInRepository::class, EloquentWellnessCheckInRepository::class);
 
         $builder = fn (): CoachRequestBuilder => new CoachRequestBuilder(new CoachingKnowledge());
         $gemini = fn (): GeminiClient => new GeminiClient(
@@ -62,8 +66,9 @@ final class CoachingServiceProvider extends ServiceProvider
             Route::post('/apply', ApplyProposalController::class)->name('programs.coach.apply');
         });
 
-        // Fitness / training-load insights.
+        // Fitness / training-load insights + daily subjective check-in.
         Route::middleware(['web', 'auth'])->get('/forme', ShowFitnessController::class)->name('fitness');
+        Route::middleware(['web', 'auth'])->post('/forme/check-in', SubmitWellnessCheckInController::class)->name('fitness.checkin');
 
         // Guest advisory tool ("Conseil") — assess any runner, no persistence.
         Route::middleware(['web', 'auth'])->prefix('conseil')->group(function (): void {

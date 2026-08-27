@@ -1,7 +1,24 @@
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import type { ComponentType, ReactNode } from 'react';
-import { Activity, BatteryCharging, BatteryLow, HeartPulse, Scale, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
+import {
+    Activity,
+    AlertTriangle,
+    BatteryCharging,
+    BatteryLow,
+    Check,
+    Footprints,
+    HeartPulse,
+    Moon,
+    PencilLine,
+    Scale,
+    ShieldAlert,
+    ShieldCheck,
+    Smile,
+    Sparkles,
+    TrendingUp,
+    Zap,
+} from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
 import { HelpTip } from '@/components/HelpTip';
@@ -33,6 +50,25 @@ interface Adaptation {
     cycleName: string;
 }
 
+interface Readiness {
+    score: number;
+    level: 'green' | 'amber' | 'red';
+    label: string;
+    headline: string;
+    advice: string;
+}
+
+interface CheckIn {
+    sleep: number;
+    energy: number;
+    legs: number;
+    motivation: number;
+    painLevel: number;
+    painLocation: string;
+    note: string;
+    readiness: Readiness;
+}
+
 interface Props {
     load: {
         hasData: boolean;
@@ -45,6 +81,7 @@ interface Props {
         zones?: { easy: number; moderate: number; hard: number; total: number };
     };
     adaptation?: Adaptation | null;
+    checkin?: CheckIn | null;
 }
 
 const VERDICT: Record<Adaptation['verdict'], { label: string; icon: ComponentType<{ size?: number; className?: string }>; ring: string; tint: string; chip: string }> = {
@@ -206,6 +243,206 @@ function FormChart({ series }: { series: SeriesPoint[] }) {
     );
 }
 
+const READINESS_STYLE: Record<Readiness['level'], { ring: string; chip: string; tint: string; bg: string; icon: ComponentType<{ size?: number; className?: string }> }> = {
+    green: { ring: 'border-brand-200', chip: 'bg-brand-500', tint: 'text-brand-600', bg: 'bg-brand-50', icon: ShieldCheck },
+    amber: { ring: 'border-amber-200', chip: 'bg-amber-500', tint: 'text-amber-600', bg: 'bg-amber-50', icon: ShieldAlert },
+    red: { ring: 'border-rose-200', chip: 'bg-rose-500', tint: 'text-rose-600', bg: 'bg-rose-50', icon: AlertTriangle },
+};
+
+const SENSATIONS: { key: 'sleep' | 'energy' | 'legs' | 'motivation'; label: string; icon: ComponentType<{ size?: number; className?: string }> }[] = [
+    { key: 'sleep', label: 'Sommeil', icon: Moon },
+    { key: 'energy', label: 'Énergie', icon: Zap },
+    { key: 'legs', label: 'Jambes', icon: Footprints },
+    { key: 'motivation', label: 'Motivation', icon: Smile },
+];
+
+const PAIN_OPTIONS = [
+    { value: 0, label: 'Aucune' },
+    { value: 1, label: 'Légère' },
+    { value: 2, label: 'Modérée' },
+    { value: 3, label: 'Limitante' },
+];
+
+function SensationRow({
+    icon: Icon,
+    label,
+    value,
+    onChange,
+}: {
+    icon: ComponentType<{ size?: number; className?: string }>;
+    label: string;
+    value: number;
+    onChange: (v: number) => void;
+}) {
+    return (
+        <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-sm font-medium text-neutral-600">
+                <Icon size={15} className="text-neutral-400" /> {label}
+            </span>
+            <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                        key={n}
+                        type="button"
+                        onClick={() => onChange(n)}
+                        aria-label={`${label} ${n} sur 5`}
+                        className={`h-8 w-8 rounded-lg text-sm font-semibold tabular-nums transition ${
+                            value === n ? 'bg-neutral-900 text-white shadow-sm' : 'bg-neutral-100 text-neutral-400 hover:bg-neutral-200'
+                        }`}
+                    >
+                        {n}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function CheckInCard({ checkin }: { checkin?: CheckIn | null }) {
+    const [editing, setEditing] = useState(!checkin);
+    const [sleep, setSleep] = useState(checkin?.sleep ?? 3);
+    const [energy, setEnergy] = useState(checkin?.energy ?? 3);
+    const [legs, setLegs] = useState(checkin?.legs ?? 3);
+    const [motivation, setMotivation] = useState(checkin?.motivation ?? 3);
+    const [painLevel, setPainLevel] = useState(checkin?.painLevel ?? 0);
+    const [painLocation, setPainLocation] = useState(checkin?.painLocation ?? '');
+    const [note, setNote] = useState(checkin?.note ?? '');
+    const [saving, setSaving] = useState(false);
+
+    const submit = () => {
+        setSaving(true);
+        router.post(
+            '/forme/check-in',
+            { sleep, energy, legs, motivation, painLevel, painLocation, note },
+            {
+                preserveScroll: true,
+                onSuccess: () => setEditing(false),
+                onFinish: () => setSaving(false),
+            },
+        );
+    };
+
+    // Done state — show the readiness verdict with an edit affordance.
+    if (checkin && !editing) {
+        const r = checkin.readiness;
+        const s = READINESS_STYLE[r.level];
+        const Icon = s.icon;
+        return (
+            <div className={`animate-fade-up mb-4 rounded-2xl border bg-white p-5 shadow-sm shadow-neutral-200/60 ${s.ring}`}>
+                <div className="flex items-start gap-3">
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white ${s.chip}`}>
+                        <Icon size={20} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
+                            <HeartPulse size={12} /> Ressenti du jour · readiness {r.score}/100
+                        </p>
+                        <p className={`mt-0.5 text-lg font-bold ${s.tint}`}>
+                            {r.label} — {r.headline}
+                        </p>
+                        <p className="mt-1 text-sm text-neutral-600">{r.advice}</p>
+                        <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-neutral-500">
+                            <span className="rounded-full bg-neutral-100 px-2 py-0.5">Sommeil {checkin.sleep}/5</span>
+                            <span className="rounded-full bg-neutral-100 px-2 py-0.5">Énergie {checkin.energy}/5</span>
+                            <span className="rounded-full bg-neutral-100 px-2 py-0.5">Jambes {checkin.legs}/5</span>
+                            <span className="rounded-full bg-neutral-100 px-2 py-0.5">Motiv. {checkin.motivation}/5</span>
+                            {checkin.painLevel > 0 && (
+                                <span className={`rounded-full px-2 py-0.5 font-medium ${s.bg} ${s.tint}`}>
+                                    Douleur : {PAIN_OPTIONS[checkin.painLevel].label}
+                                    {checkin.painLocation ? ` (${checkin.painLocation})` : ''}
+                                </span>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => setEditing(true)}
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-50"
+                        >
+                            <PencilLine size={14} /> Modifier
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="animate-fade-up mb-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm shadow-neutral-200/60">
+            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
+                <HeartPulse size={12} /> Comment tu te sens aujourd'hui ?
+            </p>
+            <p className="mt-0.5 mb-3 text-sm text-neutral-500">Tes sensations affinent ta forme et guident le coach (1 = très bas, 5 = au top).</p>
+
+            <div className="space-y-2.5">
+                {SENSATIONS.map((s) => {
+                    const value = { sleep, energy, legs, motivation }[s.key];
+                    const setter = { sleep: setSleep, energy: setEnergy, legs: setLegs, motivation: setMotivation }[s.key];
+                    return <SensationRow key={s.key} icon={s.icon} label={s.label} value={value} onChange={setter} />;
+                })}
+            </div>
+
+            <div className="mt-4 border-t border-neutral-100 pt-3">
+                <p className="mb-2 text-sm font-medium text-neutral-600">Douleur / gêne ?</p>
+                <div className="grid grid-cols-4 gap-1.5">
+                    {PAIN_OPTIONS.map((p) => {
+                        const active = painLevel === p.value;
+                        const danger = p.value >= 2;
+                        return (
+                            <button
+                                key={p.value}
+                                type="button"
+                                onClick={() => setPainLevel(p.value)}
+                                className={`rounded-lg px-2 py-2 text-xs font-semibold transition ${
+                                    active
+                                        ? danger
+                                            ? 'bg-rose-500 text-white shadow-sm'
+                                            : 'bg-neutral-900 text-white shadow-sm'
+                                        : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+                                }`}
+                            >
+                                {p.label}
+                            </button>
+                        );
+                    })}
+                </div>
+                {painLevel > 0 && (
+                    <input
+                        type="text"
+                        value={painLocation}
+                        onChange={(e) => setPainLocation(e.target.value)}
+                        placeholder="Où ? (genou, mollet, tendon d'Achille…)"
+                        maxLength={120}
+                        className="mt-2 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-700 placeholder:text-neutral-400 focus:border-neutral-400 focus:outline-none"
+                    />
+                )}
+            </div>
+
+            <input
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Une note ? (optionnel)"
+                maxLength={500}
+                className="mt-3 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-700 placeholder:text-neutral-400 focus:border-neutral-400 focus:outline-none"
+            />
+
+            <div className="mt-4 flex items-center gap-2">
+                <button
+                    onClick={submit}
+                    disabled={saving}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                >
+                    <Check size={15} /> {saving ? 'Enregistrement…' : checkin ? 'Mettre à jour' : 'Enregistrer mon ressenti'}
+                </button>
+                {checkin && (
+                    <button onClick={() => setEditing(false)} className="rounded-lg px-3 py-2 text-sm font-medium text-neutral-500 hover:text-neutral-700">
+                        Annuler
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function formStatus(tsb: number): { label: string; tint: string } {
     if (tsb > 8) return { label: 'Frais / affûté', tint: 'text-brand-600' };
     if (tsb >= -10) return { label: 'Équilibré', tint: 'text-neutral-500' };
@@ -225,13 +462,18 @@ function pct(part: number, total: number): number {
     return total > 0 ? Math.round((part / total) * 100) : 0;
 }
 
-export default function Forme({ load, adaptation }: Props) {
+export default function Forme({ load, adaptation, checkin }: Props) {
     if (!load.hasData || !load.series || !load.zones) {
         return (
             <>
                 <Head title="Forme & charge" />
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Forme &amp; charge</h1>
+                    <p className="mt-1 text-sm text-neutral-500">Commence par ton ressenti du jour — tes sorties viendront compléter le tableau.</p>
+                </div>
+                <CheckInCard checkin={checkin} />
                 <PagePlaceholder
-                    title="Forme & charge"
+                    title="Ta courbe de forme arrive bientôt"
                     description="Enregistre quelques sorties et renseigne ton profil : ta courbe de forme, ta charge et ton équilibre 80/20 apparaîtront ici."
                     icon={Activity}
                 />
@@ -254,6 +496,8 @@ export default function Forme({ load, adaptation }: Props) {
                 <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Forme &amp; charge</h1>
                 <p className="mt-1 text-sm text-neutral-500">Ta fraîcheur, ta charge d'entraînement et ton équilibre 80/20.</p>
             </div>
+
+            <CheckInCard checkin={checkin} />
 
             {adaptation && <RecommendationCard a={adaptation} />}
 
