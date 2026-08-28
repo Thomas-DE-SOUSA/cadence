@@ -8,6 +8,7 @@ use Cadence\Strength\Domain\Enum\Equipment;
 use Cadence\Strength\Domain\Enum\MuscleGroup;
 use Cadence\Strength\Domain\Model\Exercise;
 use Cadence\Strength\Domain\Model\StrengthSession;
+use Cadence\Strength\Domain\Model\WorkoutTemplate;
 use Cadence\Strength\Domain\Service\OneRepMaxCalculator;
 use Cadence\Strength\Domain\ValueObject\PerformedExercise;
 
@@ -55,12 +56,47 @@ final class StrengthView
                 'id' => $s->id(),
                 'date' => $snap['date'],
                 'title' => $snap['title'],
+                'status' => $s->status()->value,
+                'statusLabel' => $s->status()->label(),
+                'templateId' => $snap['template_id'],
                 'exerciseCount' => count($snap['exercises']),
                 'totalSets' => $s->totalSets(),
                 'volumeKg' => (int) round($s->totalVolumeKg()),
                 'durationSeconds' => $snap['duration_seconds'],
             ];
         }, $sessions);
+    }
+
+    /**
+     * @param list<WorkoutTemplate> $templates
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function templates(array $templates): array
+    {
+        return array_map(static function (WorkoutTemplate $t): array {
+            $snap = $t->toSnapshot();
+            $names = array_values(array_map(static fn (array $e): string => (string) ($e['name'] ?? ''), $snap['exercises']));
+
+            return [
+                'id' => $t->id(),
+                'name' => $snap['name'],
+                'exerciseCount' => count($snap['exercises']),
+                'exerciseNames' => $names,
+            ];
+        }, $templates);
+    }
+
+    /** @return array<string, mixed> full template for the editor */
+    public static function templateDetail(WorkoutTemplate $t): array
+    {
+        $snap = $t->toSnapshot();
+
+        return [
+            'id' => $t->id(),
+            'name' => $snap['name'],
+            'exercises' => $snap['exercises'],
+        ];
     }
 
     /** @return array<string, mixed> full session for the editor */
@@ -74,6 +110,8 @@ final class StrengthView
             'title' => $snap['title'],
             'note' => $snap['note'],
             'durationSeconds' => $snap['duration_seconds'],
+            'status' => $s->status()->value,
+            'templateId' => $snap['template_id'],
             'exercises' => $snap['exercises'],
         ];
     }
@@ -90,8 +128,9 @@ final class StrengthView
         /** @var array<string, array{name:string,best:float,series:list<array{date:string,e1rm:int,topWeight:float}>}> $byExercise */
         $byExercise = [];
 
-        // Oldest first so the series reads left → right.
-        $ordered = $sessions;
+        // Only done sessions count toward progression; oldest first so the
+        // series reads left → right.
+        $ordered = array_values(array_filter($sessions, static fn (StrengthSession $s): bool => $s->status()->isDone()));
         usort($ordered, static fn (StrengthSession $a, StrengthSession $b): int => strcmp($a->toSnapshot()['date'], $b->toSnapshot()['date']));
 
         foreach ($ordered as $session) {

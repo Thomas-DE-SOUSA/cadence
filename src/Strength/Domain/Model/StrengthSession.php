@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Cadence\Strength\Domain\Model;
 
+use Cadence\Strength\Domain\Enum\WorkoutStatus;
 use Cadence\Strength\Domain\ValueObject\PerformedExercise;
 
 /**
- * A logged strength workout: the exercises performed on a day, with their sets,
- * plus an optional session duration (the chrono). The aggregate that owns a
- * session's consistency and snapshots to/from persistence.
+ * A workout placed on a day of the agenda: which exercises with their (actual)
+ * sets, whether it's still planned or done, and the template it came from (if
+ * any). The aggregate that owns a session's consistency and snapshots to/from
+ * persistence.
  */
 final class StrengthSession
 {
@@ -22,6 +24,8 @@ final class StrengthSession
         private string $note,
         private ?int $durationSeconds,
         private array $exercises,
+        private WorkoutStatus $status = WorkoutStatus::DONE,
+        private ?string $templateId = null,
         private int $version = 1,
     ) {
     }
@@ -34,6 +38,11 @@ final class StrengthSession
     public function tenantId(): string
     {
         return $this->tenantId;
+    }
+
+    public function status(): WorkoutStatus
+    {
+        return $this->status;
     }
 
     public function totalSets(): int
@@ -66,6 +75,8 @@ final class StrengthSession
             'title' => $this->title,
             'note' => $this->note,
             'duration_seconds' => $this->durationSeconds,
+            'status' => $this->status->value,
+            'template_id' => $this->templateId,
             'version' => $this->version,
             'exercises' => array_map(static fn (PerformedExercise $e): array => $e->toArray(), $this->exercises),
         ];
@@ -90,6 +101,8 @@ final class StrengthSession
             (string) ($data['note'] ?? ''),
             isset($data['duration_seconds']) ? (int) $data['duration_seconds'] : null,
             $exercises,
+            WorkoutStatus::from((string) ($data['status'] ?? WorkoutStatus::DONE->value)),
+            isset($data['template_id']) ? (string) $data['template_id'] : null,
             (int) ($data['version'] ?? 1),
         );
     }

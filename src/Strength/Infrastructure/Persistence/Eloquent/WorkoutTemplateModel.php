@@ -10,32 +10,26 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * @property string $id
  * @property string $tenant_id
- * @property string $session_date
- * @property string $title
- * @property string $note
- * @property int|null $duration_seconds
- * @property string $status
- * @property string|null $template_id
+ * @property string $name
  * @property int $version
  * @property array<int, array<string, mixed>> $exercises
  */
-final class StrengthSessionModel extends Model
+final class WorkoutTemplateModel extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'strength_sessions';
+    protected $table = 'workout_templates';
 
     public $incrementing = false;
 
     protected $keyType = 'string';
 
     /** @var list<string> */
-    protected $fillable = ['id', 'tenant_id', 'session_date', 'title', 'note', 'duration_seconds', 'status', 'template_id', 'version', 'exercises'];
+    protected $fillable = ['id', 'tenant_id', 'name', 'version', 'exercises'];
 
     /** @var array<string, string> */
     protected $casts = [
         'exercises' => 'array',
-        'duration_seconds' => 'integer',
         'version' => 'integer',
     ];
 }

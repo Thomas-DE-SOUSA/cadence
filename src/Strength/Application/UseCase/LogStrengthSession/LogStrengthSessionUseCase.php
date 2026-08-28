@@ -7,6 +7,7 @@ namespace Cadence\Strength\Application\UseCase\LogStrengthSession;
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Clock\Clock;
 use Cadence\Shared\Identifier\IdGenerator;
+use Cadence\Strength\Domain\Enum\WorkoutStatus;
 use Cadence\Strength\Domain\Model\StrengthSession;
 use Cadence\Strength\Domain\Port\StrengthSessionRepository;
 use Cadence\Strength\Domain\ValueObject\PerformedExercise;
@@ -42,6 +43,8 @@ final readonly class LogStrengthSessionUseCase
             trim($input->note),
             $input->durationSeconds,
             $exercises,
+            WorkoutStatus::from($input->status),
+            $input->templateId,
             $version,
         );
 

@@ -16,6 +16,8 @@ final readonly class LogStrengthSessionInput
         public string $note,
         public ?int $durationSeconds,
         public array $exercises,
+        public string $status = 'DONE',
+        public ?string $templateId = null,
     ) {
     }
 }

@@ -23,6 +23,8 @@ final class EloquentStrengthSessionRepository implements StrengthSessionReposito
                 'title' => $s['title'],
                 'note' => $s['note'],
                 'duration_seconds' => $s['duration_seconds'],
+                'status' => $s['status'],
+                'template_id' => $s['template_id'],
                 'version' => $s['version'],
                 'exercises' => $s['exercises'],
             ]);
@@ -41,6 +43,11 @@ final class EloquentStrengthSessionRepository implements StrengthSessionReposito
         return $model instanceof StrengthSessionModel ? $this->toDomain($model) : null;
     }
 
+    public function delete(string $id, TenantId $tenant): void
+    {
+        StrengthSessionModel::query()->where('id', $id)->where('tenant_id', $tenant->value)->delete();
+    }
+
     public function forTenant(TenantId $tenant, int $limit = 50): array
     {
         $models = StrengthSessionModel::query()
@@ -48,6 +55,17 @@ final class EloquentStrengthSessionRepository implements StrengthSessionReposito
             ->orderByDesc('session_date')
             ->orderByDesc('created_at')
             ->limit($limit)
+            ->get();
+
+        return array_values($models->map(fn (StrengthSessionModel $m): StrengthSession => $this->toDomain($m))->all());
+    }
+
+    public function forRange(TenantId $tenant, string $from, string $to): array
+    {
+        $models = StrengthSessionModel::query()
+            ->where('tenant_id', $tenant->value)
+            ->whereBetween('session_date', [$from, $to])
+            ->orderBy('session_date')
             ->get();
 
         return array_values($models->map(fn (StrengthSessionModel $m): StrengthSession => $this->toDomain($m))->all());
@@ -62,6 +80,8 @@ final class EloquentStrengthSessionRepository implements StrengthSessionReposito
             'title' => $m->title,
             'note' => $m->note,
             'duration_seconds' => $m->duration_seconds,
+            'status' => $m->status,
+            'template_id' => $m->template_id,
             'version' => $m->version,
             'exercises' => $m->exercises,
         ]);
