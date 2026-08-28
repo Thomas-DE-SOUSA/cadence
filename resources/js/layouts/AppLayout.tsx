@@ -115,6 +115,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const mode: 'run' | 'muscu' = path.startsWith('/muscu') ? 'muscu' : 'run';
     const nav = mode === 'muscu' ? muscuNavItems : navItems;
     const addAction = mode === 'muscu' ? { href: '/muscu/nouveau', label: 'Séance' } : { href: '/activites/nouvelle', label: 'Activité' };
+    // The session editor has its own sticky action bar, so the mobile tab bar is
+    // suppressed there to avoid a double bottom bar.
+    const isSessionEditor = path === '/muscu/nouveau' || path.endsWith('/modifier');
 
     useEffect(() => {
         if (flash) {
@@ -197,9 +200,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </div>
             </header>
 
-            {/* Mobile bottom tab bar — hidden in the Muscu world (single page +
-                the logger's own sticky action bar; more room for logging). */}
-            {nav.length > 1 && (
+            {/* Mobile bottom tab bar — suppressed only on the session editor
+                (it has its own sticky action bar). */}
+            {nav.length > 0 && !isSessionEditor && (
                 <nav
                     className="fixed inset-x-0 bottom-0 z-30 flex border-t border-neutral-200 bg-white/95 backdrop-blur md:hidden"
                     style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}

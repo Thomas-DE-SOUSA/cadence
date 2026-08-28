@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowLeft, Check, Copy, Dumbbell, Plus, RotateCcw, Search, Timer, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Check, Copy, Pause, Play, Plus, RotateCcw, Search, Timer, Trash2, X } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 
 interface CatalogItem {
@@ -73,16 +73,16 @@ function numOrNull(v: string): number | null {
     return Number.isFinite(n) ? n : null;
 }
 
-/** Count-up session chrono, auto-started, resumable from a saved duration. */
-function useChrono(initial: number): [number, () => void] {
+/** Count-up session chrono — OFF by default (planning), started on demand (live). */
+function useChrono(initial: number): { seconds: number; running: boolean; toggle: () => void } {
     const [seconds, setSeconds] = useState(initial);
-    const [running, setRunning] = useState(true);
+    const [running, setRunning] = useState(false);
     useEffect(() => {
         if (!running) return;
         const t = setInterval(() => setSeconds((s) => s + 1), 1000);
         return () => clearInterval(t);
     }, [running]);
-    return [seconds, () => setRunning((r) => !r)];
+    return { seconds, running, toggle: () => setRunning((r) => !r) };
 }
 
 /** Rest countdown with presets. */
@@ -297,7 +297,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
     );
     const [pickerOpen, setPickerOpen] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [elapsed, toggleChrono] = useChrono(session?.durationSeconds ?? 0);
+    const { seconds: elapsed, running: chronoRunning, toggle: toggleChrono } = useChrono(session?.durationSeconds ?? 0);
 
     const addExercise = (e: CatalogItem) => {
         const last = lastByExercise[e.id];
@@ -337,7 +337,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
         setSaving(true);
         router.post(
             '/muscu',
-            { id: session?.id ?? null, date, title, note: '', durationSeconds: elapsed, exercises: items },
+            { id: session?.id ?? null, date, title, note: '', durationSeconds: elapsed > 0 ? elapsed : null, exercises: items },
             { onFinish: () => setSaving(false) },
         );
     };
@@ -369,9 +369,12 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
                 />
                 <button
                     onClick={toggleChrono}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold tabular-nums text-neutral-700"
+                    title={chronoRunning ? 'Mettre le chrono en pause' : 'Lancer le chrono (séance en direct)'}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold tabular-nums transition-colors ${
+                        chronoRunning ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-neutral-200 bg-white text-neutral-600'
+                    }`}
                 >
-                    <Timer size={15} className="text-brand-600" /> {mmss(elapsed)}
+                    {chronoRunning ? <Pause size={14} /> : <Play size={14} />} {mmss(elapsed)}
                 </button>
                 <RestTimer />
             </div>
