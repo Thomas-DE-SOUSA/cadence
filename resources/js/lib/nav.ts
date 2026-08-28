@@ -1,4 +1,4 @@
-import { Activity, CalendarDays, Gauge, LayoutDashboard, Lightbulb, TrendingUp, type LucideIcon } from 'lucide-react';
+import { Activity, CalendarDays, Dumbbell, Gauge, LayoutDashboard, Lightbulb, TrendingUp, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
     label: string;
@@ -13,6 +13,7 @@ export const navItems: NavItem[] = [
     { label: 'Progression', href: '/progression', icon: TrendingUp },
     { label: 'Forme', href: '/forme', icon: Activity },
     { label: 'Programme', href: '/programme', icon: CalendarDays },
+    { label: 'Muscu', href: '/muscu', icon: Dumbbell },
     { label: 'Allures', href: '/allures', icon: Gauge },
     { label: 'Conseil', href: '/conseil', icon: Lightbulb },
 ];

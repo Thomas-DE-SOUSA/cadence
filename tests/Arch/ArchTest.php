@@ -79,3 +79,19 @@ arch('the Coaching application never reaches into infrastructure')
         'Illuminate\Database\Eloquent',
         'Cadence\Coaching\Infrastructure',
     ]);
+
+// Strength context — explicit inward-only boundaries.
+arch('the Strength domain depends on nothing outward')
+    ->expect('Cadence\Strength\Domain')
+    ->not->toUse([
+        'Illuminate',
+        'Cadence\Strength\Application',
+        'Cadence\Strength\Infrastructure',
+    ]);
+
+arch('the Strength application never reaches into infrastructure')
+    ->expect('Cadence\Strength\Application')
+    ->not->toUse([
+        'Illuminate\Database\Eloquent',
+        'Cadence\Strength\Infrastructure',
+    ]);
