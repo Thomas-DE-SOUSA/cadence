@@ -115,9 +115,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const mode: 'run' | 'muscu' = path.startsWith('/muscu') ? 'muscu' : 'run';
     const nav = mode === 'muscu' ? muscuNavItems : navItems;
     const addAction = mode === 'muscu' ? { href: '/muscu/nouveau', label: 'Séance' } : { href: '/activites/nouvelle', label: 'Activité' };
-    // The session editor has its own sticky action bar, so the mobile tab bar is
-    // suppressed there to avoid a double bottom bar.
-    const isSessionEditor = path === '/muscu/nouveau' || path.endsWith('/modifier');
+    // Editor screens (template editor, "do the session") have their own sticky
+    // action bar, so the mobile tab bar is suppressed there.
+    const isSessionEditor = path.startsWith('/muscu/seances/') || path.startsWith('/muscu/agenda/');
 
     useEffect(() => {
         if (flash) {

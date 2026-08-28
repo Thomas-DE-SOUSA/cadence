@@ -1,4 +1,4 @@
-import { Activity, CalendarDays, Dumbbell, Gauge, LayoutDashboard, Lightbulb, TrendingUp, type LucideIcon } from 'lucide-react';
+import { Activity, CalendarCheck, CalendarDays, Dumbbell, Gauge, LayoutDashboard, Lightbulb, TrendingUp, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
     label: string;
@@ -18,6 +18,10 @@ export const navItems: NavItem[] = [
     { label: 'Conseil', href: '/conseil', icon: Lightbulb },
 ];
 
-// The Muscu world's own nav. Kept minimal on purpose — the dashboard holds the
-// sessions + progression; more lands here as the strength side grows.
-export const muscuNavItems: NavItem[] = [{ label: 'Séances', href: '/muscu', icon: Dumbbell }];
+// The Muscu world's own nav: the agenda (place séances on days), the séance
+// templates library, and the strength progression.
+export const muscuNavItems: NavItem[] = [
+    { label: 'Agenda', href: '/muscu', icon: CalendarCheck },
+    { label: 'Séances', href: '/muscu/seances', icon: Dumbbell },
+    { label: 'Progression', href: '/muscu/progression', icon: TrendingUp },
+];

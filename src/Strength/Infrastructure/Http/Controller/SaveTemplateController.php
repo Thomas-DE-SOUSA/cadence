@@ -6,15 +6,15 @@ namespace Cadence\Strength\Infrastructure\Http\Controller;
 
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Application\TenantContext;
-use Cadence\Strength\Application\UseCase\LogStrengthSession\LogStrengthSessionInput;
-use Cadence\Strength\Application\UseCase\LogStrengthSession\LogStrengthSessionUseCase;
+use Cadence\Strength\Application\UseCase\SaveWorkoutTemplate\SaveWorkoutTemplateInput;
+use Cadence\Strength\Application\UseCase\SaveWorkoutTemplate\SaveWorkoutTemplateUseCase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
-final class LogStrengthSessionController
+final class SaveTemplateController
 {
     public function __construct(
-        private readonly LogStrengthSessionUseCase $useCase,
+        private readonly SaveWorkoutTemplateUseCase $useCase,
         private readonly TenantContext $tenantContext,
     ) {
     }
@@ -23,12 +23,7 @@ final class LogStrengthSessionController
     {
         $data = $request->validate([
             'id' => ['nullable', 'string'],
-            'date' => ['nullable', 'date'],
-            'title' => ['nullable', 'string', 'max:120'],
-            'note' => ['nullable', 'string', 'max:1000'],
-            'durationSeconds' => ['nullable', 'integer', 'min:0'],
-            'status' => ['nullable', 'in:PLANNED,DONE'],
-            'templateId' => ['nullable', 'string'],
+            'name' => ['required', 'string', 'max:120'],
             'exercises' => ['array'],
             'exercises.*.exercise_id' => ['required', 'string'],
             'exercises.*.name' => ['required', 'string', 'max:160'],
@@ -48,19 +43,10 @@ final class LogStrengthSessionController
         $exercises = array_values($data['exercises'] ?? []);
 
         $this->useCase->execute(
-            new LogStrengthSessionInput(
-                isset($data['id']) ? (string) $data['id'] : null,
-                (string) ($data['date'] ?? ''),
-                (string) ($data['title'] ?? ''),
-                (string) ($data['note'] ?? ''),
-                isset($data['durationSeconds']) ? (int) $data['durationSeconds'] : null,
-                $exercises,
-                (string) ($data['status'] ?? 'DONE'),
-                isset($data['templateId']) ? (string) $data['templateId'] : null,
-            ),
+            new SaveWorkoutTemplateInput(isset($data['id']) ? (string) $data['id'] : null, (string) $data['name'], $exercises),
             new ExecutionContext($this->tenantContext->current()),
         );
 
-        return redirect()->route('muscu')->with('status', 'Séance enregistrée 💪');
+        return redirect()->route('muscu.templates')->with('status', 'Séance enregistrée 💪');
     }
 }
