@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowLeft, Check, Copy, Pause, Play, Plus, RotateCcw, Search, Timer, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Check, Copy, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 
 interface CatalogItem {
@@ -61,72 +61,10 @@ interface Props {
 const today = () => new Date().toISOString().slice(0, 10);
 const emptySet = (): SetRow => ({ weight_kg: null, reps: null, rpe: null, duration_seconds: null, is_warmup: false, done: true });
 
-function mmss(total: number): string {
-    const m = Math.floor(total / 60);
-    const s = total % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
 function numOrNull(v: string): number | null {
     if (v.trim() === '') return null;
     const n = Number(v.replace(',', '.'));
     return Number.isFinite(n) ? n : null;
-}
-
-/** Count-up session chrono — OFF by default (planning), started on demand (live). */
-function useChrono(initial: number): { seconds: number; running: boolean; toggle: () => void } {
-    const [seconds, setSeconds] = useState(initial);
-    const [running, setRunning] = useState(false);
-    useEffect(() => {
-        if (!running) return;
-        const t = setInterval(() => setSeconds((s) => s + 1), 1000);
-        return () => clearInterval(t);
-    }, [running]);
-    return { seconds, running, toggle: () => setRunning((r) => !r) };
-}
-
-/** Rest countdown with presets. */
-function RestTimer() {
-    const [remaining, setRemaining] = useState(0);
-    const ref = useRef<number | null>(null);
-    const start = (s: number) => {
-        setRemaining(s);
-        if (ref.current) window.clearInterval(ref.current);
-        ref.current = window.setInterval(() => {
-            setRemaining((r) => {
-                if (r <= 1) {
-                    if (ref.current) window.clearInterval(ref.current);
-                    return 0;
-                }
-                return r - 1;
-            });
-        }, 1000);
-    };
-    useEffect(() => () => void (ref.current && window.clearInterval(ref.current)), []);
-    const active = remaining > 0;
-    return (
-        <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${active ? 'border-brand-300 bg-brand-50' : 'border-neutral-200 bg-white'}`}>
-            <Timer size={16} className={active ? 'text-brand-600' : 'text-neutral-400'} />
-            <span className={`w-12 text-sm font-bold tabular-nums ${active ? 'text-brand-700' : 'text-neutral-400'}`}>{mmss(remaining)}</span>
-            <div className="flex gap-1">
-                {[60, 90, 120, 180].map((s) => (
-                    <button
-                        key={s}
-                        type="button"
-                        onClick={() => start(s)}
-                        className="rounded-md bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-600 hover:bg-neutral-200"
-                    >
-                        {s < 120 ? `${s}s` : `${s / 60}m`}
-                    </button>
-                ))}
-                {active && (
-                    <button type="button" onClick={() => setRemaining(0)} className="rounded-md px-1.5 py-1 text-neutral-400 hover:text-neutral-600">
-                        <X size={14} />
-                    </button>
-                )}
-            </div>
-        </div>
-    );
 }
 
 function ExercisePicker({
@@ -297,7 +235,6 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
     );
     const [pickerOpen, setPickerOpen] = useState(false);
     const [saving, setSaving] = useState(false);
-    const { seconds: elapsed, running: chronoRunning, toggle: toggleChrono } = useChrono(session?.durationSeconds ?? 0);
 
     const addExercise = (e: CatalogItem) => {
         const last = lastByExercise[e.id];
@@ -337,7 +274,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
         setSaving(true);
         router.post(
             '/muscu',
-            { id: session?.id ?? null, date, title, note: '', durationSeconds: elapsed > 0 ? elapsed : null, exercises: items },
+            { id: session?.id ?? null, date, title, note: '', durationSeconds: session?.durationSeconds ?? null, exercises: items },
             { onFinish: () => setSaving(false) },
         );
     };
@@ -367,16 +304,6 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
                     onChange={(e) => setDate(e.target.value)}
                     className="rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-neutral-400 focus:outline-none"
                 />
-                <button
-                    onClick={toggleChrono}
-                    title={chronoRunning ? 'Mettre le chrono en pause' : 'Lancer le chrono (séance en direct)'}
-                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold tabular-nums transition-colors ${
-                        chronoRunning ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-neutral-200 bg-white text-neutral-600'
-                    }`}
-                >
-                    {chronoRunning ? <Pause size={14} /> : <Play size={14} />} {mmss(elapsed)}
-                </button>
-                <RestTimer />
             </div>
 
             <div className="space-y-3 pb-28">
