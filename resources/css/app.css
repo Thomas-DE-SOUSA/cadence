@@ -163,6 +163,35 @@ html.dark {
     --color-slate-100: #23272f;
 }
 
+/* ============================================================
+   Muscu world — the strength side. Wrapping the app in
+   `.mode-muscu` remaps the brand scale to warehouse orange, so
+   every brand-tinted chrome element (logo, nav, buttons, chips)
+   turns orange without touching a single utility class. The
+   compound `html.dark .mode-muscu` wins over the dark green.
+   ============================================================ */
+.mode-muscu,
+html.dark .mode-muscu {
+    --color-brand-50: #fdf3ec;
+    --color-brand-100: #fbe1cd;
+    --color-brand-200: #f6c199;
+    --color-brand-300: #f19b5f;
+    --color-brand-400: #ed7d33;
+    --color-brand-500: #e2631a;
+    --color-brand-600: #c14f13;
+    --color-brand-700: #9a3e12;
+    --color-brand-800: #7c3314;
+    --color-brand-900: #662c14;
+}
+
+html.dark .mode-muscu {
+    /* Dark-tinted chips + readable orange accent text in dark mode. */
+    --color-brand-50: #2a1c12;
+    --color-brand-100: #35230f;
+    --color-brand-600: #f2894a;
+    --color-brand-700: #f6a670;
+}
+
 html.dark body {
     background-color: #0e1014;
     background-image:

@@ -466,7 +466,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
             </div>
 
             {/* Sticky save bar */}
-            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 p-3 backdrop-blur sm:left-64">
+            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 p-3 backdrop-blur">
                 <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
                     <span className="text-sm text-neutral-500">
                         {items.length} exo{items.length > 1 ? 's' : ''} · {totalSets} série{totalSets > 1 ? 's' : ''}

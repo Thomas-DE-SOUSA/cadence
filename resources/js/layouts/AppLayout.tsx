@@ -1,8 +1,8 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ChevronDown, LogOut, Palette, Plus, User as UserIcon } from 'lucide-react';
+import { ChevronDown, Dumbbell, LogOut, Palette, Plus, User as UserIcon } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-import { navItems } from '@/lib/nav';
+import { muscuNavItems, navItems } from '@/lib/nav';
 import { BrandMark } from '@/components/BrandMark';
 import { ThemePicker } from '@/components/ThemePicker';
 
@@ -108,6 +108,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const user = (page.props.auth as { user?: AuthUser | null } | undefined)?.user ?? null;
     const [themeOpen, setThemeOpen] = useState(false);
 
+    // Two worlds: the running side (Cadence, green) and the strength side
+    // (Muscu, orange). The world is derived from the URL; switching is a tap in
+    // the top bar — no extra nav clutter. The `mode-muscu` class remaps the
+    // brand palette to orange for the whole chrome.
+    const mode: 'run' | 'muscu' = path.startsWith('/muscu') ? 'muscu' : 'run';
+    const nav = mode === 'muscu' ? muscuNavItems : navItems;
+    const addAction = mode === 'muscu' ? { href: '/muscu/nouveau', label: 'Séance' } : { href: '/activites/nouvelle', label: 'Activité' };
+
     useEffect(() => {
         if (flash) {
             toast.success(flash);
@@ -120,23 +128,36 @@ export function AppLayout({ children }: { children: ReactNode }) {
             : null;
 
     return (
-        <div className="min-h-screen text-neutral-900">
+        <div className={`min-h-screen text-neutral-900${mode === 'muscu' ? ' mode-muscu' : ''}`}>
             {/* Top navigation bar */}
             <header className="fixed inset-x-0 top-0 z-30 border-b border-neutral-200/80 bg-white/85 shadow-[0_1px_2px_rgba(16,16,20,0.04),0_8px_24px_-12px_rgba(16,16,20,0.12)] backdrop-blur-lg">
                 <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:px-8">
-                    {/* Brand */}
-                    <Link href="/" className="flex shrink-0 items-center gap-2.5">
+                    {/* Brand — reflects the current world */}
+                    <Link href={mode === 'muscu' ? '/muscu' : '/'} className="flex shrink-0 items-center gap-2.5">
                         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 shadow-md shadow-brand-500/30">
-                            <BrandMark className="h-6 w-auto text-white" />
+                            {mode === 'muscu' ? <Dumbbell className="h-5 w-5 text-white" /> : <BrandMark className="h-6 w-auto text-white" />}
                         </span>
                         <span className="whitespace-nowrap text-[15px] font-black tracking-tight text-neutral-900">
-                            Cadence
+                            {mode === 'muscu' ? 'Muscu' : 'Cadence'}
                         </span>
+                    </Link>
+
+                    {/* World switch — tap to jump to the other side */}
+                    <Link
+                        href={mode === 'muscu' ? '/' : '/muscu'}
+                        title={mode === 'muscu' ? 'Passer à la course' : 'Passer à la muscu'}
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-transform hover:-translate-y-0.5 ${
+                            mode === 'muscu'
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                                : 'border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100'
+                        }`}
+                    >
+                        {mode === 'muscu' ? <BrandMark className="h-5 w-auto" /> : <Dumbbell className="h-5 w-5" />}
                     </Link>
 
                     {/* Primary nav (desktop) */}
                     <nav className="ml-2 hidden flex-1 items-center gap-1 md:flex">
-                        {navItems.map(({ href, label, icon: Icon }) => {
+                        {nav.map(({ href, label, icon: Icon }) => {
                             const active = isActive(path, href);
                             return (
                                 <Link
@@ -165,38 +186,41 @@ export function AppLayout({ children }: { children: ReactNode }) {
                             </span>
                         )}
                         <Link
-                            href="/activites/nouvelle"
+                            href={addAction.href}
                             className="flex items-center gap-1.5 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 px-3.5 py-2 text-sm font-semibold text-white shadow-md shadow-brand-500/25 transition-transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-500/30"
                         >
                             <Plus size={17} />
-                            <span className="hidden sm:inline">Activité</span>
+                            <span className="hidden sm:inline">{addAction.label}</span>
                         </Link>
                         <AccountMenu user={user} athlete={athlete} onOpenTheme={() => setThemeOpen(true)} />
                     </div>
                 </div>
             </header>
 
-            {/* Mobile bottom tab bar */}
-            <nav
-                className="fixed inset-x-0 bottom-0 z-30 flex border-t border-neutral-200 bg-white/95 backdrop-blur md:hidden"
-                style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-            >
-                {navItems.map(({ href, label, icon: Icon }) => {
-                    const active = isActive(path, href);
-                    return (
-                        <Link
-                            key={href}
-                            href={href}
-                            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors ${
-                                active ? 'text-brand-600' : 'text-neutral-400'
-                            }`}
-                        >
-                            <Icon size={20} />
-                            {label.split(' ')[0]}
-                        </Link>
-                    );
-                })}
-            </nav>
+            {/* Mobile bottom tab bar — hidden in the Muscu world (single page +
+                the logger's own sticky action bar; more room for logging). */}
+            {nav.length > 1 && (
+                <nav
+                    className="fixed inset-x-0 bottom-0 z-30 flex border-t border-neutral-200 bg-white/95 backdrop-blur md:hidden"
+                    style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+                >
+                    {nav.map(({ href, label, icon: Icon }) => {
+                        const active = isActive(path, href);
+                        return (
+                            <Link
+                                key={href}
+                                href={href}
+                                className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors ${
+                                    active ? 'text-brand-600' : 'text-neutral-400'
+                                }`}
+                            >
+                                <Icon size={20} />
+                                {label.split(' ')[0]}
+                            </Link>
+                        );
+                    })}
+                </nav>
+            )}
 
             {/* Content */}
             <main className="px-4 pb-24 pt-24 sm:px-6 md:px-8 md:pb-14 lg:px-10">
