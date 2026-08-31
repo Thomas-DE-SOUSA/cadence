@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowLeft, Check, CircleCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import { AppLayout } from '@/layouts/AppLayout';
 import { ExerciseEditor, itemsFromServer, type CatalogItem, type Item, type Option, type SetRow } from '@/muscu/ExerciseEditor';
 
@@ -44,7 +45,10 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
                 templateId: session?.templateId ?? null,
                 exercises: items,
             },
-            { onFinish: () => setSaving(false) },
+            {
+                onError: (errors) => toast.error(Object.values(errors)[0] ?? "Impossible d'enregistrer la séance."),
+                onFinish: () => setSaving(false),
+            },
         );
     };
 

@@ -1,4 +1,4 @@
-const CACHE = 'cadence-v2';
+const CACHE = 'cadence-v3';
 
 self.addEventListener('install', () => {
     self.skipWaiting();
@@ -17,7 +17,9 @@ self.addEventListener('activate', (event) => {
 // Network-first with a cache fallback: fresh data online, shell still loads offline.
 self.addEventListener('fetch', (event) => {
     const { request } = event;
-    if (request.method !== 'GET') {
+    // Only cache plain GET documents/assets. Never touch Inertia XHR partials
+    // (they return JSON and must never be replayed as a page).
+    if (request.method !== 'GET' || request.headers.get('X-Inertia')) {
         return;
     }
     event.respondWith(

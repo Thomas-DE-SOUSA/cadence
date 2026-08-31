@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowLeft, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { AppLayout } from '@/layouts/AppLayout';
 import { ExerciseEditor, itemsFromServer, type CatalogItem, type Item, type Option, type SetRow } from '@/muscu/ExerciseEditor';
 
@@ -31,7 +32,14 @@ export default function MuscuTemplate({ catalog, muscles, equipments, template }
             return;
         }
         setSaving(true);
-        router.post('/muscu/seances', { id: template?.id ?? null, name, exercises: items }, { onFinish: () => setSaving(false) });
+        router.post(
+            '/muscu/seances',
+            { id: template?.id ?? null, name, exercises: items },
+            {
+                onError: (errors) => toast.error(Object.values(errors)[0] ?? "Impossible d'enregistrer la séance."),
+                onFinish: () => setSaving(false),
+            },
+        );
     };
 
     return (
