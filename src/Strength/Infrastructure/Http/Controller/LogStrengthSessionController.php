@@ -42,6 +42,11 @@ final class LogStrengthSessionController
             'exercises.*.sets.*.duration_seconds' => ['nullable', 'integer', 'min:0'],
             'exercises.*.sets.*.is_warmup' => ['nullable', 'boolean'],
             'exercises.*.sets.*.done' => ['nullable', 'boolean'],
+        ], [
+            'exercises.*.sets.*.rpe.between' => 'Le RPE doit être entre 0 et 10 (laisse vide si tu ne l’utilises pas).',
+            'exercises.*.sets.*.rpe.numeric' => 'Le RPE doit être un nombre.',
+            'exercises.*.sets.*.weight_kg.numeric' => 'Le poids doit être un nombre.',
+            'exercises.*.sets.*.reps.integer' => 'Les répétitions doivent être un nombre entier.',
         ]);
 
         /** @var list<array<string, mixed>> $exercises */

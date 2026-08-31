@@ -305,8 +305,12 @@ export function ExerciseEditor({
                                 <input
                                     inputMode="decimal"
                                     value={set.rpe ?? ''}
-                                    onChange={(e) => patchSet(i, s, { rpe: numOrNull(e.target.value) })}
+                                    onChange={(e) => {
+                                        const n = numOrNull(e.target.value);
+                                        patchSet(i, s, { rpe: n === null ? null : Math.min(10, Math.max(0, n)) });
+                                    }}
                                     placeholder="—"
+                                    title="RPE = intensité perçue, de 0 à 10"
                                     className="w-full rounded-lg border border-neutral-200 px-2 py-1.5 text-center text-sm tabular-nums focus:border-neutral-400 focus:outline-none"
                                 />
                                 <button onClick={() => removeSet(i, s)} className="text-neutral-300 hover:text-rose-500">
