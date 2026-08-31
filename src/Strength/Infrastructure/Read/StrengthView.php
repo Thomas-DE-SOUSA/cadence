@@ -69,12 +69,13 @@ final class StrengthView
 
     /**
      * @param list<WorkoutTemplate> $templates
+     * @param array<string, int> $usage templateId → agenda placements
      *
      * @return list<array<string, mixed>>
      */
-    public static function templates(array $templates): array
+    public static function templates(array $templates, array $usage = []): array
     {
-        return array_map(static function (WorkoutTemplate $t): array {
+        return array_map(static function (WorkoutTemplate $t) use ($usage): array {
             $snap = $t->toSnapshot();
             $names = array_values(array_map(static fn (array $e): string => (string) ($e['name'] ?? ''), $snap['exercises']));
 
@@ -83,6 +84,7 @@ final class StrengthView
                 'name' => $snap['name'],
                 'exerciseCount' => count($snap['exercises']),
                 'exerciseNames' => $names,
+                'usageCount' => $usage[$t->id()] ?? 0,
             ];
         }, $templates);
     }

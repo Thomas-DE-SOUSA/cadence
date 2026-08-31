@@ -71,6 +71,24 @@ final class EloquentStrengthSessionRepository implements StrengthSessionReposito
         return array_values($models->map(fn (StrengthSessionModel $m): StrengthSession => $this->toDomain($m))->all());
     }
 
+    public function usageByTemplate(TenantId $tenant): array
+    {
+        $rows = StrengthSessionModel::query()
+            ->where('tenant_id', $tenant->value)
+            ->whereNotNull('template_id')
+            ->selectRaw('template_id, COUNT(*) as total')
+            ->groupBy('template_id')
+            ->get();
+
+        $out = [];
+        foreach ($rows as $row) {
+            $data = $row->toArray();
+            $out[(string) $data['template_id']] = (int) $data['total'];
+        }
+
+        return $out;
+    }
+
     private function toDomain(StrengthSessionModel $m): StrengthSession
     {
         return StrengthSession::fromSnapshot([

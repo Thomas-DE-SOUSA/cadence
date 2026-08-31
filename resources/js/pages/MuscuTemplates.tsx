@@ -8,6 +8,7 @@ interface Template {
     name: string;
     exerciseCount: number;
     exerciseNames: string[];
+    usageCount: number;
 }
 interface Props {
     templates: Template[];
@@ -15,7 +16,11 @@ interface Props {
 
 export default function MuscuTemplates({ templates }: Props) {
     const remove = (t: Template) => {
-        if (confirm(`Supprimer la séance « ${t.name} » ?`)) {
+        const msg =
+            t.usageCount > 0
+                ? `⚠️ « ${t.name} » est posée ${t.usageCount} fois sur ton agenda.\n\nSupprimer le modèle n'efface PAS ces séances (elles gardent leur propre copie), mais tu ne pourras plus le reposer sur de nouveaux jours.\n\nSupprimer quand même ?`
+                : `Supprimer la séance « ${t.name} » ?`;
+        if (confirm(msg)) {
             router.post(`/muscu/seances/${t.id}/supprimer`, {}, { preserveScroll: true });
         }
     };
@@ -48,7 +53,16 @@ export default function MuscuTemplates({ templates }: Props) {
                             <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
                                     <p className="truncate font-bold text-neutral-900">{t.name}</p>
-                                    <p className="text-xs text-neutral-400">{t.exerciseCount} exercice{t.exerciseCount > 1 ? 's' : ''}</p>
+                                    <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-neutral-400">
+                                        <span>
+                                            {t.exerciseCount} exercice{t.exerciseCount > 1 ? 's' : ''}
+                                        </span>
+                                        {t.usageCount > 0 && (
+                                            <span className="rounded-full bg-brand-50 px-1.5 py-0.5 font-medium text-brand-600">
+                                                posée {t.usageCount}×
+                                            </span>
+                                        )}
+                                    </p>
                                 </div>
                                 <div className="flex shrink-0 gap-1">
                                     <Link href={`/muscu/seances/${t.id}/modifier`} className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700">

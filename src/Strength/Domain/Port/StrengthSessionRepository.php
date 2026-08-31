@@ -28,4 +28,11 @@ interface StrengthSessionRepository
      * @return list<StrengthSession>
      */
     public function forRange(TenantId $tenant, string $from, string $to): array;
+
+    /**
+     * How many agenda sessions reference each template.
+     *
+     * @return array<string, int> templateId → count
+     */
+    public function usageByTemplate(TenantId $tenant): array;
 }
