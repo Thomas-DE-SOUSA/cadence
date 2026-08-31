@@ -31,11 +31,6 @@ createInertiaApp({
     progress: { color: '#D7FF3E' },
 });
 
-// Register the service worker for offline shell + installability (Android/Chrome).
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {
-            /* offline support is best-effort */
-        });
-    });
-}
+// The service worker is no longer registered here — the remaining /sw.js is a
+// self-destroying stub that cleans up any previously-installed worker + caches.
+// (Re-introduce offline support later via a versioned tool if needed.)
