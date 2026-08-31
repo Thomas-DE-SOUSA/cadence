@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Cadence\Strength\Infrastructure;
 
 use Cadence\Strength\Domain\Port\ExerciseRepository;
+use Cadence\Strength\Domain\Port\MuscuProfileRepository;
 use Cadence\Strength\Domain\Port\StrengthSessionRepository;
 use Cadence\Strength\Domain\Port\WorkoutTemplateRepository;
 use Cadence\Strength\Infrastructure\Http\Controller\AddCustomExerciseController;
+use Cadence\Strength\Infrastructure\Http\Controller\SaveMuscuProfileController;
+use Cadence\Strength\Infrastructure\Http\Controller\ShowMuscuProfileController;
 use Cadence\Strength\Infrastructure\Http\Controller\DeleteTemplateController;
 use Cadence\Strength\Infrastructure\Http\Controller\LogStrengthSessionController;
 use Cadence\Strength\Infrastructure\Http\Controller\RemoveScheduledWorkoutController;
@@ -19,6 +22,7 @@ use Cadence\Strength\Infrastructure\Http\Controller\ShowSessionEditorController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowTemplateEditorController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowTemplatesController;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentExerciseRepository;
+use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentMuscuProfileRepository;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentStrengthSessionRepository;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentWorkoutTemplateRepository;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +35,7 @@ final class StrengthServiceProvider extends ServiceProvider
         $this->app->bind(ExerciseRepository::class, EloquentExerciseRepository::class);
         $this->app->bind(StrengthSessionRepository::class, EloquentStrengthSessionRepository::class);
         $this->app->bind(WorkoutTemplateRepository::class, EloquentWorkoutTemplateRepository::class);
+        $this->app->bind(MuscuProfileRepository::class, EloquentMuscuProfileRepository::class);
     }
 
     public function boot(): void
@@ -39,6 +44,10 @@ final class StrengthServiceProvider extends ServiceProvider
             // Agenda (home) + progression.
             Route::get('/', ShowAgendaController::class)->name('muscu');
             Route::get('/progression', ShowProgressionController::class)->name('muscu.progression');
+
+            // Muscu profile (goal, level, equipment, priorities…).
+            Route::get('/profil', ShowMuscuProfileController::class)->name('muscu.profile');
+            Route::post('/profil', SaveMuscuProfileController::class)->name('muscu.profile.save');
 
             // Séance templates (the reusable library).
             Route::get('/seances', ShowTemplatesController::class)->name('muscu.templates');

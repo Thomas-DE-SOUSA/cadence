@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace Cadence\Strength\Infrastructure\Read;
 
 use Cadence\Strength\Domain\Enum\Equipment;
+use Cadence\Strength\Domain\Enum\ExperienceLevel;
+use Cadence\Strength\Domain\Enum\GymAccess;
 use Cadence\Strength\Domain\Enum\MuscleGroup;
+use Cadence\Strength\Domain\Enum\SplitPreference;
+use Cadence\Strength\Domain\Enum\StrengthGoal;
 use Cadence\Strength\Domain\Model\Exercise;
+use Cadence\Strength\Domain\Model\MuscuProfile;
 use Cadence\Strength\Domain\Model\StrengthSession;
 use Cadence\Strength\Domain\Model\WorkoutTemplate;
 use Cadence\Strength\Domain\Service\OneRepMaxCalculator;
 use Cadence\Strength\Domain\ValueObject\PerformedExercise;
+use DateTimeImmutable;
 
 /** Shapes strength data for the Muscu pages. Pure presentation over snapshots. */
 final class StrengthView
@@ -31,6 +37,52 @@ final class StrengthView
             'equipmentLabel' => $e->equipment->label(),
             'isCustom' => $e->isCustom,
         ], $exercises);
+    }
+
+    /** @return array<string, mixed> the athlete's muscu profile, or sensible defaults */
+    public static function profile(?MuscuProfile $p): array
+    {
+        $s = $p?->toSnapshot();
+
+        return [
+            'exists' => $p !== null,
+            'goal' => $s['goal'] ?? StrengthGoal::GENERAL->value,
+            'level' => $s['level'] ?? ExperienceLevel::INTERMEDIATE->value,
+            'bodyweightKg' => $s['bodyweight_kg'] ?? null,
+            'weeklyFrequency' => $s['weekly_frequency'] ?? 3,
+            'split' => $s['split'] ?? SplitPreference::FREE->value,
+            'equipment' => $s['equipment'] ?? GymAccess::FULL_GYM->value,
+            'priorities' => $s['priorities'] ?? [],
+            'limitations' => $s['limitations'] ?? [],
+            'note' => $s['note'] ?? '',
+        ];
+    }
+
+    /** @return array<string, list<array{value:string,label:string}>> option lists for the profile form */
+    public static function profileOptions(): array
+    {
+        $goals = [];
+        foreach (StrengthGoal::cases() as $g) {
+            $goals[] = ['value' => $g->value, 'label' => $g->label()];
+        }
+        $levels = [];
+        foreach (ExperienceLevel::cases() as $l) {
+            $levels[] = ['value' => $l->value, 'label' => $l->label()];
+        }
+        $splits = [];
+        foreach (SplitPreference::cases() as $s) {
+            $splits[] = ['value' => $s->value, 'label' => $s->label()];
+        }
+        $equipments = [];
+        foreach (GymAccess::cases() as $e) {
+            $equipments[] = ['value' => $e->value, 'label' => $e->label()];
+        }
+        $muscles = [];
+        foreach (MuscleGroup::cases() as $m) {
+            $muscles[] = ['value' => $m->value, 'label' => $m->label()];
+        }
+
+        return ['goals' => $goals, 'levels' => $levels, 'splits' => $splits, 'equipments' => $equipments, 'muscles' => $muscles];
     }
 
     /** @return array{muscles:list<array{value:string,label:string}>,equipments:list<array{value:string,label:string}>} */
@@ -173,6 +225,114 @@ final class StrengthView
 
         // Most-trained / heaviest first.
         usort($out, static fn (array $a, array $b): int => $b['bestE1rm'] <=> $a['bestE1rm']);
+
+        return $out;
+    }
+
+    /**
+     * Sessions + volume per ISO week over the last 8 weeks (done sessions).
+     *
+     * @param list<StrengthSession> $sessions
+     *
+     * @return list<array{label:string,sessions:int,volumeKg:int}>
+     */
+    public static function weekly(array $sessions, string $today): array
+    {
+        $byWeek = [];
+        foreach ($sessions as $s) {
+            if (! $s->status()->isDone()) {
+                continue;
+            }
+            $key = (new DateTimeImmutable((string) $s->toSnapshot()['date']))->format('o-W');
+            $byWeek[$key] ??= ['sessions' => 0, 'volume' => 0.0];
+            $byWeek[$key]['sessions']++;
+            $byWeek[$key]['volume'] += $s->totalVolumeKg();
+        }
+
+        $out = [];
+        for ($i = 7; $i >= 0; $i--) {
+            $week = (new DateTimeImmutable($today))->modify('monday this week')->modify("-{$i} week");
+            $key = $week->format('o-W');
+            $out[] = [
+                'label' => 'S'.$week->format('W'),
+                'sessions' => $byWeek[$key]['sessions'] ?? 0,
+                'volumeKg' => (int) round($byWeek[$key]['volume'] ?? 0.0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Working sets per muscle group over the last {@see $days} days (done sessions),
+     * so the athlete sees where the volume actually goes (balance).
+     *
+     * @param list<StrengthSession> $sessions
+     * @param list<Exercise> $exercises the catalogue, to map exercise → muscle
+     *
+     * @return list<array{muscle:string,label:string,sets:int}>
+     */
+    public static function volumeByMuscle(array $sessions, array $exercises, string $today, int $days = 28): array
+    {
+        $muscleOf = [];
+        foreach ($exercises as $e) {
+            $muscleOf[$e->id] = $e->primaryMuscle;
+        }
+
+        $cut = (new DateTimeImmutable($today))->modify('-'.($days - 1).' days')->format('Y-m-d');
+
+        $sets = [];
+        foreach ($sessions as $s) {
+            $snap = $s->toSnapshot();
+            if (! $s->status()->isDone() || (string) $snap['date'] < $cut) {
+                continue;
+            }
+            foreach ($snap['exercises'] as $rawExercise) {
+                if (! is_array($rawExercise)) {
+                    continue;
+                }
+                $exercise = PerformedExercise::fromArray($rawExercise);
+                $muscle = $muscleOf[$exercise->exerciseId] ?? null;
+                if ($muscle === null) {
+                    continue;
+                }
+                $sets[$muscle->value] = ($sets[$muscle->value] ?? 0) + count($exercise->workingSets());
+            }
+        }
+
+        $out = [];
+        foreach ($sets as $muscle => $count) {
+            $out[] = ['muscle' => $muscle, 'label' => MuscleGroup::from($muscle)->label(), 'sets' => $count];
+        }
+        usort($out, static fn (array $a, array $b): int => $b['sets'] <=> $a['sets']);
+
+        return $out;
+    }
+
+    /**
+     * Best estimated 1RM per exercise with the date it was hit, most recent first.
+     *
+     * @param list<StrengthSession> $sessions
+     *
+     * @return list<array{name:string,e1rm:int,date:string,recent:bool}>
+     */
+    public static function records(array $sessions, OneRepMaxCalculator $calc, string $today): array
+    {
+        $recentCut = (new DateTimeImmutable($today))->modify('-20 days')->format('Y-m-d');
+
+        $out = [];
+        foreach (self::progression($sessions, $calc) as $p) {
+            $best = 0;
+            $bestDate = '';
+            foreach ($p['series'] as $point) {
+                if ($point['e1rm'] >= $best) {
+                    $best = $point['e1rm'];
+                    $bestDate = $point['date'];
+                }
+            }
+            $out[] = ['name' => $p['name'], 'e1rm' => $p['bestE1rm'], 'date' => $bestDate, 'recent' => $bestDate >= $recentCut];
+        }
+        usort($out, static fn (array $a, array $b): int => ($b['recent'] <=> $a['recent']) ?: strcmp($b['date'], $a['date']));
 
         return $out;
     }
