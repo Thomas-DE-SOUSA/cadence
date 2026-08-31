@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowLeft, Check, CircleCheck } from 'lucide-react';
+import { ArrowLeft, Check, CircleCheck, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/layouts/AppLayout';
 import { ExerciseEditor, itemsFromServer, type CatalogItem, type Item, type Option, type SetRow } from '@/muscu/ExerciseEditor';
@@ -52,6 +52,12 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
         );
     };
 
+    const removeFromAgenda = () => {
+        if (session && confirm("Retirer cette séance de l'agenda ?")) {
+            router.post(`/muscu/agenda/${session.id}/supprimer`, {}, { preserveScroll: true });
+        }
+    };
+
     const totalSets = items.reduce((n, it) => n + it.sets.filter((s) => !s.is_warmup).length, 0);
 
     return (
@@ -68,6 +74,11 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
                     placeholder="Titre de la séance"
                     className="flex-1 rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-lg font-bold text-neutral-900 placeholder:text-neutral-300 focus:border-neutral-200 focus:outline-none"
                 />
+                {session && (
+                    <button onClick={removeFromAgenda} title="Retirer de l'agenda" className="shrink-0 rounded-lg p-2 text-neutral-400 hover:bg-rose-50 hover:text-rose-500">
+                        <Trash2 size={18} />
+                    </button>
+                )}
             </div>
 
             <div className="mb-4 flex flex-wrap items-center gap-2">

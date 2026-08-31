@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { CalendarPlus, ChevronLeft, ChevronRight, CircleCheck, Dumbbell, Plus, X } from 'lucide-react';
+import { CalendarPlus, ChevronLeft, ChevronRight, CircleCheck, Dumbbell, Plus, Trash2, X } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 
 interface DaySession {
@@ -73,6 +73,12 @@ function PlacePicker({ date, templates, onClose }: { date: string; templates: Te
 export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: Props) {
     const [placeDate, setPlaceDate] = useState<string | null>(null);
 
+    const removeSession = (id: string, title: string) => {
+        if (confirm(`Retirer « ${title || 'la séance'} » de l'agenda ?`)) {
+            router.post(`/muscu/agenda/${id}/supprimer`, {}, { preserveScroll: true });
+        }
+    };
+
     return (
         <>
             <Head title="Agenda muscu" />
@@ -108,20 +114,26 @@ export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: 
                         ) : (
                             <div className="space-y-1.5">
                                 {d.sessions.map((s) => (
-                                    <Link
+                                    <div
                                         key={s.id}
-                                        href={`/muscu/agenda/${s.id}`}
-                                        className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition ${
-                                            s.status === 'DONE' ? 'bg-brand-50 hover:bg-brand-100' : 'bg-neutral-50 hover:bg-neutral-100'
-                                        }`}
+                                        className={`flex items-center rounded-xl transition ${s.status === 'DONE' ? 'bg-brand-50' : 'bg-neutral-50'}`}
                                     >
-                                        <CircleCheck size={16} className={s.status === 'DONE' ? 'text-brand-600' : 'text-neutral-300'} />
-                                        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-800">{s.title || 'Séance'}</span>
-                                        <span className="shrink-0 text-xs text-neutral-400">
-                                            {s.totalSets > 0 && `${s.totalSets} séries`}
-                                            {s.status === 'DONE' && s.volumeKg > 0 && ` · ${s.volumeKg.toLocaleString('fr-FR')} kg`}
-                                        </span>
-                                    </Link>
+                                        <Link href={`/muscu/agenda/${s.id}`} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-l-xl px-3 py-2.5">
+                                            <CircleCheck size={16} className={s.status === 'DONE' ? 'text-brand-600' : 'text-neutral-300'} />
+                                            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-800">{s.title || 'Séance'}</span>
+                                            <span className="shrink-0 text-xs text-neutral-400">
+                                                {s.totalSets > 0 && `${s.totalSets} séries`}
+                                                {s.status === 'DONE' && s.volumeKg > 0 && ` · ${s.volumeKg.toLocaleString('fr-FR')} kg`}
+                                            </span>
+                                        </Link>
+                                        <button
+                                            onClick={() => removeSession(s.id, s.title)}
+                                            title="Retirer de l'agenda"
+                                            className="shrink-0 rounded-r-xl px-3 py-2.5 text-neutral-300 transition hover:text-rose-500"
+                                        >
+                                            <Trash2 size={15} />
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
                         )}
