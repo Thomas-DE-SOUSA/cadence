@@ -36,6 +36,17 @@ export interface Item {
 
 export const emptySet = (): SetRow => ({ weight_kg: null, reps: null, rpe: null, duration_seconds: null, is_warmup: false, done: true });
 
+/** "100 kg × 8" for the heaviest working set, or "12 reps" when bodyweight. */
+export function lastTopSet(sets: SetRow[]): string | null {
+    const working = sets.filter((s) => !s.is_warmup);
+    if (working.length === 0) return null;
+    const top = working.reduce((a, b) => ((b.weight_kg ?? 0) > (a.weight_kg ?? 0) ? b : a));
+    if (top.weight_kg && top.reps) return `${top.weight_kg} kg × ${top.reps}`;
+    if (top.reps) return `${top.reps} reps`;
+    if (top.duration_seconds) return `${top.duration_seconds}s`;
+    return null;
+}
+
 export function numOrNull(v: string): number | null {
     if (v.trim() === '') return null;
     const n = Number(v.replace(',', '.'));
@@ -205,6 +216,7 @@ export function ExerciseEditor({
     muscles,
     equipments,
     lastByExercise = {},
+    execution = false,
 }: {
     items: Item[];
     setItems: (updater: (prev: Item[]) => Item[]) => void;
@@ -212,6 +224,7 @@ export function ExerciseEditor({
     muscles: Option[];
     equipments: Option[];
     lastByExercise?: Record<string, { sets: SetRow[] }>;
+    execution?: boolean;
 }) {
     const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -252,6 +265,9 @@ export function ExerciseEditor({
                                     {it.muscleLabel}
                                     {it.equipmentLabel ? ` · ${it.equipmentLabel}` : ''}
                                 </p>
+                            )}
+                            {execution && lastByExercise[it.exercise_id] && lastTopSet(lastByExercise[it.exercise_id].sets) && (
+                                <p className="mt-0.5 text-xs font-medium text-brand-600">↩ Dernière fois : {lastTopSet(lastByExercise[it.exercise_id].sets)}</p>
                             )}
                         </div>
                         <div className="flex shrink-0 gap-1">

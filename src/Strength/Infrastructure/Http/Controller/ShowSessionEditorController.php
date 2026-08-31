@@ -34,6 +34,13 @@ final class ShowSessionEditorController
             $session = StrengthView::detail($found);
         }
 
+        // "Last time" = the most recent DONE session of each exercise, excluding
+        // the one being performed, so the athlete sees a real reference to beat.
+        $history = array_values(array_filter(
+            $recent,
+            static fn ($s): bool => $s->status()->isDone() && $s->id() !== $id,
+        ));
+
         $enums = StrengthView::enums();
 
         return Inertia::render('MuscuSession', [
@@ -41,7 +48,7 @@ final class ShowSessionEditorController
             'muscles' => $enums['muscles'],
             'equipments' => $enums['equipments'],
             'session' => $session,
-            'lastByExercise' => StrengthView::lastByExercise($recent),
+            'lastByExercise' => StrengthView::lastByExercise($history),
         ]);
     }
 }
