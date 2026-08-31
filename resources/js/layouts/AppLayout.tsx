@@ -2,7 +2,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, Dumbbell, LogOut, Palette, Plus, User as UserIcon } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-import { muscuNavItems, navItems } from '@/lib/nav';
+import { muscuNavItems, navItems, type NavItem } from '@/lib/nav';
 import { BrandMark } from '@/components/BrandMark';
 import { ThemePicker } from '@/components/ThemePicker';
 
@@ -96,8 +96,17 @@ function AccountMenu({
     );
 }
 
-function isActive(currentPath: string, href: string): boolean {
-    return href === '/' ? currentPath === '/' : currentPath.startsWith(href);
+/**
+ * The active nav item is the LONGEST href that matches the path, so a parent
+ * route (e.g. "/muscu") doesn't stay highlighted on a child ("/muscu/seances").
+ */
+function activeHref(path: string, items: NavItem[]): string {
+    let best = '';
+    for (const { href } of items) {
+        const match = href === '/' ? path === '/' : path === href || path.startsWith(href + '/');
+        if (match && href.length > best.length) best = href;
+    }
+    return best;
 }
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -114,7 +123,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
     // brand palette to orange for the whole chrome.
     const mode: 'run' | 'muscu' = path.startsWith('/muscu') ? 'muscu' : 'run';
     const nav = mode === 'muscu' ? muscuNavItems : navItems;
-    const addAction = mode === 'muscu' ? { href: '/muscu/nouveau', label: 'Séance' } : { href: '/activites/nouvelle', label: 'Activité' };
+    const activeNav = activeHref(path, nav);
+    const addAction = mode === 'muscu' ? { href: '/muscu/seances/nouveau', label: 'Séance' } : { href: '/activites/nouvelle', label: 'Activité' };
     // Editor screens (template editor, "do the session") have their own sticky
     // action bar, so the mobile tab bar is suppressed there.
     const isSessionEditor = path.startsWith('/muscu/seances/') || path.startsWith('/muscu/agenda/');
@@ -161,7 +171,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     {/* Primary nav (desktop) */}
                     <nav className="ml-2 hidden flex-1 items-center gap-1 md:flex">
                         {nav.map(({ href, label, icon: Icon }) => {
-                            const active = isActive(path, href);
+                            const active = href === activeNav;
                             return (
                                 <Link
                                     key={href}
@@ -208,7 +218,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
                 >
                     {nav.map(({ href, label, icon: Icon }) => {
-                        const active = isActive(path, href);
+                        const active = href === activeNav;
                         return (
                             <Link
                                 key={href}
