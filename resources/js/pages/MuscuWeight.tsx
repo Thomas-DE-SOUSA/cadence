@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Check, Moon, Scale, Sunrise, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,32 +23,109 @@ interface Props {
     recent: Entry[];
 }
 
-const fmtWeek = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-const fmtDay = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+/** Formats a Y-M-D as "25 août" at local midnight (no timezone drift). */
+function shortDate(iso: string): string {
+    const [y, m, d] = iso.slice(0, 10).split('-');
+    return new Date(Number(y), Number(m) - 1, Number(d)).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
 
 const toggleClass = (active: boolean) =>
     `flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
         active ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-neutral-200 bg-white text-neutral-500'
     }`;
 
-/** Weekly-average trend line — the whole point is seeing week-to-week drift. */
-function Sparkline({ weeks }: { weeks: Week[] }) {
-    if (weeks.length < 2) return null;
+/**
+ * Weekly-average curve, styled after the running Progression chart: real-pixel
+ * width, area gradient, labelled points and dates. The vertical scale keeps a
+ * minimum span (~2 kg) so small week-to-week wobbles stay gentle instead of
+ * filling the whole height and looking dramatic.
+ */
+function WeightChart({ weeks }: { weeks: Week[] }) {
+    const wrapRef = useRef<HTMLDivElement>(null);
+    const [width, setWidth] = useState(600);
+
+    useEffect(() => {
+        const el = wrapRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver((entries) => {
+            const w = entries[0]?.contentRect.width;
+            if (w) setWidth(w);
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
+
+    const H = 220;
+    const padL = 16;
+    const padR = 16;
+    const padTop = 30;
+    const padBottom = 28;
+
+    const containerW = Math.max(width, 300);
+    const minStep = 62;
+    const neededW = padL + padR + Math.max(weeks.length - 1, 1) * minStep;
+    const W = Math.max(containerW, neededW);
+    const scrollable = W > containerW + 1;
+
+    const plotW = W - padL - padR;
+    const plotH = H - padTop - padBottom;
+
     const vals = weeks.map((w) => w.avgKg);
-    const min = Math.min(...vals);
-    const max = Math.max(...vals);
-    const span = Math.max(max - min, 0.1);
-    const W = 280;
-    const H = 60;
-    const pts = weeks.map((w, i) => [(i / (weeks.length - 1)) * W, H - ((w.avgKg - min) / span) * H] as const);
-    const path = pts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+    const minV = Math.min(...vals);
+    const maxV = Math.max(...vals);
+    // Floor the visible span so a ±0.4 kg wiggle doesn't stretch edge-to-edge.
+    const span = Math.max(maxV - minV, 2);
+    const mid = (minV + maxV) / 2;
+    const top = mid + span / 2;
+
+    const y = (kg: number) => padTop + (0.1 + (0.8 * (top - kg)) / span) * plotH;
+    const x = (i: number) => (weeks.length === 1 ? padL + plotW / 2 : padL + (i / (weeks.length - 1)) * plotW);
+
+    // Keep the latest week in view (scroll to the far right) once sized.
+    useEffect(() => {
+        const el = wrapRef.current;
+        if (el) el.scrollLeft = el.scrollWidth;
+    }, [W, weeks.length]);
+
+    const linePath = weeks.map((w, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(w.avgKg).toFixed(1)}`).join(' ');
+    const areaPath =
+        weeks.length > 1
+            ? `${linePath} L ${x(weeks.length - 1).toFixed(1)} ${(H - padBottom).toFixed(1)} L ${x(0).toFixed(1)} ${(H - padBottom).toFixed(1)} Z`
+            : '';
+
     return (
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 60 }} preserveAspectRatio="none">
-            <path d={path} fill="none" stroke="#f26722" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-            {pts.map(([x, y], i) => (
-                <circle key={i} cx={x} cy={y} r={2.5} fill="#f26722" />
-            ))}
-        </svg>
+        <>
+            <div ref={wrapRef} className="w-full overflow-x-auto">
+                <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="block">
+                    <defs>
+                        <linearGradient id="weight-area" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stopColor="#f26722" stopOpacity="0.16" />
+                            <stop offset="1" stopColor="#f26722" stopOpacity="0" />
+                        </linearGradient>
+                    </defs>
+
+                    <line x1={padL} y1={H - padBottom} x2={W - padR} y2={H - padBottom} stroke="#f1f1f2" strokeWidth={1} />
+
+                    {areaPath && <path d={areaPath} fill="url(#weight-area)" />}
+                    {weeks.length > 1 && (
+                        <path d={linePath} fill="none" stroke="#f26722" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+                    )}
+
+                    {weeks.map((w, i) => (
+                        <g key={w.weekStart}>
+                            <circle cx={x(i)} cy={y(w.avgKg)} r={4} fill="#f26722" stroke="#fff" strokeWidth={2} />
+                            <text x={x(i)} y={y(w.avgKg) - 11} textAnchor="middle" fontSize={12} className="fill-neutral-800 font-bold">
+                                {w.avgKg.toFixed(1)}
+                            </text>
+                            <text x={x(i)} y={H - 9} textAnchor="middle" fontSize={11} className="fill-neutral-400">
+                                {shortDate(w.weekStart)}
+                            </text>
+                        </g>
+                    ))}
+                </svg>
+            </div>
+            {scrollable && <p className="mt-1 text-center text-[11px] text-neutral-400">← fais défiler pour parcourir l'historique →</p>}
+        </>
     );
 }
 
@@ -77,8 +154,7 @@ export default function MuscuWeight({ today, weeks, recent }: Props) {
         );
     };
 
-    // Newest week first for the list, each with its drift vs the previous week.
-    const list = weeks.map((w, i) => ({ ...w, delta: i > 0 ? Number((w.avgKg - weeks[i - 1].avgKg).toFixed(1)) : null })).reverse();
+    const overall = weeks.length > 1 ? Number((weeks[weeks.length - 1].avgKg - weeks[0].avgKg).toFixed(1)) : null;
 
     return (
         <>
@@ -137,33 +213,28 @@ export default function MuscuWeight({ today, weeks, recent }: Props) {
             <div className="mt-4">
                 <Card
                     title={
-                        <span className="inline-flex items-center gap-1.5">
-                            <TrendingUp size={15} className="text-brand-600" /> Moyenne par semaine
-                        </span>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="inline-flex items-center gap-1.5">
+                                <TrendingUp size={15} className="text-brand-600" /> Moyenne par semaine
+                            </span>
+                            {overall !== null && overall !== 0 && (
+                                <span className={`text-xs font-semibold normal-case ${overall < 0 ? 'text-emerald-600' : 'text-neutral-500'}`}>
+                                    {overall < 0 ? '↓' : '↑'} {Math.abs(overall).toFixed(1)} kg sur la période
+                                </span>
+                            )}
+                        </div>
                     }
                 >
                     {weeks.length === 0 ? (
                         <p className="text-sm text-neutral-400">Aucune pesée pour l'instant — commence ce matin 👆</p>
+                    ) : weeks.length === 1 ? (
+                        <p className="py-4 text-center text-sm text-neutral-500">
+                            <span className="text-2xl font-bold tabular-nums text-neutral-900">{weeks[0].avgKg.toFixed(1)} kg</span>
+                            <br />
+                            de moyenne cette semaine — la courbe se dessinera semaine après semaine.
+                        </p>
                     ) : (
-                        <>
-                            <Sparkline weeks={weeks} />
-                            <ul className="mt-3 divide-y divide-neutral-100">
-                                {list.map((w) => (
-                                    <li key={w.weekStart} className="flex items-center justify-between gap-3 py-2.5">
-                                        <span className="flex-1 text-sm text-neutral-600">Sem. du {fmtWeek(w.weekStart)}</span>
-                                        <span className="text-[11px] text-neutral-400">
-                                            {w.count} pesée{w.count > 1 ? 's' : ''}
-                                        </span>
-                                        {w.delta !== null && w.delta !== 0 && (
-                                            <span className={`text-xs font-medium ${w.delta < 0 ? 'text-emerald-600' : 'text-neutral-400'}`}>
-                                                {w.delta < 0 ? '↓' : '↑'} {Math.abs(w.delta).toFixed(1)}
-                                            </span>
-                                        )}
-                                        <span className="w-16 text-right text-sm font-bold tabular-nums text-neutral-900">{w.avgKg.toFixed(1)} kg</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
+                        <WeightChart weeks={weeks} />
                     )}
                 </Card>
             </div>
@@ -174,7 +245,7 @@ export default function MuscuWeight({ today, weeks, recent }: Props) {
                         <ul className="divide-y divide-neutral-100">
                             {recent.map((e, i) => (
                                 <li key={i} className="flex items-center justify-between gap-3 py-2 text-sm">
-                                    <span className="flex-1 capitalize text-neutral-600">{fmtDay(e.date)}</span>
+                                    <span className="flex-1 capitalize text-neutral-600">{shortDate(e.date)}</span>
                                     <span className="text-neutral-400">{e.momentLabel}</span>
                                     <span className="w-16 text-right font-semibold tabular-nums text-neutral-900">{e.weightKg.toFixed(1)} kg</span>
                                 </li>
