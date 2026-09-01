@@ -262,8 +262,9 @@ export function ExerciseEditor({
                 const workingSets = it.sets.filter((s) => !s.is_warmup);
                 const doneWorking = workingSets.filter((s) => s.done).length;
                 const topSet = lastTopSet(it.sets);
+                const allDone = execution && it.sets.length > 0 && it.sets.every((s) => s.done);
                 return (
-                <div key={i} className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm shadow-neutral-200/60">
+                <div key={i} className={`rounded-2xl border p-4 shadow-sm transition-colors ${allDone ? 'border-emerald-300 bg-emerald-50 shadow-emerald-200/50' : 'border-neutral-200 bg-white shadow-neutral-200/60'}`}>
                     <div className={`flex items-start justify-between gap-2 ${collapsed ? '' : 'mb-2'}`}>
                         <button onClick={() => patchItem(i, { collapsed: !collapsed })} className="flex min-w-0 flex-1 items-start gap-2 text-left">
                             <span className="mt-0.5 shrink-0 text-neutral-400">{collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}</span>
@@ -316,7 +317,7 @@ export function ExerciseEditor({
                     {it.sets.map((set, s) => {
                         const workingIndex = it.sets.slice(0, s + 1).filter((x) => !x.is_warmup).length;
                         return (
-                            <div key={s} className={`grid grid-cols-[1.5rem_1fr_1fr_1fr_1.5rem] items-center gap-2 py-1 ${execution && !set.done ? 'opacity-50' : ''}`}>
+                            <div key={s} className={`grid grid-cols-[1.5rem_1fr_1fr_1fr_1.5rem] items-center gap-2 rounded-lg px-1 py-1 transition-colors ${execution && set.done ? 'bg-emerald-50' : ''} ${execution && !set.done ? 'opacity-50' : ''}`}>
                                 <button
                                     onClick={() => patchSet(i, s, { is_warmup: !set.is_warmup })}
                                     title={set.is_warmup ? 'Échauffement' : 'Série de travail'}
@@ -357,7 +358,7 @@ export function ExerciseEditor({
                                         onClick={() => patchSet(i, s, { done: !set.done })}
                                         title={set.done ? 'Série faite' : 'Marquer comme faite'}
                                         className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
-                                            set.done ? 'bg-brand-600 text-white' : 'border border-neutral-300 text-neutral-300 hover:border-brand-400 hover:text-brand-400'
+                                            set.done ? 'bg-emerald-500 text-white' : 'border border-neutral-300 text-neutral-300 hover:border-emerald-400 hover:text-emerald-400'
                                         }`}
                                     >
                                         <Check size={14} />
