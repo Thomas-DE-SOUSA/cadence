@@ -120,7 +120,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
                     placeholder="Titre de la séance"
                     className="flex-1 rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-lg font-bold text-neutral-900 placeholder:text-neutral-300 focus:border-neutral-200 focus:outline-none"
                 />
-                {session && (
+                {session && !started && (
                     <button onClick={removeFromAgenda} title="Retirer de l'agenda" className="shrink-0 rounded-lg p-2 text-neutral-400 hover:bg-rose-50 hover:text-rose-500">
                         <Trash2 size={18} />
                     </button>
@@ -129,9 +129,6 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
 
             {started ? (
                 <div className="mb-4 flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-brand-300 bg-brand-50 px-3 py-2 text-sm font-bold tabular-nums text-brand-700">
-                        <Timer size={15} /> {mmss(elapsed)}
-                    </span>
                     <RestTimer />
                 </div>
             ) : (
@@ -155,7 +152,10 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
 
             {canStart && (
                 <button
-                    onClick={() => setStarted(true)}
+                    onClick={() => {
+                        setItems((prev) => prev.map((it) => ({ ...it, sets: it.sets.map((s) => ({ ...s, done: false })) })));
+                        setStarted(true);
+                    }}
                     className="mb-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 py-3.5 text-sm font-bold text-white shadow-md shadow-brand-500/25 transition-transform hover:-translate-y-0.5"
                 >
                     <Play size={18} /> Démarrer la séance
@@ -170,7 +170,6 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
                 <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
                     <span className="text-sm text-neutral-500">
                         {items.length} exo{items.length > 1 ? 's' : ''} · {totalSets} série{totalSets > 1 ? 's' : ''}
-                        {started && <> · {mmss(elapsed)}</>}
                     </span>
                     {started ? (
                         <button

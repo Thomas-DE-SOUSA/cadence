@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import { Copy, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Copy, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
 
 export interface CatalogItem {
     id: string;
@@ -32,6 +32,8 @@ export interface Item {
     superset_group: number | null;
     note: string;
     sets: SetRow[];
+    /** UI-only: card folded to its summary. Not persisted meaningfully. */
+    collapsed?: boolean;
 }
 
 export const emptySet = (): SetRow => ({ weight_kg: null, reps: null, rpe: null, duration_seconds: null, is_warmup: false, done: true });
@@ -230,7 +232,7 @@ export function ExerciseEditor({
 
     const addExercise = (e: CatalogItem) => {
         const last = lastByExercise[e.id];
-        const sets = last?.sets?.length ? last.sets.map((s) => ({ ...s, done: true })) : [emptySet()];
+        const sets = last?.sets?.length ? last.sets.map((s) => ({ ...s, done: !execution })) : [{ ...emptySet(), done: !execution }];
         setItems((prev) => [...prev, { exercise_id: e.id, name: e.name, muscleLabel: e.muscleLabel, equipmentLabel: e.equipmentLabel, per_side: false, superset_group: null, note: '', sets }]);
         setPickerOpen(false);
     };
@@ -241,7 +243,7 @@ export function ExerciseEditor({
             prev.map((it, idx) => {
                 if (idx !== i) return it;
                 const prevSet = it.sets[it.sets.length - 1];
-                const next: SetRow = prevSet ? { ...prevSet, is_warmup: false, done: true } : emptySet();
+                const next: SetRow = prevSet ? { ...prevSet, is_warmup: false, done: !execution } : { ...emptySet(), done: !execution };
                 return { ...it, sets: [...it.sets, next] };
             }),
         );
@@ -255,33 +257,54 @@ export function ExerciseEditor({
 
     return (
         <div className="space-y-3">
-            {items.map((it, i) => (
+            {items.map((it, i) => {
+                const collapsed = it.collapsed ?? false;
+                const workingSets = it.sets.filter((s) => !s.is_warmup);
+                const doneWorking = workingSets.filter((s) => s.done).length;
+                const topSet = lastTopSet(it.sets);
+                return (
                 <div key={i} className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm shadow-neutral-200/60">
-                    <div className="mb-2 flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                            <p className="truncate font-semibold text-neutral-800">{it.name}</p>
-                            {(it.muscleLabel || it.equipmentLabel) && (
-                                <p className="text-xs text-neutral-400">
-                                    {it.muscleLabel}
-                                    {it.equipmentLabel ? ` · ${it.equipmentLabel}` : ''}
-                                </p>
-                            )}
-                            {execution && lastByExercise[it.exercise_id] && lastTopSet(lastByExercise[it.exercise_id].sets) && (
-                                <p className="mt-0.5 text-xs font-medium text-brand-600">↩ Dernière fois : {lastTopSet(lastByExercise[it.exercise_id].sets)}</p>
-                            )}
-                        </div>
+                    <div className={`flex items-start justify-between gap-2 ${collapsed ? '' : 'mb-2'}`}>
+                        <button onClick={() => patchItem(i, { collapsed: !collapsed })} className="flex min-w-0 flex-1 items-start gap-2 text-left">
+                            <span className="mt-0.5 shrink-0 text-neutral-400">{collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}</span>
+                            <div className="min-w-0">
+                                <p className="truncate font-semibold text-neutral-800">{it.name}</p>
+                                {collapsed ? (
+                                    <p className="text-xs text-neutral-500">
+                                        {execution ? `${doneWorking}/${workingSets.length} série${workingSets.length > 1 ? 's' : ''}` : `${workingSets.length} série${workingSets.length > 1 ? 's' : ''}`}
+                                        {topSet ? ` · ${topSet}` : ''}
+                                    </p>
+                                ) : (
+                                    <>
+                                        {(it.muscleLabel || it.equipmentLabel) && (
+                                            <p className="text-xs text-neutral-400">
+                                                {it.muscleLabel}
+                                                {it.equipmentLabel ? ` · ${it.equipmentLabel}` : ''}
+                                            </p>
+                                        )}
+                                        {execution && lastByExercise[it.exercise_id] && lastTopSet(lastByExercise[it.exercise_id].sets) && (
+                                            <p className="mt-0.5 text-xs font-medium text-brand-600">↩ Dernière fois : {lastTopSet(lastByExercise[it.exercise_id].sets)}</p>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </button>
                         <div className="flex shrink-0 gap-1">
                             {lastByExercise[it.exercise_id] && (
                                 <button onClick={() => repeatLast(i)} title="Reprendre la dernière fois" className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600">
                                     <RotateCcw size={15} />
                                 </button>
                             )}
-                            <button onClick={() => removeItem(i)} className="rounded-lg p-1.5 text-neutral-400 hover:bg-rose-50 hover:text-rose-500">
-                                <Trash2 size={15} />
-                            </button>
+                            {!execution && (
+                                <button onClick={() => removeItem(i)} className="rounded-lg p-1.5 text-neutral-400 hover:bg-rose-50 hover:text-rose-500">
+                                    <Trash2 size={15} />
+                                </button>
+                            )}
                         </div>
                     </div>
 
+                    {!collapsed && (
+                    <>
                     <div className="grid grid-cols-[1.5rem_1fr_1fr_1fr_1.5rem] items-center gap-2 px-1 pb-1 text-[10px] font-semibold uppercase tracking-wide text-neutral-400">
                         <span>Set</span>
                         <span>Kg</span>
@@ -293,7 +316,7 @@ export function ExerciseEditor({
                     {it.sets.map((set, s) => {
                         const workingIndex = it.sets.slice(0, s + 1).filter((x) => !x.is_warmup).length;
                         return (
-                            <div key={s} className="grid grid-cols-[1.5rem_1fr_1fr_1fr_1.5rem] items-center gap-2 py-1">
+                            <div key={s} className={`grid grid-cols-[1.5rem_1fr_1fr_1fr_1.5rem] items-center gap-2 py-1 ${execution && !set.done ? 'opacity-50' : ''}`}>
                                 <button
                                     onClick={() => patchSet(i, s, { is_warmup: !set.is_warmup })}
                                     title={set.is_warmup ? 'Échauffement' : 'Série de travail'}
@@ -329,9 +352,21 @@ export function ExerciseEditor({
                                     title="RPE = intensité perçue, de 0 à 10"
                                     className="w-full rounded-lg border border-neutral-200 px-2 py-1.5 text-center text-sm tabular-nums focus:border-neutral-400 focus:outline-none"
                                 />
-                                <button onClick={() => removeSet(i, s)} className="text-neutral-300 hover:text-rose-500">
-                                    <X size={14} />
-                                </button>
+                                {execution ? (
+                                    <button
+                                        onClick={() => patchSet(i, s, { done: !set.done })}
+                                        title={set.done ? 'Série faite' : 'Marquer comme faite'}
+                                        className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
+                                            set.done ? 'bg-brand-600 text-white' : 'border border-neutral-300 text-neutral-300 hover:border-brand-400 hover:text-brand-400'
+                                        }`}
+                                    >
+                                        <Check size={14} />
+                                    </button>
+                                ) : (
+                                    <button onClick={() => removeSet(i, s)} className="text-neutral-300 hover:text-rose-500">
+                                        <X size={14} />
+                                    </button>
+                                )}
                             </div>
                         );
                     })}
@@ -339,8 +374,11 @@ export function ExerciseEditor({
                     <button onClick={() => addSet(i)} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-neutral-200 py-2 text-xs font-semibold text-neutral-500 hover:bg-neutral-50">
                         <Copy size={13} /> Ajouter une série
                     </button>
+                    </>
+                    )}
                 </div>
-            ))}
+                );
+            })}
 
             <button
                 onClick={() => setPickerOpen(true)}
