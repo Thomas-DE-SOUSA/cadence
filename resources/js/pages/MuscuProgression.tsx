@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { Activity, CalendarCheck, Dumbbell, Layers, SlidersHorizontal, Trophy, TrendingUp } from 'lucide-react';
+import { Activity, CalendarCheck, Dumbbell, Layers, SlidersHorizontal } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
 
@@ -14,42 +14,11 @@ interface MuscleVolume {
     label: string;
     sets: number;
 }
-interface Record {
-    name: string;
-    e1rm: number;
-    date: string;
-    recent: boolean;
-}
-interface Progression {
-    exerciseId: string;
-    name: string;
-    bestE1rm: number;
-    series: { date: string; e1rm: number; topWeight: number }[];
-}
 interface Props {
     goal: string;
     hasProfile: boolean;
     weekly: Weekly[];
     muscleVolume: MuscleVolume[];
-    records: Record[];
-    progression: Progression[];
-}
-
-function Spark({ series }: { series: { e1rm: number }[] }) {
-    if (series.length < 2) return null;
-    const vals = series.map((p) => p.e1rm);
-    const min = Math.min(...vals);
-    const max = Math.max(...vals);
-    const span = Math.max(max - min, 1);
-    const W = 96;
-    const H = 28;
-    const path = series.map((p, i) => `${i === 0 ? 'M' : 'L'} ${((i / (series.length - 1)) * W).toFixed(1)} ${(H - ((p.e1rm - min) / span) * H).toFixed(1)}`).join(' ');
-    return (
-        <svg width={W} height={H} className="overflow-visible">
-            <path d={path} fill="none" stroke="#f26722" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx={W} cy={H - ((series[series.length - 1].e1rm - min) / span) * H} r={2.5} fill="#f26722" />
-        </svg>
-    );
 }
 
 function Attendance({ weekly }: { weekly: Weekly[] }) {
@@ -114,67 +83,16 @@ function MuscleBalance({ muscleVolume }: { muscleVolume: MuscleVolume[] }) {
     );
 }
 
-function Records({ records }: { records: Record[] }) {
-    return (
-        <Card
-            title={
-                <span className="inline-flex items-center gap-1.5">
-                    <Trophy size={15} className="text-brand-600" /> Records (1RM estimé)
-                </span>
-            }
-        >
-            <ul className="divide-y divide-neutral-100">
-                {records.slice(0, 8).map((r) => (
-                    <li key={r.name} className="flex items-center justify-between gap-3 py-2.5">
-                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-700">{r.name}</span>
-                        {r.recent && <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-600">récent 🎉</span>}
-                        <span className="w-16 shrink-0 text-right text-sm font-bold tabular-nums text-neutral-900">{r.e1rm} kg</span>
-                    </li>
-                ))}
-            </ul>
-        </Card>
-    );
-}
+export default function MuscuProgression({ goal, hasProfile, weekly, muscleVolume }: Props) {
+    const empty = muscleVolume.length === 0 && weekly.every((w) => w.sessions === 0);
 
-function E1rmList({ progression }: { progression: Progression[] }) {
-    return (
-        <Card
-            title={
-                <span className="inline-flex items-center gap-1.5">
-                    <TrendingUp size={15} className="text-brand-600" /> Force par exercice (e1RM)
-                </span>
-            }
-        >
-            <ul className="divide-y divide-neutral-100">
-                {progression.map((p) => (
-                    <li key={p.exerciseId} className="flex items-center justify-between gap-3 py-3">
-                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-700">{p.name}</span>
-                        <Spark series={p.series} />
-                        <span className="w-16 shrink-0 text-right text-sm font-bold tabular-nums text-neutral-900">{p.bestE1rm} kg</span>
-                    </li>
-                ))}
-            </ul>
-        </Card>
-    );
-}
-
-export default function MuscuProgression({ goal, hasProfile, weekly, muscleVolume, records, progression }: Props) {
-    const empty = records.length === 0 && muscleVolume.length === 0 && weekly.every((w) => w.sessions === 0);
-
-    // The profile's goal reorders the sections — what matters most goes first.
-    const order: Record<string, ('attendance' | 'muscle' | 'records' | 'e1rm')[]> = {
-        GENERAL: ['attendance', 'muscle', 'records', 'e1rm'],
-        HYPERTROPHY: ['muscle', 'attendance', 'e1rm', 'records'],
-        STRENGTH: ['e1rm', 'records', 'attendance', 'muscle'],
-        ENDURANCE: ['muscle', 'attendance', 'e1rm', 'records'],
-    };
-    const sections = order[goal] ?? order.GENERAL;
+    // The profile's goal decides which of the two blocks leads.
+    const muscleFirst = goal === 'HYPERTROPHY' || goal === 'ENDURANCE';
+    const sections = muscleFirst ? ['muscle', 'attendance'] : ['attendance', 'muscle'];
 
     const render = (key: string) => {
         if (key === 'attendance') return <Attendance key={key} weekly={weekly} />;
         if (key === 'muscle') return <MuscleBalance key={key} muscleVolume={muscleVolume} />;
-        if (key === 'records') return records.length > 0 ? <Records key={key} records={records} /> : null;
-        if (key === 'e1rm') return progression.length > 0 ? <E1rmList key={key} progression={progression} /> : null;
         return null;
     };
 
@@ -184,7 +102,7 @@ export default function MuscuProgression({ goal, hasProfile, weekly, muscleVolum
             <div className="mb-6 flex items-start justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Progression</h1>
-                    <p className="mt-1 text-sm text-neutral-500">Adaptée à ton profil{!hasProfile && ' (à configurer)'}.</p>
+                    <p className="mt-1 text-sm text-neutral-500">Ta régularité et l'équilibre de ton volume{!hasProfile && ' (profil à configurer)'}.</p>
                 </div>
                 <Link
                     href="/muscu/profil"
@@ -200,7 +118,7 @@ export default function MuscuProgression({ goal, hasProfile, weekly, muscleVolum
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-200 px-6 py-16 text-center">
                     <Dumbbell size={32} className="mb-3 text-neutral-400" />
                     <p className="max-w-sm text-sm text-neutral-500">
-                        Fais quelques séances (marquées « fait ») : ton assiduité, ton volume par muscle et ta progression force apparaîtront ici.
+                        Fais quelques séances (marquées « fait ») : ton assiduité et ton volume par muscle apparaîtront ici.
                     </p>
                     {!hasProfile && (
                         <Link href="/muscu/profil" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white">

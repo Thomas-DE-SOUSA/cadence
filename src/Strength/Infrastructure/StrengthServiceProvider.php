@@ -7,12 +7,14 @@ namespace Cadence\Strength\Infrastructure;
 use Cadence\Strength\Domain\Port\ExerciseRepository;
 use Cadence\Strength\Domain\Port\MuscuProfileRepository;
 use Cadence\Strength\Domain\Port\StrengthSessionRepository;
+use Cadence\Strength\Domain\Port\WeightEntryRepository;
 use Cadence\Strength\Domain\Port\WorkoutTemplateRepository;
 use Cadence\Strength\Infrastructure\Http\Controller\AddCustomExerciseController;
 use Cadence\Strength\Infrastructure\Http\Controller\SaveMuscuProfileController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowMuscuProfileController;
 use Cadence\Strength\Infrastructure\Http\Controller\DeleteTemplateController;
 use Cadence\Strength\Infrastructure\Http\Controller\LogStrengthSessionController;
+use Cadence\Strength\Infrastructure\Http\Controller\LogWeightEntryController;
 use Cadence\Strength\Infrastructure\Http\Controller\RemoveScheduledWorkoutController;
 use Cadence\Strength\Infrastructure\Http\Controller\SaveTemplateController;
 use Cadence\Strength\Infrastructure\Http\Controller\ScheduleWorkoutController;
@@ -21,9 +23,11 @@ use Cadence\Strength\Infrastructure\Http\Controller\ShowProgressionController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowSessionEditorController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowTemplateEditorController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowTemplatesController;
+use Cadence\Strength\Infrastructure\Http\Controller\ShowWeightController;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentExerciseRepository;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentMuscuProfileRepository;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentStrengthSessionRepository;
+use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentWeightEntryRepository;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentWorkoutTemplateRepository;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -36,6 +40,7 @@ final class StrengthServiceProvider extends ServiceProvider
         $this->app->bind(StrengthSessionRepository::class, EloquentStrengthSessionRepository::class);
         $this->app->bind(WorkoutTemplateRepository::class, EloquentWorkoutTemplateRepository::class);
         $this->app->bind(MuscuProfileRepository::class, EloquentMuscuProfileRepository::class);
+        $this->app->bind(WeightEntryRepository::class, EloquentWeightEntryRepository::class);
     }
 
     public function boot(): void
@@ -44,6 +49,10 @@ final class StrengthServiceProvider extends ServiceProvider
             // Agenda (home) + progression.
             Route::get('/', ShowAgendaController::class)->name('muscu');
             Route::get('/progression', ShowProgressionController::class)->name('muscu.progression');
+
+            // Body-weight tracker (morning/evening readings → weekly averages).
+            Route::get('/poids', ShowWeightController::class)->name('muscu.weight');
+            Route::post('/poids', LogWeightEntryController::class)->name('muscu.weight.save');
 
             // Muscu profile (goal, level, equipment, priorities…).
             Route::get('/profil', ShowMuscuProfileController::class)->name('muscu.profile');
