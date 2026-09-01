@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowLeft, Check, CircleCheck, Flag, Play, Timer, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Check, CircleCheck, Flag, Play, RotateCcw, Square, Timer, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/layouts/AppLayout';
 import { ExerciseEditor, itemsFromServer, type CatalogItem, type Item, type Option, type SetRow } from '@/muscu/ExerciseEditor';
@@ -30,42 +30,85 @@ function mmss(total: number): string {
     return `${String(m).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
-/** Rest countdown with presets — used between sets in execution mode. */
-function RestTimer() {
-    const [remaining, setRemaining] = useState(0);
-    const ref = useRef<number | null>(null);
-    const start = (s: number) => {
-        setRemaining(s);
-        if (ref.current) window.clearInterval(ref.current);
-        ref.current = window.setInterval(() => {
-            setRemaining((r) => {
-                if (r <= 1) {
-                    if (ref.current) window.clearInterval(ref.current);
-                    return 0;
-                }
-                return r - 1;
-            });
-        }, 1000);
+/**
+ * Manual count-up stopwatch. A full-width button opens a popup; the chrono
+ * starts from 0 on first open and keeps running even when the popup is closed —
+ * closing never stops it. While active, the button shows the running time
+ * instead of the "Chrono" label.
+ */
+function SessionChrono() {
+    const [open, setOpen] = useState(false);
+    const [running, setRunning] = useState(false);
+    const [elapsed, setElapsed] = useState(0);
+
+    useEffect(() => {
+        if (!running) return;
+        const t = window.setInterval(() => setElapsed((s) => s + 1), 1000);
+        return () => window.clearInterval(t);
+    }, [running]);
+
+    const openModal = () => {
+        if (!running && elapsed === 0) setRunning(true); // start from 0 on first open
+        setOpen(true);
     };
-    useEffect(() => () => void (ref.current && window.clearInterval(ref.current)), []);
-    const active = remaining > 0;
+    const reset = () => {
+        setElapsed(0);
+        setRunning(false);
+    };
+    const active = running || elapsed > 0;
+
     return (
-        <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${active ? 'border-brand-300 bg-brand-50' : 'border-neutral-200 bg-white'}`}>
-            <Timer size={16} className={active ? 'text-brand-600' : 'text-neutral-400'} />
-            <span className={`w-11 text-sm font-bold tabular-nums ${active ? 'text-brand-700' : 'text-neutral-400'}`}>{mmss(remaining)}</span>
-            <div className="flex gap-1">
-                {[60, 90, 120, 180].map((s) => (
-                    <button key={s} type="button" onClick={() => start(s)} className="rounded-md bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-600 hover:bg-neutral-200">
-                        {s < 120 ? `${s}s` : `${s / 60}m`}
-                    </button>
-                ))}
-                {active && (
-                    <button type="button" onClick={() => setRemaining(0)} className="rounded-md px-1.5 py-1 text-neutral-400 hover:text-neutral-600">
-                        <X size={14} />
-                    </button>
-                )}
-            </div>
-        </div>
+        <>
+            <button
+                type="button"
+                onClick={openModal}
+                className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-3.5 text-sm font-bold transition-colors ${
+                    active ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-neutral-200 bg-white text-neutral-600'
+                }`}
+            >
+                <Timer size={18} />
+                {active ? <span className="tabular-nums">{mmss(elapsed)}</span> : 'Chrono'}
+            </button>
+
+            {open && (
+                <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/40 sm:items-center" onClick={() => setOpen(false)}>
+                    <div className="w-full max-w-sm rounded-t-2xl bg-white p-6 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+                        <p className="text-center text-xs font-semibold uppercase tracking-wide text-neutral-400">Chrono</p>
+                        <p className="mb-6 mt-1 text-center text-5xl font-bold tabular-nums text-neutral-900">{mmss(elapsed)}</p>
+                        <div className="flex gap-2">
+                            {running ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setRunning(false)}
+                                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white"
+                                >
+                                    <Square size={15} /> Arrêter
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => setRunning(true)}
+                                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-600 py-2.5 text-sm font-semibold text-white"
+                                >
+                                    <Play size={15} /> Démarrer
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={reset}
+                                title="Remettre à zéro"
+                                className="flex items-center justify-center rounded-xl border border-neutral-200 px-4 text-neutral-500 hover:bg-neutral-50"
+                            >
+                                <RotateCcw size={16} />
+                            </button>
+                        </div>
+                        <button type="button" onClick={() => setOpen(false)} className="mt-3 w-full py-2 text-sm text-neutral-500 hover:text-neutral-700">
+                            Fermer
+                        </button>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
 
@@ -128,8 +171,8 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
             </div>
 
             {started ? (
-                <div className="mb-4 flex flex-wrap items-center gap-2">
-                    <RestTimer />
+                <div className="mb-4">
+                    <SessionChrono />
                 </div>
             ) : (
                 <div className="mb-4 flex flex-wrap items-center gap-2">
