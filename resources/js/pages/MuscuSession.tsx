@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowLeft, Check, CircleCheck, Flag, Play, RotateCcw, Square, Timer, Trash2 } from 'lucide-react';
@@ -118,7 +118,11 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
     const [done, setDone] = useState(session?.status === 'DONE');
     const [items, setItems] = useState<Item[]>(session ? itemsFromServer(session.exercises) : []);
     const [saving, setSaving] = useState(false);
-    const [started, setStarted] = useState(false);
+    // A planned session with any unchecked set is already in progress (its sets
+    // were reset to "to-do" when it was started) — resume it instead of showing
+    // the "Démarrer" gate, so returning to it never loses the ticked sets.
+    const resuming = !!session && session.status === 'PLANNED' && session.exercises.some((e) => e.sets.some((s) => !s.done));
+    const [started, setStarted] = useState(resuming);
     const [elapsed, setElapsed] = useState(0);
 
     // Session chrono runs automatically once started.
@@ -146,6 +150,13 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
         }
     };
 
+    // Going back mid-session saves progress (as PLANNED) so a misclick can't
+    // wipe the ticked sets — the save itself redirects to the agenda.
+    const goBack = () => {
+        if (started && items.length > 0) post('PLANNED', elapsed);
+        else router.visit('/muscu');
+    };
+
     const totalSets = items.reduce((n, it) => n + it.sets.filter((s) => !s.is_warmup).length, 0);
     const canStart = session !== null && !started && session.status !== 'DONE';
 
@@ -154,9 +165,9 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
             <Head title={title || 'Séance'} />
 
             <div className="mb-4 flex items-center gap-2">
-                <Link href="/muscu" className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100">
+                <button onClick={goBack} title="Retour" className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100">
                     <ArrowLeft size={18} />
-                </Link>
+                </button>
                 <input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
@@ -174,6 +185,10 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
                 <div className="mb-4">
                     <SessionChrono />
                 </div>
+            ) : session ? (
+                <p className="mb-4 text-sm capitalize text-neutral-500">
+                    {new Date(date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </p>
             ) : (
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                     <input
