@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, Copy, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
 
 export interface CatalogItem {
@@ -53,6 +53,50 @@ export function numOrNull(v: string): number | null {
     if (v.trim() === '') return null;
     const n = Number(v.replace(',', '.'));
     return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Decimal text field bound to a number model. Keeps the raw text so an
+ * in-progress "22," or "22." isn't stripped the instant it's parsed (the bug
+ * that made decimals impossible). Only re-syncs the text when the external
+ * number changes for another reason (repeat-last prefill, reset).
+ */
+function DecimalInput({
+    value,
+    onChange,
+    className,
+    placeholder,
+    title,
+}: {
+    value: number | null;
+    onChange: (n: number | null) => void;
+    className?: string;
+    placeholder?: string;
+    title?: string;
+}) {
+    const [text, setText] = useState(value === null ? '' : String(value));
+
+    useEffect(() => {
+        if (numOrNull(text) !== value) {
+            setText(value === null ? '' : String(value));
+        }
+        // Only react to external value changes, not to local typing.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [value]);
+
+    return (
+        <input
+            inputMode="decimal"
+            value={text}
+            onChange={(e) => {
+                setText(e.target.value);
+                onChange(numOrNull(e.target.value));
+            }}
+            placeholder={placeholder}
+            title={title}
+            className={className}
+        />
+    );
 }
 
 /** Map a server exercise payload to the editor's Item shape. */
@@ -325,10 +369,9 @@ export function ExerciseEditor({
                                 >
                                     {set.is_warmup ? 'É' : workingIndex}
                                 </button>
-                                <input
-                                    inputMode="decimal"
-                                    value={set.weight_kg ?? ''}
-                                    onChange={(e) => patchSet(i, s, { weight_kg: numOrNull(e.target.value) })}
+                                <DecimalInput
+                                    value={set.weight_kg}
+                                    onChange={(n) => patchSet(i, s, { weight_kg: n })}
                                     placeholder="—"
                                     className="w-full rounded-lg border border-neutral-200 px-2 py-1.5 text-center text-sm tabular-nums focus:border-neutral-400 focus:outline-none"
                                 />
@@ -342,13 +385,9 @@ export function ExerciseEditor({
                                     placeholder="—"
                                     className="w-full rounded-lg border border-neutral-200 px-2 py-1.5 text-center text-sm tabular-nums focus:border-neutral-400 focus:outline-none"
                                 />
-                                <input
-                                    inputMode="decimal"
-                                    value={set.rpe ?? ''}
-                                    onChange={(e) => {
-                                        const n = numOrNull(e.target.value);
-                                        patchSet(i, s, { rpe: n === null ? null : Math.min(10, Math.max(0, n)) });
-                                    }}
+                                <DecimalInput
+                                    value={set.rpe}
+                                    onChange={(n) => patchSet(i, s, { rpe: n === null ? null : Math.min(10, Math.max(0, n)) })}
                                     placeholder="—"
                                     title="RPE = intensité perçue, de 0 à 10"
                                     className="w-full rounded-lg border border-neutral-200 px-2 py-1.5 text-center text-sm tabular-nums focus:border-neutral-400 focus:outline-none"
