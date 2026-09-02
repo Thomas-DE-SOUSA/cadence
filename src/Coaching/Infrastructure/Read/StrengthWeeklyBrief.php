@@ -57,7 +57,14 @@ final class StrengthWeeklyBrief
             $snap = $session->toSnapshot();
             $date = (string) $snap['date'];
 
-            if ($date <= $today && ($lastDate === null || $date > $lastDate)) {
+            // Only what has actually happened counts: a DONE session dated in
+            // the future is ignored everywhere (counts, tonnage, days-since),
+            // so the summary can never contradict itself.
+            if ($date > $today) {
+                continue;
+            }
+
+            if ($lastDate === null || $date > $lastDate) {
                 $lastDate = $date;
             }
 
@@ -82,12 +89,17 @@ final class StrengthWeeklyBrief
                     continue;
                 }
                 $exercise = PerformedExercise::fromArray($raw);
+                // Total working sets is the true count of work done — it must
+                // not depend on the catalog being complete, so it accrues
+                // before the muscle lookup. Per-muscle balance only counts sets
+                // whose exercise maps to a known muscle.
+                $sets = count($exercise->workingSets());
+                $workingSets += $sets;
+
                 $muscle = $muscleOf[$exercise->exerciseId] ?? null;
                 if ($muscle === null) {
                     continue;
                 }
-                $sets = count($exercise->workingSets());
-                $workingSets += $sets;
                 $perMuscle[$muscle->value] = ($perMuscle[$muscle->value] ?? 0) + $sets;
                 if (in_array($muscle->value, self::LEG_MUSCLES, true)) {
                     $touchesLegs = true;
@@ -99,11 +111,13 @@ final class StrengthWeeklyBrief
             }
         }
 
-        arsort($perMuscle);
         $balance = [];
         foreach ($perMuscle as $muscle => $sets) {
             $balance[] = ['muscle' => $muscle, 'label' => MuscleGroup::from($muscle)->label(), 'sets' => $sets];
         }
+        // Explicit, meaningful order: most sets first, ties broken alphabetically
+        // by muscle key — deterministic regardless of session/exercise ordering.
+        usort($balance, static fn (array $a, array $b): int => $b['sets'] <=> $a['sets'] ?: strcmp((string) $a['muscle'], (string) $b['muscle']));
 
         return new StrengthWeekSummary(
             $weekStart,
@@ -136,6 +150,11 @@ final class StrengthWeeklyBrief
         return $count === 0 ? null : round($sum / $count, 1);
     }
 
+    /**
+     * Whole days between two Y-m-d dates. Callers guarantee $from <= $to (the
+     * loop only records $lastDate when it is <= $today), so the unsigned
+     * DateInterval::$days is always the intended non-negative gap.
+     */
     private static function daysBetween(string $from, string $to): int
     {
         return (int) (new DateTimeImmutable($from))->diff(new DateTimeImmutable($to))->days;
