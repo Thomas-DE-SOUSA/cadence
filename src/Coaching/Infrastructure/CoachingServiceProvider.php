@@ -10,10 +10,17 @@ use Cadence\Coaching\Domain\Port\CoachStreamer;
 use Cadence\Coaching\Domain\Port\ConversationRepository;
 use Cadence\Coaching\Domain\Port\ProgramContextProvider;
 use Cadence\Coaching\Domain\Port\SessionAdjuster;
+use Cadence\Coaching\Domain\Port\StrengthContextProvider;
+use Cadence\Coaching\Domain\Port\WeeklyCoachStreamer;
+use Cadence\Coaching\Domain\Port\WeeklyReviewRepository;
 use Cadence\Coaching\Domain\Port\WellnessCheckInRepository;
 use Cadence\Coaching\Infrastructure\Ai\AdvisorStreamer;
 use Cadence\Coaching\Infrastructure\Ai\CoachRequestBuilder;
 use Cadence\Coaching\Infrastructure\Ai\GeminiCoachStreamer;
+use Cadence\Coaching\Infrastructure\Ai\GeminiWeeklyCoachStreamer;
+use Cadence\Coaching\Infrastructure\Ai\WeeklyCoachRequestBuilder;
+use Cadence\Coaching\Infrastructure\Persistence\Eloquent\EloquentWeeklyReviewRepository;
+use Cadence\Coaching\Infrastructure\Provider\StrengthWeeklyContextProvider;
 use Cadence\Shared\Infrastructure\Ai\GeminiClient;
 use Cadence\Coaching\Infrastructure\Http\Controller\AnalyzeGuestGpxController;
 use Cadence\Coaching\Infrastructure\Http\Controller\ApplyProposalController;
@@ -43,6 +50,10 @@ final class CoachingServiceProvider extends ServiceProvider
         $this->app->bind(SessionAdjuster::class, TrainingSessionAdjuster::class);
         $this->app->bind(WellnessCheckInRepository::class, EloquentWellnessCheckInRepository::class);
 
+        // Weekly cross-modal coach: strength context seam + its own review store.
+        $this->app->bind(StrengthContextProvider::class, StrengthWeeklyContextProvider::class);
+        $this->app->bind(WeeklyReviewRepository::class, EloquentWeeklyReviewRepository::class);
+
         $builder = fn (): CoachRequestBuilder => new CoachRequestBuilder(new CoachingKnowledge());
         $gemini = fn (): GeminiClient => new GeminiClient(
             (string) config('services.gemini.key'),
@@ -55,6 +66,7 @@ final class CoachingServiceProvider extends ServiceProvider
         $this->app->bind(CoachStreamer::class, GeminiCoachStreamer::class);
         $this->app->bind(CoachChat::class, GeminiCoachStreamer::class);
         $this->app->bind(AdvisorStreamer::class, fn (): AdvisorStreamer => new AdvisorStreamer($gemini()));
+        $this->app->bind(WeeklyCoachStreamer::class, fn (): GeminiWeeklyCoachStreamer => new GeminiWeeklyCoachStreamer($gemini(), new WeeklyCoachRequestBuilder(new CoachingKnowledge())));
     }
 
     public function boot(): void
