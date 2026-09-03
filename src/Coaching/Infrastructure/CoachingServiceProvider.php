@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cadence\Coaching\Infrastructure;
 
+use Cadence\Coaching\Domain\Port\AthleteGoalProvider;
 use Cadence\Coaching\Domain\Port\AthleteHistoryProvider;
 use Cadence\Coaching\Domain\Port\CoachChat;
 use Cadence\Coaching\Domain\Port\CoachStreamer;
@@ -21,6 +22,7 @@ use Cadence\Coaching\Infrastructure\Ai\GeminiWeeklyCoachStreamer;
 use Cadence\Coaching\Infrastructure\Ai\WeeklyCoachRequestBuilder;
 use Cadence\Coaching\Infrastructure\Persistence\Eloquent\EloquentWeeklyReviewRepository;
 use Cadence\Coaching\Infrastructure\Provider\StrengthWeeklyContextProvider;
+use Cadence\Coaching\Infrastructure\Provider\TrainingGoalProvider;
 use Cadence\Shared\Infrastructure\Ai\GeminiClient;
 use Cadence\Coaching\Infrastructure\Http\Controller\AnalyzeGuestGpxController;
 use Cadence\Coaching\Infrastructure\Http\Controller\ApplyProposalController;
@@ -52,6 +54,7 @@ final class CoachingServiceProvider extends ServiceProvider
 
         // Weekly cross-modal coach: strength context seam + its own review store.
         $this->app->bind(StrengthContextProvider::class, StrengthWeeklyContextProvider::class);
+        $this->app->bind(AthleteGoalProvider::class, TrainingGoalProvider::class);
         $this->app->bind(WeeklyReviewRepository::class, EloquentWeeklyReviewRepository::class);
 
         $builder = fn (): CoachRequestBuilder => new CoachRequestBuilder(new CoachingKnowledge());

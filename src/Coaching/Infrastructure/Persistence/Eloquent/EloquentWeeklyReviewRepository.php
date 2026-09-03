@@ -18,12 +18,17 @@ final class EloquentWeeklyReviewRepository implements WeeklyReviewRepository
         $s = $review->toSnapshot();
 
         try {
-            WeeklyReviewModel::query()->updateOrCreate(['id' => $s['id']], [
-                'tenant_id' => $s['tenant_id'],
-                'week_start' => $s['week_start'],
-                'messages' => $s['messages'],
-                'version' => $s['version'],
-            ]);
+            // Match on id AND tenant so a foreign tenant's id can never overwrite
+            // this row. `version` is persisted for snapshot parity, not enforced
+            // as an optimistic lock (single-user app; sequential requests).
+            WeeklyReviewModel::query()->updateOrCreate(
+                ['id' => $s['id'], 'tenant_id' => $s['tenant_id']],
+                [
+                    'week_start' => $s['week_start'],
+                    'messages' => $s['messages'],
+                    'version' => $s['version'],
+                ],
+            );
         } catch (Throwable $e) {
             throw new PersistenceFailure('Could not persist the weekly review.', 0, $e);
         }
