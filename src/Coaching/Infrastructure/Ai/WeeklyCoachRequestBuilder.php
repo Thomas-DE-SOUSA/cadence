@@ -49,12 +49,38 @@ final class WeeklyCoachRequestBuilder
         return $messages;
     }
 
+    /**
+     * The conversation as Gemini `contents`. Seeds a single opening user turn
+     * when there is no history yet, so the model produces the first verdict.
+     * Single source of truth for the {role,content}→{role,parts} mapping.
+     *
+     * @param list<Message> $history
+     *
+     * @return list<array{role:string,parts:list<array{text:string}>}>
+     */
+    public function contents(array $history): array
+    {
+        $contents = [];
+        foreach ($this->messages($history) as $message) {
+            $contents[] = [
+                'role' => $message['role'] === 'assistant' ? 'model' : 'user',
+                'parts' => [['text' => $message['content']]],
+            ];
+        }
+
+        if ($contents === []) {
+            $contents[] = ['role' => 'user', 'parts' => [['text' => 'Fais le bilan de ma semaine.']]];
+        }
+
+        return $contents;
+    }
+
     private function athleteBlock(WeeklyReviewContext $c): string
     {
         $lines = [
             "- Semaine analysée : du {$c->weekStart} au {$c->weekEnd} (lundi→dimanche).",
-            "- Objectif : {$c->goal}",
-            '- Course cible : '.($c->targetRaceName !== '' ? $c->targetRaceName : 'non précisée').($c->targetRaceDate !== null ? " (le {$c->targetRaceDate})" : ''),
+            '- Objectif : '.$this->plain($c->goal),
+            '- Course cible : '.($c->targetRaceName !== '' ? $this->plain($c->targetRaceName) : 'non précisée').($c->targetRaceDate !== null ? " (le {$c->targetRaceDate})" : ''),
         ];
 
         if ($c->fitness instanceof FitnessSnapshot) {
@@ -67,9 +93,9 @@ final class WeeklyCoachRequestBuilder
 
     private function runningBlock(WeeklyReviewContext $c): string
     {
-        $lines = ['- Sorties récentes : '.($c->recentRunsSummary !== '' ? $c->recentRunsSummary : 'aucune enregistrée.')];
+        $lines = ['- Sorties récentes : '.($c->recentRunsSummary !== '' ? $this->plain($c->recentRunsSummary) : 'aucune enregistrée.')];
         if (trim($c->runningAnalysis) !== '') {
-            $lines[] = $c->runningAnalysis;
+            $lines[] = $this->plain($c->runningAnalysis);
         }
 
         return implode("\n", $lines);
@@ -100,18 +126,27 @@ final class WeeklyCoachRequestBuilder
         }
 
         if ($s->weightAvgKg !== null) {
-            $trend = $s->weightPrevAvgKg !== null
-                ? sprintf(' (%+.1f kg vs semaine précédente à %.1f kg)', $s->weightAvgKg - $s->weightPrevAvgKg, $s->weightPrevAvgKg)
-                : '';
-            $lines[] = sprintf('- Poids moyen : %.1f kg%s.', $s->weightAvgKg, $trend);
+            $line = sprintf('- Poids moyen : %s kg', $this->kg($s->weightAvgKg));
+            if ($s->weightPrevAvgKg !== null) {
+                $delta = round($s->weightAvgKg - $s->weightPrevAvgKg, 1);
+                $line .= sprintf(' (%s%s kg vs %s kg la semaine précédente)', $delta >= 0.0 ? '+' : '-', $this->kg(abs($delta)), $this->kg($s->weightPrevAvgKg));
+            }
+            $lines[] = $line.'.';
         }
 
         return implode("\n", $lines);
     }
 
+    /** French number: comma decimal, space thousands. Consistent across the whole prompt. */
     private function kg(float $value): string
     {
         return number_format($value, $value === floor($value) ? 0 : 1, ',', ' ');
+    }
+
+    /** Neutralises Markdown headings in interpolated free text so it can't forge a prompt section. */
+    private function plain(string $text): string
+    {
+        return trim((string) preg_replace('/^\h*#+\h*/m', '', $text));
     }
 
     private function rules(): string

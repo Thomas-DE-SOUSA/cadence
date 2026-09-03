@@ -26,37 +26,11 @@ final class GeminiWeeklyCoachStreamer implements WeeklyCoachStreamer
     {
         $result = $this->client->stream(
             $this->builder->system($context),
-            $this->toContents($this->builder->messages($history)),
+            $this->builder->contents($history),
             [],
             $onText,
         );
 
         return new CoachReply($result['text'], null);
-    }
-
-    /**
-     * Maps the builder's {role,content} messages to Gemini's contents shape.
-     * With no history yet, seeds a single user turn so the model produces the
-     * opening verdict.
-     *
-     * @param list<array{role:string,content:string}> $messages
-     *
-     * @return list<array{role:string,parts:list<array{text:string}>}>
-     */
-    private function toContents(array $messages): array
-    {
-        $contents = [];
-        foreach ($messages as $message) {
-            $contents[] = [
-                'role' => $message['role'] === 'user' ? 'user' : 'model',
-                'parts' => [['text' => $message['content']]],
-            ];
-        }
-
-        if ($contents === []) {
-            $contents[] = ['role' => 'user', 'parts' => [['text' => 'Fais le bilan de ma semaine.']]];
-        }
-
-        return $contents;
     }
 }
