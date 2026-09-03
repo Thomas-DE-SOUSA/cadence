@@ -18,6 +18,22 @@ final class CoachingKnowledge
         return implode("\n\n---\n\n", array_filter($parts));
     }
 
+    /**
+     * The running foundation plus the cross-modal notes that only the weekly
+     * coach needs (kept out of {@see systemFoundation} so the per-day running
+     * coach's prompt stays lean).
+     */
+    public function weeklyFoundation(): string
+    {
+        $parts = [$this->systemFoundation()];
+
+        foreach (glob(__DIR__.'/weekly/*.md') ?: [] as $file) {
+            $parts[] = $this->read($file);
+        }
+
+        return implode("\n\n---\n\n", array_filter($parts));
+    }
+
     private function read(string $path): string
     {
         $contents = is_file($path) ? file_get_contents($path) : '';
