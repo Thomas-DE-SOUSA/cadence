@@ -29,8 +29,11 @@ use Cadence\Coaching\Infrastructure\Http\Controller\ApplyProposalController;
 use Cadence\Coaching\Infrastructure\Http\Controller\SendCoachMessageController;
 use Cadence\Coaching\Infrastructure\Http\Controller\ShowCoachThreadController;
 use Cadence\Coaching\Infrastructure\Http\Controller\ShowFitnessController;
+use Cadence\Coaching\Infrastructure\Http\Controller\ShowWeeklyReviewController;
+use Cadence\Coaching\Infrastructure\Http\Controller\ShowWeeklyThreadController;
 use Cadence\Coaching\Infrastructure\Http\Controller\StreamAdvisorController;
 use Cadence\Coaching\Infrastructure\Http\Controller\StreamCoachController;
+use Cadence\Coaching\Infrastructure\Http\Controller\StreamWeeklyReviewController;
 use Cadence\Coaching\Infrastructure\Knowledge\CoachingKnowledge;
 use Inertia\Inertia;
 use Cadence\Coaching\Infrastructure\Http\Controller\SubmitWellnessCheckInController;
@@ -84,6 +87,13 @@ final class CoachingServiceProvider extends ServiceProvider
         // Fitness / training-load insights + daily subjective check-in.
         Route::middleware(['web', 'auth'])->get('/forme', ShowFitnessController::class)->name('fitness');
         Route::middleware(['web', 'auth'])->post('/forme/check-in', SubmitWellnessCheckInController::class)->name('fitness.checkin');
+
+        // Weekly cross-modal review ("Bilan") — lives in the muscu world's nav.
+        Route::middleware(['web', 'auth'])->prefix('muscu/bilan')->group(function (): void {
+            Route::get('/', ShowWeeklyReviewController::class)->name('muscu.review');
+            Route::get('/thread', ShowWeeklyThreadController::class)->name('muscu.review.thread');
+            Route::post('/stream', StreamWeeklyReviewController::class)->name('muscu.review.stream');
+        });
 
         // Guest advisory tool ("Conseil") — assess any runner, no persistence.
         Route::middleware(['web', 'auth'])->prefix('conseil')->group(function (): void {
