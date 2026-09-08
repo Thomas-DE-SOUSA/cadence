@@ -19,7 +19,7 @@ interface Strength {
     weightPrevAvgKg: number | null;
 }
 interface ThreadMessage {
-    role: string; // ATHLETE | COACH
+    role: 'athlete' | 'coach';
     text: string;
 }
 interface Props {
@@ -114,6 +114,9 @@ function StrengthCard({ s }: { s: Strength }) {
                     )}
                 </p>
             )}
+            {s.daysSinceLast !== null && (
+                <p className="text-xs text-neutral-400">Dernière séance muscu il y a {s.daysSinceLast} jour{s.daysSinceLast > 1 ? 's' : ''}.</p>
+            )}
         </div>
     );
 }
@@ -170,14 +173,24 @@ export default function MuscuBilan({ weekStart, weekEnd, goal, strength, thread:
                         else if (l.startsWith('data:')) data += l.slice(5).trim();
                     }
                     if (!data) continue;
-                    const payload = JSON.parse(data);
+                    let payload: { t?: string; message?: string; thread?: ThreadMessage[] };
+                    try {
+                        payload = JSON.parse(data);
+                    } catch {
+                        continue; // skip a malformed / non-JSON frame (heartbeat, partial)
+                    }
                     if (event === 'text') {
                         liveRef.current += payload.t ?? '';
                         setLive(liveRef.current);
                     } else if (event === 'done') {
                         const res2 = await fetch(`/muscu/bilan/thread?week_start=${weekStart}`, { headers: { Accept: 'application/json' } });
-                        const json = await res2.json();
-                        setThread(json.thread ?? []);
+                        if (res2.ok) {
+                            const json = await res2.json();
+                            setThread(json.thread ?? []);
+                        } else {
+                            // Refetch failed — keep the streamed verdict rather than blanking it.
+                            setThread((t) => [...t, { role: 'coach', text: liveRef.current }]);
+                        }
                         setLive('');
                     } else if (event === 'error') {
                         setError(payload.message ?? 'Le coach est indisponible.');
@@ -219,7 +232,7 @@ export default function MuscuBilan({ weekStart, weekEnd, goal, strength, thread:
                         <p className="mb-3 text-sm text-neutral-500">Le coach croise ta course et ta muscu pour te dire si la semaine est bonne et quoi ajuster.</p>
                     )}
 
-                    <div className="space-y-3">
+                    <div className="space-y-3" aria-live="polite">
                         {thread.map((m, i) =>
                             m.role === 'athlete' ? (
                                 <div key={i} className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-brand-600 px-3.5 py-2 text-sm text-white">{m.text}</div>
@@ -259,6 +272,7 @@ export default function MuscuBilan({ weekStart, weekEnd, goal, strength, thread:
                             <button
                                 onClick={() => send(input)}
                                 disabled={streaming || input.trim() === ''}
+                                aria-label="Envoyer"
                                 className="flex items-center justify-center rounded-xl bg-neutral-900 px-4 text-white disabled:opacity-40"
                             >
                                 <Send size={16} />

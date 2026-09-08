@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cadence\Coaching\Infrastructure\Http\Controller;
 
+use Cadence\Coaching\Application\WeeklyReview\WeekAnchor;
 use Cadence\Coaching\Application\WeeklyReview\WeeklyReviewService;
 use Cadence\Coaching\Domain\Port\WeeklyCoachStreamer;
 use Cadence\Shared\Application\ExecutionContext;
@@ -27,18 +28,15 @@ final class StreamWeeklyReviewController
     public function __invoke(Request $request): StreamedResponse
     {
         $data = $request->validate([
-            'week_start' => ['nullable', 'date'],
+            'week_start' => ['nullable', 'date_format:Y-m-d'],
             'message' => ['required', 'string', 'max:4000'],
         ]);
 
-        $weekStart = isset($data['week_start'])
-            ? (new \DateTimeImmutable((string) $data['week_start']))->modify('monday this week')->format('Y-m-d')
-            : $this->clock->now()->modify('monday this week')->format('Y-m-d');
-
+        $weekStart = WeekAnchor::monday($data['week_start'] ?? null, $this->clock);
+        $message = (string) $data['message'];
         $context = new ExecutionContext($this->tenantContext->current());
-        $turn = $this->reviews->start($weekStart, (string) $data['message'], $context);
 
-        return response()->stream(function () use ($turn, $context): void {
+        return response()->stream(function () use ($weekStart, $message, $context): void {
             $emit = static function (string $event, array $payload): void {
                 echo 'event: '.$event."\n".'data: '.(string) json_encode($payload)."\n\n";
                 if (ob_get_level() > 0) {
@@ -48,6 +46,9 @@ final class StreamWeeklyReviewController
             };
 
             try {
+                // Assembling the context can fail (a provider/DB error); do it here
+                // so it surfaces as `event: error`, not a raw 500 with no SSE frame.
+                $turn = $this->reviews->start($weekStart, $message, $context);
                 $reply = $this->streamer->stream(
                     $turn->context,
                     $turn->history,

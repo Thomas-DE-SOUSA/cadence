@@ -51,4 +51,19 @@ describe('Feature: weekly review aggregate', function (): void {
         expect(fn (): WeeklyReviewId => WeeklyReviewId::fromString('  '))
             ->toThrow(InvalidArgumentException::class);
     });
+
+    it('prunes a trailing unanswered athlete turn (retry) but keeps answered threads', function (): void {
+        // Aborted turn: athlete asked, no coach reply → prune removes it.
+        $aborted = newReview();
+        $aborted->addAthleteMessage('m1', 'essai 1', '2026-09-07T09:00:00+00:00');
+        $aborted->pruneUnansweredAthleteTail();
+        expect($aborted->messages())->toBe([]);
+
+        // Answered turn: last message is the coach → prune is a no-op.
+        $answered = newReview();
+        $answered->addAthleteMessage('m1', 'q', '2026-09-07T09:00:00+00:00');
+        $answered->addCoachMessage('m2', 'a', '2026-09-07T09:00:05+00:00');
+        $answered->pruneUnansweredAthleteTail();
+        expect($answered->messages())->toHaveCount(2);
+    });
 });

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cadence\Coaching\Infrastructure\Http\Controller;
 
+use Cadence\Coaching\Application\WeeklyReview\WeekAnchor;
 use Cadence\Coaching\Domain\Model\Message;
 use Cadence\Coaching\Domain\Port\WeeklyReviewRepository;
 use Cadence\Shared\Application\TenantContext;
@@ -24,9 +25,8 @@ final class ShowWeeklyThreadController
     public function __invoke(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->current();
-        $weekStart = ($start = (string) $request->query('week_start', '')) !== ''
-            ? (new \DateTimeImmutable($start))->modify('monday this week')->format('Y-m-d')
-            : $this->clock->now()->modify('monday this week')->format('Y-m-d');
+        $raw = $request->query('week_start');
+        $weekStart = WeekAnchor::monday(is_string($raw) ? $raw : null, $this->clock);
 
         $review = $this->reviews->forWeek($weekStart, $tenant);
 

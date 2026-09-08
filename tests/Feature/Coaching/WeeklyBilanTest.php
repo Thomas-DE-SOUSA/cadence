@@ -23,6 +23,20 @@ final class FakeWeeklyCoachStreamer implements WeeklyCoachStreamer
     }
 }
 
+/** A streamer that fails, to exercise the SSE error path. */
+final class ThrowingWeeklyCoachStreamer implements WeeklyCoachStreamer
+{
+    public function stream(WeeklyReviewContext $context, array $history, callable $onText): CoachReply
+    {
+        throw new RuntimeException('gemini down');
+    }
+}
+
+function currentMonday(): string
+{
+    return (new DateTimeImmutable('now'))->modify('monday this week')->format('Y-m-d');
+}
+
 describe('Feature: weekly bilan', function (): void {
     it('renders the review page with the (empty) week and no thread', function (): void {
         $this->get('/muscu/bilan')->assertInertia(
@@ -64,4 +78,39 @@ describe('Feature: weekly bilan', function (): void {
     it('rejects an empty message', function (): void {
         $this->post('/muscu/bilan/stream', ['message' => ''])->assertSessionHasErrors('message');
     });
+
+    it('rejects a malformed week_start', function (): void {
+        $this->post('/muscu/bilan/stream', ['message' => 'x', 'week_start' => 'tuesday'])
+            ->assertSessionHasErrors('week_start');
+    });
+
+    it('does not leak another tenant’s review thread', function (): void {
+        WeeklyReviewModel::query()->create([
+            'id' => 'wr-other',
+            'tenant_id' => 'tenant-other',
+            'week_start' => currentMonday(),
+            'messages' => [[
+                'id' => 'x', 'role' => 'coach', 'text' => 'secret',
+                'occurred_at' => '2026-01-01T00:00:00+00:00', 'proposal' => null, 'proposal_applied' => false,
+            ]],
+            'version' => 2,
+        ]);
+
+        $this->get('/muscu/bilan/thread')->assertOk()->assertExactJson(['thread' => []]);
+    });
+
+    it('emits event: error and persists no coach reply when the streamer fails', function (): void {
+        $this->app->instance(WeeklyCoachStreamer::class, new ThrowingWeeklyCoachStreamer());
+
+        $body = $this->post('/muscu/bilan/stream', ['message' => 'Fais le bilan.'])->streamedContent();
+
+        expect($body)->toContain('event: error');
+        expect($body)->not->toContain('event: done');
+
+        $this->get('/muscu/bilan/thread')
+            ->assertOk()
+            ->assertJsonCount(1, 'thread')
+            ->assertJsonPath('thread.0.role', 'athlete');
+    });
+
 });

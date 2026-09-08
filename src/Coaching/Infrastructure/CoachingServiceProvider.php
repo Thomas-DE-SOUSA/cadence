@@ -72,7 +72,7 @@ final class CoachingServiceProvider extends ServiceProvider
         $this->app->bind(CoachStreamer::class, GeminiCoachStreamer::class);
         $this->app->bind(CoachChat::class, GeminiCoachStreamer::class);
         $this->app->bind(AdvisorStreamer::class, fn (): AdvisorStreamer => new AdvisorStreamer($gemini()));
-        $this->app->bind(WeeklyCoachStreamer::class, fn (): GeminiWeeklyCoachStreamer => new GeminiWeeklyCoachStreamer($gemini(), new WeeklyCoachRequestBuilder(new CoachingKnowledge())));
+        $this->app->singleton(WeeklyCoachStreamer::class, fn (): GeminiWeeklyCoachStreamer => new GeminiWeeklyCoachStreamer($gemini(), new WeeklyCoachRequestBuilder(new CoachingKnowledge())));
     }
 
     public function boot(): void
@@ -90,9 +90,9 @@ final class CoachingServiceProvider extends ServiceProvider
 
         // Weekly cross-modal review ("Bilan") — lives in the muscu world's nav.
         Route::middleware(['web', 'auth'])->prefix('muscu/bilan')->group(function (): void {
-            Route::get('/', ShowWeeklyReviewController::class)->name('muscu.review');
-            Route::get('/thread', ShowWeeklyThreadController::class)->name('muscu.review.thread');
-            Route::post('/stream', StreamWeeklyReviewController::class)->name('muscu.review.stream');
+            Route::get('/', ShowWeeklyReviewController::class)->name('muscu.bilan');
+            Route::get('/thread', ShowWeeklyThreadController::class)->name('muscu.bilan.thread');
+            Route::post('/stream', StreamWeeklyReviewController::class)->name('muscu.bilan.stream');
         });
 
         // Guest advisory tool ("Conseil") — assess any runner, no persistence.

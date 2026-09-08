@@ -41,13 +41,18 @@ final readonly class WeeklyReviewService
     {
         $tenant = $context->tenant;
 
+        // Assemble the (fallible) cross-modal context BEFORE persisting anything,
+        // so a provider failure never leaves a dangling athlete-only turn.
+        $reviewContext = $this->assemble($weekStart, $context);
+
         $review = $this->reviews->forWeek($weekStart, $tenant)
             ?? WeeklyReview::start(WeeklyReviewId::generate($this->ids), $tenant, $weekStart);
 
+        $review->pruneUnansweredAthleteTail(); // drop a prior aborted/failed athlete turn on retry
         $review->addAthleteMessage($this->ids->generate(), $text, $this->now());
         $this->reviews->save($review);
 
-        return new WeeklyTurn($review->id(), $this->assemble($weekStart, $context), $review->messages());
+        return new WeeklyTurn($review->id(), $reviewContext, $review->messages());
     }
 
     public function finish(WeeklyReviewId $reviewId, string $text, ExecutionContext $context): void

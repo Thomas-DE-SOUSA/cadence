@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cadence\Coaching\Infrastructure\Http\Controller;
 
+use Cadence\Coaching\Application\WeeklyReview\WeekAnchor;
 use Cadence\Coaching\Domain\Model\Message;
 use Cadence\Coaching\Domain\Port\AthleteGoalProvider;
 use Cadence\Coaching\Domain\Port\StrengthContextProvider;
@@ -29,10 +30,9 @@ final class ShowWeeklyReviewController
     public function __invoke(): Response
     {
         $tenant = $this->tenantContext->current();
-        $now = $this->clock->now();
-        $today = $now->format('Y-m-d');
-        $weekStart = $now->modify('monday this week')->format('Y-m-d');
-        $weekEnd = $now->modify('monday this week')->modify('+6 days')->format('Y-m-d');
+        $today = $this->clock->now()->format('Y-m-d');
+        $weekStart = WeekAnchor::monday(null, $this->clock);
+        $weekEnd = (new \DateTimeImmutable($weekStart))->modify('+6 days')->format('Y-m-d');
 
         $review = $this->reviews->forWeek($weekStart, $tenant);
         $goal = $this->goals->currentGoal($tenant);

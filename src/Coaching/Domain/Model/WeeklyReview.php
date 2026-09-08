@@ -49,6 +49,20 @@ final class WeeklyReview
         $this->version++;
     }
 
+    /**
+     * Drops a trailing athlete message that never got a coach reply — a turn
+     * that was aborted or failed mid-stream. Keeps the thread strictly
+     * alternating (no stacked user turns) when a verdict is retried.
+     */
+    public function pruneUnansweredAthleteTail(): void
+    {
+        $lastKey = array_key_last($this->messages);
+        if ($lastKey !== null && $this->messages[$lastKey]->role === MessageRole::ATHLETE) {
+            array_pop($this->messages);
+            $this->version++;
+        }
+    }
+
     public function id(): WeeklyReviewId
     {
         return $this->id;
