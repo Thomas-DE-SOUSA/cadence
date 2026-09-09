@@ -345,7 +345,23 @@ export function ExerciseEditor({
                                 )}
                             </div>
                         </button>
-                        <div className="flex shrink-0 gap-1">
+                        <div className="flex shrink-0 items-center gap-1">
+                            {!execution && (
+                                <select
+                                    value={it.superset_group ?? ''}
+                                    onChange={(e) => patchItem(i, { superset_group: e.target.value === '' ? null : Number(e.target.value) })}
+                                    title="Regrouper en superset (même lettre = enchaînés)"
+                                    className={`rounded-lg border px-1.5 py-1 text-xs font-semibold focus:outline-none ${
+                                        it.superset_group != null ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-neutral-200 bg-white text-neutral-500'
+                                    }`}
+                                >
+                                    <option value="">Solo</option>
+                                    <option value="1">SS A</option>
+                                    <option value="2">SS B</option>
+                                    <option value="3">SS C</option>
+                                    <option value="4">SS D</option>
+                                </select>
+                            )}
                             {lastByExercise[it.exercise_id] && (
                                 <button onClick={() => repeatLast(i)} title="Reprendre la dernière fois" className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600">
                                     <RotateCcw size={15} />
