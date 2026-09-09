@@ -12,6 +12,7 @@ use Cadence\Strength\Domain\Port\WorkoutTemplateRepository;
 use Cadence\Strength\Infrastructure\Http\Controller\AddCustomExerciseController;
 use Cadence\Strength\Infrastructure\Http\Controller\SaveMuscuProfileController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowMuscuProfileController;
+use Cadence\Strength\Infrastructure\Http\Controller\ShowNutritionController;
 use Cadence\Strength\Infrastructure\Http\Controller\DeleteTemplateController;
 use Cadence\Strength\Infrastructure\Http\Controller\LogStrengthSessionController;
 use Cadence\Strength\Infrastructure\Http\Controller\LogWeightEntryController;
@@ -53,6 +54,9 @@ final class StrengthServiceProvider extends ServiceProvider
             // Body-weight tracker (morning/evening readings → weekly averages).
             Route::get('/poids', ShowWeightController::class)->name('muscu.weight');
             Route::post('/poids', LogWeightEntryController::class)->name('muscu.weight.save');
+
+            // Nutrition reference (lean-bulk day split across meals).
+            Route::get('/nutrition', ShowNutritionController::class)->name('muscu.nutrition');
 
             // Muscu profile (goal, level, equipment, priorities…).
             Route::get('/profil', ShowMuscuProfileController::class)->name('muscu.profile');

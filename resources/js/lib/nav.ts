@@ -1,4 +1,4 @@
-import { Activity, CalendarCheck, CalendarDays, Dumbbell, Gauge, LayoutDashboard, Lightbulb, Scale, Sparkles, TrendingUp, type LucideIcon } from 'lucide-react';
+import { Activity, CalendarCheck, CalendarDays, Dumbbell, Gauge, LayoutDashboard, Lightbulb, Scale, Sparkles, TrendingUp, Utensils, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
     label: string;
@@ -25,5 +25,6 @@ export const muscuNavItems: NavItem[] = [
     { label: 'Séances', href: '/muscu/seances', icon: Dumbbell },
     { label: 'Progression', href: '/muscu/progression', icon: TrendingUp },
     { label: 'Poids', href: '/muscu/poids', icon: Scale },
+    { label: 'Nutrition', href: '/muscu/nutrition', icon: Utensils },
     { label: 'Bilan', href: '/muscu/bilan', icon: Sparkles },
 ];
