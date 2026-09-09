@@ -23,6 +23,11 @@ function ctx(): ExecutionContext
     return new ExecutionContext(TenantId::fromString('tenant-thomas'));
 }
 
+function ctxFor(string $tenant): ExecutionContext
+{
+    return new ExecutionContext(TenantId::fromString($tenant));
+}
+
 describe('Feature: Muscu agenda (template → plan → done)', function (): void {
     it('creates a template, schedules it as PLANNED, then marks it DONE and tracks progression', function (): void {
         // 1. Save a reusable template.
@@ -113,5 +118,76 @@ describe('Feature: Muscu agenda (template → plan → done)', function (): void
 
         $exercises = StrengthSessionModel::query()->find($planned)->exercises;
         expect((float) $exercises[0]['sets'][0]['weight_kg'])->toBe(100.0);
+    });
+
+    it('uses the latest training date, not just any DONE session', function (): void {
+        $templateId = app(SaveWorkoutTemplateUseCase::class)->execute(
+            new SaveWorkoutTemplateInput(null, 'Push A', [
+                ['exercise_id' => 'bench', 'name' => 'Développé couché', 'sets' => [['weight_kg' => 60, 'reps' => 8]]],
+            ]),
+            ctx(),
+        );
+
+        // Two DONE sessions: an earlier date at 80, a later date at 85.
+        $log = fn (string $date, float $kg) => app(LogStrengthSessionUseCase::class)->execute(
+            new LogStrengthSessionInput(null, $date, 'Push A', '', null, [
+                ['exercise_id' => 'bench', 'name' => 'Développé couché', 'sets' => [['weight_kg' => $kg, 'reps' => 8]]],
+            ], 'DONE', $templateId),
+            ctx(),
+        );
+        $log('2026-09-05', 85.0);
+        $log('2026-09-01', 80.0); // logged after, but dated earlier
+
+        $planned = app(ScheduleWorkoutUseCase::class)->execute(new ScheduleWorkoutInput($templateId, '2026-09-12'), ctx());
+        $exercises = StrengthSessionModel::query()->find($planned)->exercises;
+        expect((float) $exercises[0]['sets'][0]['weight_kg'])->toBe(85.0); // latest date wins, not last logged
+    });
+
+    it('never seeds a plan from another tenant’s performance', function (): void {
+        // Another tenant benches heavy.
+        app(LogStrengthSessionUseCase::class)->execute(
+            new LogStrengthSessionInput(null, '2026-09-05', 'Push', '', null, [
+                ['exercise_id' => 'bench', 'name' => 'Bench', 'sets' => [['weight_kg' => 999, 'reps' => 1]]],
+            ], 'DONE', null),
+            ctxFor('tenant-other'),
+        );
+
+        // Thomas has never done bench → falls back to his template target, not 999.
+        $templateId = app(SaveWorkoutTemplateUseCase::class)->execute(
+            new SaveWorkoutTemplateInput(null, 'Push A', [
+                ['exercise_id' => 'bench', 'name' => 'Développé couché', 'sets' => [['weight_kg' => 80, 'reps' => 8]]],
+            ]),
+            ctx(),
+        );
+        $planned = app(ScheduleWorkoutUseCase::class)->execute(new ScheduleWorkoutInput($templateId, '2026-09-01'), ctx());
+
+        $exercises = StrengthSessionModel::query()->find($planned)->exercises;
+        expect((float) $exercises[0]['sets'][0]['weight_kg'])->toBe(80.0);
+    });
+
+    it('carries plan-shaped sets only — keeps warm-up structure, drops RPE', function (): void {
+        $templateId = app(SaveWorkoutTemplateUseCase::class)->execute(
+            new SaveWorkoutTemplateInput(null, 'Push A', [
+                ['exercise_id' => 'bench', 'name' => 'Développé couché', 'sets' => [['weight_kg' => 80, 'reps' => 8]]],
+            ]),
+            ctx(),
+        );
+        app(LogStrengthSessionUseCase::class)->execute(
+            new LogStrengthSessionInput(null, '2026-09-01', 'Push A', '', null, [
+                ['exercise_id' => 'bench', 'name' => 'Développé couché', 'sets' => [
+                    ['weight_kg' => 40, 'reps' => 10, 'is_warmup' => true],
+                    ['weight_kg' => 82.5, 'reps' => 8, 'rpe' => 9],
+                ]],
+            ], 'DONE', $templateId),
+            ctx(),
+        );
+
+        $planned = app(ScheduleWorkoutUseCase::class)->execute(new ScheduleWorkoutInput($templateId, '2026-09-08'), ctx());
+        $sets = StrengthSessionModel::query()->find($planned)->exercises[0]['sets'];
+
+        expect($sets)->toHaveCount(2);
+        expect($sets[0]['is_warmup'])->toBeTrue();          // warm-up structure kept
+        expect((float) $sets[1]['weight_kg'])->toBe(82.5);
+        expect($sets[1]['rpe'] ?? null)->toBeNull();        // per-session RPE not carried into a plan
     });
 });

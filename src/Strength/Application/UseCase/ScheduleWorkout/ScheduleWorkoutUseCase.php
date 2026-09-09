@@ -15,9 +15,11 @@ use Cadence\Strength\Domain\Port\WorkoutTemplateRepository;
 
 /**
  * Places a template on an agenda day: creates a PLANNED session pre-filled,
- * per exercise, with the weights actually performed last time
- * (progressive-overload memory) — falling back to the template's target sets
- * for exercises never done before.
+ * per exercise, with the weights performed on the athlete's latest training
+ * date for that exercise (progressive-overload memory) — falling back to the
+ * template's target sets for exercises never performed. Only the plan-shaped
+ * fields carry over (load / reps / duration / warm-up structure); per-session
+ * performance data (RPE, done state) is not copied into a plan.
  */
 final readonly class ScheduleWorkoutUseCase
 {
@@ -70,15 +72,19 @@ final readonly class ScheduleWorkoutUseCase
     }
 
     /**
-     * The sets performed the most recent time each exercise was actually done
-     * (DONE sessions only; the repo returns them most-recent-first).
+     * The sets performed on the latest training date each exercise was done
+     * (DONE sessions only; the repo orders by session_date desc). Sibling of
+     * {@see \Cadence\Strength\Infrastructure\Read\StrengthView::lastByExercise},
+     * which serves the live editor's "last time" reference.
      *
-     * @return array<string, list<array<string, mixed>>> exercise_id → its last performed sets
+     * @return array<string, list<array<string, mixed>>> exercise_id → its last performed sets, plan-shaped
      */
     private function lastPerformedSets(TenantId $tenant): array
     {
         $last = [];
-        foreach ($this->sessions->forTenant($tenant) as $session) {
+        // A generous bound so an exercise's memory isn't silently lost past a
+        // small page — a single athlete's whole history fits comfortably.
+        foreach ($this->sessions->forTenant($tenant, 500) as $session) {
             if (! $session->status()->isDone()) {
                 continue;
             }
@@ -87,12 +93,49 @@ final readonly class ScheduleWorkoutUseCase
                     continue;
                 }
                 $exerciseId = (string) $exercise['exercise_id'];
-                if (! isset($last[$exerciseId]) && isset($exercise['sets']) && is_array($exercise['sets'])) {
-                    $last[$exerciseId] = array_values($exercise['sets']);
+                if (isset($last[$exerciseId]) || ! isset($exercise['sets']) || ! is_array($exercise['sets'])) {
+                    continue;
+                }
+                $planSets = $this->toPlanSets($exercise['sets']);
+                if ($planSets !== []) {
+                    $last[$exerciseId] = $planSets;
                 }
             }
         }
 
         return $last;
+    }
+
+    /**
+     * Projects performed sets to plan-shaped targets: keeps load / reps /
+     * duration / warm-up structure, drops per-session performance (RPE, done —
+     * their VO defaults apply). Returns [] when there was no working set last
+     * time, so the template target is kept instead.
+     *
+     * @param array<int|string, mixed> $sets
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function toPlanSets(array $sets): array
+    {
+        $out = [];
+        $hasWorkingSet = false;
+        foreach ($sets as $set) {
+            if (! is_array($set)) {
+                continue;
+            }
+            $isWarmup = (bool) ($set['is_warmup'] ?? false);
+            if (! $isWarmup && ($set['done'] ?? true) !== false) {
+                $hasWorkingSet = true;
+            }
+            $out[] = [
+                'weight_kg' => $set['weight_kg'] ?? null,
+                'reps' => $set['reps'] ?? null,
+                'duration_seconds' => $set['duration_seconds'] ?? null,
+                'is_warmup' => $isWarmup,
+            ];
+        }
+
+        return $hasWorkingSet ? $out : [];
     }
 }
