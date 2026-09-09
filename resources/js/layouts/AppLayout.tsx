@@ -112,7 +112,9 @@ function activeHref(path: string, items: NavItem[]): string {
 export function AppLayout({ children }: { children: ReactNode }) {
     const page = usePage();
     const path = page.url.split('?')[0];
-    const flash = (page.props.flash as { status?: string } | undefined)?.status;
+    const flashProps = page.props.flash as { status?: string; error?: string } | undefined;
+    const flash = flashProps?.status;
+    const flashError = flashProps?.error;
     const athlete = page.props.topbar as AthleteSummary | null;
     const user = (page.props.auth as { user?: AuthUser | null } | undefined)?.user ?? null;
     const [themeOpen, setThemeOpen] = useState(false);
@@ -134,6 +136,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
             toast.success(flash);
         }
     }, [flash]);
+
+    useEffect(() => {
+        if (flashError) {
+            toast.error(flashError);
+        }
+    }, [flashError]);
 
     const raceChip =
         athlete?.raceDaysLeft !== null && athlete?.raceDaysLeft !== undefined && athlete.raceDaysLeft >= 0

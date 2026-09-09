@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace Cadence\Strength\Infrastructure;
 
+use Cadence\Shared\Infrastructure\Ai\GeminiClient;
+use Cadence\Strength\Application\Port\FoodEstimator;
 use Cadence\Strength\Domain\Port\ExerciseRepository;
 use Cadence\Strength\Domain\Port\MuscuProfileRepository;
+use Cadence\Strength\Domain\Port\NutritionEntryRepository;
 use Cadence\Strength\Domain\Port\StrengthSessionRepository;
 use Cadence\Strength\Domain\Port\WeightEntryRepository;
 use Cadence\Strength\Domain\Port\WorkoutTemplateRepository;
+use Cadence\Strength\Infrastructure\Ai\GeminiFoodEstimator;
 use Cadence\Strength\Infrastructure\Http\Controller\AddCustomExerciseController;
+use Cadence\Strength\Infrastructure\Http\Controller\DeleteNutritionEntryController;
+use Cadence\Strength\Infrastructure\Http\Controller\LogNutritionController;
 use Cadence\Strength\Infrastructure\Http\Controller\SaveMuscuProfileController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowMuscuProfileController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowNutritionController;
@@ -27,6 +33,7 @@ use Cadence\Strength\Infrastructure\Http\Controller\ShowTemplatesController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowWeightController;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentExerciseRepository;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentMuscuProfileRepository;
+use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentNutritionEntryRepository;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentStrengthSessionRepository;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentWeightEntryRepository;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentWorkoutTemplateRepository;
@@ -42,6 +49,10 @@ final class StrengthServiceProvider extends ServiceProvider
         $this->app->bind(WorkoutTemplateRepository::class, EloquentWorkoutTemplateRepository::class);
         $this->app->bind(MuscuProfileRepository::class, EloquentMuscuProfileRepository::class);
         $this->app->bind(WeightEntryRepository::class, EloquentWeightEntryRepository::class);
+        $this->app->bind(NutritionEntryRepository::class, EloquentNutritionEntryRepository::class);
+        $this->app->bind(FoodEstimator::class, fn (): GeminiFoodEstimator => new GeminiFoodEstimator(
+            new GeminiClient((string) config('services.gemini.key', ''), (string) config('services.gemini.model')),
+        ));
     }
 
     public function boot(): void
@@ -55,8 +66,10 @@ final class StrengthServiceProvider extends ServiceProvider
             Route::get('/poids', ShowWeightController::class)->name('muscu.weight');
             Route::post('/poids', LogWeightEntryController::class)->name('muscu.weight.save');
 
-            // Nutrition reference (lean-bulk day split across meals).
+            // Nutrition: daily food log (AI-estimated) vs. lean-bulk targets.
             Route::get('/nutrition', ShowNutritionController::class)->name('muscu.nutrition');
+            Route::post('/nutrition', LogNutritionController::class)->name('muscu.nutrition.log');
+            Route::post('/nutrition/{id}/supprimer', DeleteNutritionEntryController::class)->name('muscu.nutrition.delete');
 
             // Muscu profile (goal, level, equipment, priorities…).
             Route::get('/profil', ShowMuscuProfileController::class)->name('muscu.profile');

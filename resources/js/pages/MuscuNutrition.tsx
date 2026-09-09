@@ -1,58 +1,108 @@
-import { Head } from '@inertiajs/react';
-import { Moon, Sun, Sunrise, Utensils } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight, Loader2, Moon, Sun, Sunrise, Trash2, Utensils } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
 
-interface Meal {
-    key: string;
+interface Macro {
+    kcal: number;
+    protein: number;
+    fat: number;
+    carbs: number;
+}
+interface Entry {
+    id: string;
+    description: string;
+    kcal: number;
+    protein: number;
+    fat: number;
+    carbs: number;
+}
+interface Meal extends Macro {
+    key: 'matin' | 'midi' | 'soir';
     label: string;
     share: number;
-    kcal: number;
-    protein: number;
-    fat: number;
-    carbs: number;
     note: string;
-}
-interface Daily {
-    kcal: number;
-    protein: number;
-    fat: number;
-    carbs: number;
+    entries: Entry[];
+    subtotal: Macro;
 }
 interface Props {
-    daily: Daily;
+    date: string;
+    daily: Macro;
     meals: Meal[];
+    totals: Macro;
+    remaining: Macro;
 }
 
 const mealIcon: Record<string, LucideIcon> = { matin: Sunrise, midi: Sun, soir: Moon };
 
-/** A stacked bar showing the protein / carbs / fat split of a meal by calories. */
-function MacroBar({ protein, fat, carbs }: { protein: number; fat: number; carbs: number }) {
-    const kcalP = protein * 4;
-    const kcalC = carbs * 4;
-    const kcalF = fat * 9;
-    const total = kcalP + kcalC + kcalF || 1;
+/** Y-M-D + day offset, at local midnight (no timezone drift). */
+function shiftDate(iso: string, days: number): string {
+    const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+    const dt = new Date(y, m - 1, d + days);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+function longDate(iso: string): string {
+    const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+function todayIso(): string {
+    const dt = new Date();
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+function guessMeal(): 'matin' | 'midi' | 'soir' {
+    const h = new Date().getHours();
+    if (h < 11) return 'matin';
+    if (h < 17) return 'midi';
+    return 'soir';
+}
+
+function MacroRow({ label, done, target, unit = 'g' }: { label: string; done: number; target: number; unit?: string }) {
+    const pct = Math.min(100, target > 0 ? (done / target) * 100 : 0);
+    const over = done > target;
     return (
-        <div className="flex h-2.5 overflow-hidden rounded-full bg-neutral-100">
-            <div className="bg-brand-500" style={{ width: `${(kcalP / total) * 100}%` }} title="Protéines" />
-            <div className="bg-amber-400" style={{ width: `${(kcalC / total) * 100}%` }} title="Glucides" />
-            <div className="bg-neutral-400" style={{ width: `${(kcalF / total) * 100}%` }} title="Lipides" />
+        <div>
+            <div className="flex justify-between text-xs font-semibold">
+                <span className="text-neutral-500">{label}</span>
+                <span className={over ? 'text-red-500' : 'text-neutral-700'}>
+                    {done} / {target} {unit}
+                </span>
+            </div>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-neutral-100">
+                <div className={`h-full rounded-full ${over ? 'bg-red-400' : 'bg-brand-500'}`} style={{ width: `${pct}%` }} />
+            </div>
         </div>
     );
 }
 
-function MacroChips({ protein, fat, carbs }: { protein: number; fat: number; carbs: number }) {
-    return (
-        <div className="flex flex-wrap gap-1.5">
-            <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">P {protein} g</span>
-            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Gluc {carbs} g</span>
-            <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-600">Lip {fat} g</span>
-        </div>
-    );
-}
+export default function MuscuNutrition({ date, daily, meals, totals, remaining }: Props) {
+    const [text, setText] = useState('');
+    const [meal, setMeal] = useState<'matin' | 'midi' | 'soir'>(guessMeal());
+    const [busy, setBusy] = useState(false);
+    const isToday = date === todayIso();
 
-export default function MuscuNutrition({ daily, meals }: Props) {
+    const go = (d: string) => router.get('/muscu/nutrition', { date: d }, { preserveScroll: true });
+
+    const submit = () => {
+        if (text.trim() === '' || busy) return;
+        router.post(
+            '/muscu/nutrition',
+            { text: text.trim(), meal, date },
+            {
+                preserveScroll: true,
+                onStart: () => setBusy(true),
+                onFinish: () => setBusy(false),
+                onSuccess: () => setText(''),
+            },
+        );
+    };
+
+    const remove = (id: string) => router.post(`/muscu/nutrition/${id}/supprimer`, { date }, { preserveScroll: true });
+
+    const kcalPct = Math.min(100, daily.kcal > 0 ? (totals.kcal / daily.kcal) * 100 : 0);
+    const kcalOver = totals.kcal > daily.kcal;
+
     return (
         <AppLayout>
             <Head title="Nutrition" />
@@ -63,25 +113,91 @@ export default function MuscuNutrition({ daily, meals }: Props) {
                     </span>
                     <div>
                         <h1 className="text-xl font-bold text-neutral-900">Nutrition</h1>
-                        <p className="text-sm text-neutral-500">Lean bulk — répartition matin / midi / soir</p>
+                        <p className="text-sm text-neutral-500">Suivi journalier — lean bulk</p>
                     </div>
                 </header>
 
-                {/* Daily target */}
-                <Card title="Objectif du jour">
-                    <div className="flex items-end gap-2">
-                        <span className="text-4xl font-black text-neutral-900">{daily.kcal.toLocaleString('fr-FR')}</span>
-                        <span className="mb-1 text-sm font-semibold text-neutral-500">kcal / jour</span>
+                {/* Date navigation */}
+                <div className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-white px-3 py-2 shadow-sm shadow-neutral-200/60">
+                    <button onClick={() => go(shiftDate(date, -1))} className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100" aria-label="Jour précédent">
+                        <ChevronLeft size={18} />
+                    </button>
+                    <div className="text-center">
+                        <p className="text-sm font-semibold capitalize text-neutral-800">{longDate(date)}</p>
+                        {!isToday && (
+                            <button onClick={() => go(todayIso())} className="text-xs font-semibold text-brand-600">
+                                Revenir à aujourd'hui
+                            </button>
+                        )}
                     </div>
-                    <div className="mt-3">
-                        <MacroBar protein={daily.protein} fat={daily.fat} carbs={daily.carbs} />
+                    <button
+                        onClick={() => go(shiftDate(date, 1))}
+                        disabled={isToday}
+                        className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 disabled:opacity-30"
+                        aria-label="Jour suivant"
+                    >
+                        <ChevronRight size={18} />
+                    </button>
+                </div>
+
+                {/* Daily summary */}
+                <Card title="Total du jour">
+                    <div className="flex items-end justify-between">
+                        <div className="flex items-end gap-2">
+                            <span className={`text-4xl font-black ${kcalOver ? 'text-red-500' : 'text-neutral-900'}`}>{totals.kcal.toLocaleString('fr-FR')}</span>
+                            <span className="mb-1 text-sm font-semibold text-neutral-500">/ {daily.kcal.toLocaleString('fr-FR')} kcal</span>
+                        </div>
+                        <span className={`text-sm font-semibold ${remaining.kcal < 0 ? 'text-red-500' : 'text-brand-600'}`}>
+                            {remaining.kcal >= 0 ? `${remaining.kcal.toLocaleString('fr-FR')} restantes` : `${Math.abs(remaining.kcal).toLocaleString('fr-FR')} au-dessus`}
+                        </span>
                     </div>
-                    <div className="mt-3">
-                        <MacroChips protein={daily.protein} fat={daily.fat} carbs={daily.carbs} />
+                    <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-neutral-100">
+                        <div className={`h-full rounded-full ${kcalOver ? 'bg-red-400' : 'bg-brand-500'}`} style={{ width: `${kcalPct}%` }} />
                     </div>
-                    <p className="mt-3 text-xs text-neutral-500">
-                        Protéines réparties ~50-55 g par repas (optimal pour la synthèse). Glucides plus élevés autour de l'entraînement.
-                    </p>
+                    <div className="mt-4 space-y-2.5">
+                        <MacroRow label="Protéines" done={totals.protein} target={daily.protein} />
+                        <MacroRow label="Glucides" done={totals.carbs} target={daily.carbs} />
+                        <MacroRow label="Lipides" done={totals.fat} target={daily.fat} />
+                    </div>
+                </Card>
+
+                {/* Add food */}
+                <Card title="Ajouter ce que tu as mangé">
+                    <div className="mb-2 flex gap-1.5">
+                        {(['matin', 'midi', 'soir'] as const).map((m) => (
+                            <button
+                                key={m}
+                                onClick={() => setMeal(m)}
+                                className={`flex-1 rounded-lg border px-2 py-1.5 text-sm font-semibold capitalize transition-colors ${
+                                    meal === m ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-neutral-200 bg-white text-neutral-500'
+                                }`}
+                            >
+                                {m}
+                            </button>
+                        ))}
+                    </div>
+                    <textarea
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        rows={2}
+                        maxLength={500}
+                        placeholder="ex : une énorme part de lasagne, un Monster, 25 bâtons du berger"
+                        className="w-full resize-none rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-brand-300 focus:outline-none"
+                    />
+                    <button
+                        onClick={submit}
+                        disabled={busy || text.trim() === ''}
+                        className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-brand-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-40"
+                    >
+                        {busy ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" /> Estimation IA…
+                            </>
+                        ) : (
+                            'Estimer & ajouter'
+                        )}
+                    </button>
+                    <p className="mt-2 text-xs text-neutral-400">L'IA estime kcal + macros. Approximatif — supprime et reformule si c'est à côté.</p>
                 </Card>
 
                 {/* Meals */}
@@ -93,24 +209,37 @@ export default function MuscuNutrition({ daily, meals }: Props) {
                                 <div className="flex items-center gap-2">
                                     <Icon className="h-5 w-5 text-brand-600" />
                                     <h2 className="text-base font-bold text-neutral-900">{m.label}</h2>
-                                    <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-500">{m.share} %</span>
                                 </div>
-                                <div className="text-right">
-                                    <span className="text-lg font-black text-neutral-900">{m.kcal.toLocaleString('fr-FR')}</span>
-                                    <span className="ml-1 text-xs font-semibold text-neutral-400">kcal</span>
-                                </div>
+                                <span className="text-sm font-semibold text-neutral-700">
+                                    {m.subtotal.kcal.toLocaleString('fr-FR')}
+                                    <span className="text-xs font-medium text-neutral-400"> / {m.kcal.toLocaleString('fr-FR')} kcal</span>
+                                </span>
                             </div>
-                            <MacroBar protein={m.protein} fat={m.fat} carbs={m.carbs} />
-                            <div className="mt-3">
-                                <MacroChips protein={m.protein} fat={m.fat} carbs={m.carbs} />
-                            </div>
-                            <p className="mt-3 text-sm text-neutral-600">{m.note}</p>
+                            {m.entries.length === 0 ? (
+                                <p className="text-sm text-neutral-400">Rien pour l'instant.</p>
+                            ) : (
+                                <ul className="space-y-2">
+                                    {m.entries.map((e) => (
+                                        <li key={e.id} className="flex items-start justify-between gap-2 rounded-lg bg-neutral-50 px-3 py-2">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-medium text-neutral-800">{e.description}</p>
+                                                <p className="text-xs text-neutral-500">
+                                                    {e.kcal} kcal · P {e.protein} · G {e.carbs} · L {e.fat}
+                                                </p>
+                                            </div>
+                                            <button onClick={() => remove(e.id)} className="shrink-0 rounded-md p-1.5 text-neutral-400 hover:bg-red-50 hover:text-red-500" aria-label="Supprimer">
+                                                <Trash2 size={15} />
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </Card>
                     );
                 })}
 
                 <p className="px-1 text-center text-xs text-neutral-400">
-                    Pas de plat imposé — juste la répartition. Pilote au poids (moyenne hebdo), tour de taille et charges, pas à la balance quotidienne.
+                    Cible lean bulk : {daily.kcal.toLocaleString('fr-FR')} kcal · {daily.protein} g protéines · {daily.carbs} g glucides · {daily.fat} g lipides.
                 </p>
             </div>
         </AppLayout>
