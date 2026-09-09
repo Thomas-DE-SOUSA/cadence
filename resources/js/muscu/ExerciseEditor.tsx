@@ -335,8 +335,8 @@ export function ExerciseEditor({
                         <button onClick={() => patchItem(i, { collapsed: !collapsed })} className="flex min-w-0 flex-1 items-start gap-2 text-left">
                             <span className="mt-0.5 shrink-0 text-neutral-400">{collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}</span>
                             <div className="min-w-0">
-                                <p className="flex items-center gap-2 font-semibold text-neutral-800">
-                                    <span className="truncate">{it.name}</span>
+                                <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-neutral-800">
+                                    <span className="break-words">{it.name}</span>
                                     {it.superset_group != null && (
                                         <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700">
                                             <Link2 size={11} /> Superset {supersetLabel(it.superset_group)}
