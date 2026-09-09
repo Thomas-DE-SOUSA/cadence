@@ -19,18 +19,18 @@ final class NutritionView
     {
         $meals = [
             [
-                'key' => 'matin', 'label' => 'Matin', 'share' => 30,
-                'kcal' => 1080, 'protein' => 50, 'fat' => 30, 'carbs' => 150,
-                'note' => "Gros petit-déj (tu manges large). Protéines (œufs, skyr, whey) + glucides lents (avoine, pain complet) + un fruit.",
+                'key' => 'matin', 'label' => 'Matin', 'share' => 20,
+                'kcal' => 720, 'protein' => 40, 'fat' => 22, 'carbs' => 90,
+                'note' => "Petit-déj léger : skyr + flocons d'avoine + 2 œufs + un peu de bacon (~555 kcal), ajoute une banane pour compléter à ~720.",
             ],
             [
-                'key' => 'midi', 'label' => 'Midi', 'share' => 35,
-                'kcal' => 1260, 'protein' => 55, 'fat' => 35, 'carbs' => 190,
-                'note' => "Le plus gros repas. Protéine (viande/poisson) + féculent généreux (riz, pâtes, patate) + légumes + huile d'olive. Cale-le idéalement autour de ton entraînement.",
+                'key' => 'midi', 'label' => 'Midi', 'share' => 40,
+                'kcal' => 1440, 'protein' => 60, 'fat' => 40, 'carbs' => 210,
+                'note' => "Gros repas. Protéine (viande/poisson) + féculent généreux (riz, pâtes, patate) + légumes + huile d'olive. Cale-le idéalement autour de ton entraînement.",
             ],
             [
-                'key' => 'soir', 'label' => 'Soir', 'share' => 35,
-                'kcal' => 1260, 'protein' => 55, 'fat' => 30, 'carbs' => 185,
+                'key' => 'soir', 'label' => 'Soir', 'share' => 40,
+                'kcal' => 1440, 'protein' => 60, 'fat' => 33, 'carbs' => 225,
                 'note' => "Aussi copieux. Protéine + féculent + légumes. Si tu fais pompes/abdos le soir, garde des glucides ici pour la récup.",
             ],
         ];
