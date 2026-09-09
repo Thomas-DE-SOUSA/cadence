@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Loader2, Moon, Sun, Sunrise, Trash2, Utensils } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
@@ -104,7 +105,7 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
     const kcalOver = totals.kcal > daily.kcal;
 
     return (
-        <AppLayout>
+        <>
             <Head title="Nutrition" />
             <div className="mx-auto max-w-2xl space-y-5 pb-24">
                 <header className="flex items-center gap-3">
@@ -242,6 +243,8 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
                     Cible lean bulk : {daily.kcal.toLocaleString('fr-FR')} kcal · {daily.protein} g protéines · {daily.carbs} g glucides · {daily.fat} g lipides.
                 </p>
             </div>
-        </AppLayout>
+        </>
     );
 }
+
+MuscuNutrition.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
