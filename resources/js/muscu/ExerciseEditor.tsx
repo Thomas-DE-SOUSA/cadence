@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
-import { Check, ChevronDown, ChevronRight, Copy, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Copy, Link2, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
 
 export interface CatalogItem {
     id: string;
@@ -54,6 +54,9 @@ export function numOrNull(v: string): number | null {
     const n = Number(v.replace(',', '.'));
     return Number.isFinite(n) ? n : null;
 }
+
+/** Superset group number → a stable human label (1 → A, 2 → B, …). */
+export const supersetLabel = (group: number): string => String.fromCharCode(64 + group);
 
 /**
  * Decimal text field bound to a number model. Keeps the raw text so an
@@ -313,7 +316,14 @@ export function ExerciseEditor({
                         <button onClick={() => patchItem(i, { collapsed: !collapsed })} className="flex min-w-0 flex-1 items-start gap-2 text-left">
                             <span className="mt-0.5 shrink-0 text-neutral-400">{collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}</span>
                             <div className="min-w-0">
-                                <p className="truncate font-semibold text-neutral-800">{it.name}</p>
+                                <p className="flex items-center gap-2 font-semibold text-neutral-800">
+                                    <span className="truncate">{it.name}</span>
+                                    {it.superset_group != null && (
+                                        <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700">
+                                            <Link2 size={11} /> Superset {supersetLabel(it.superset_group)}
+                                        </span>
+                                    )}
+                                </p>
                                 {collapsed ? (
                                     <p className="text-xs text-neutral-500">
                                         {execution ? `${doneWorking}/${workingSets.length} série${workingSets.length > 1 ? 's' : ''}` : `${workingSets.length} série${workingSets.length > 1 ? 's' : ''}`}
@@ -327,6 +337,7 @@ export function ExerciseEditor({
                                                 {it.equipmentLabel ? ` · ${it.equipmentLabel}` : ''}
                                             </p>
                                         )}
+                                        {it.note !== '' && <p className="mt-1 whitespace-pre-line text-xs text-neutral-500">{it.note}</p>}
                                         {execution && lastByExercise[it.exercise_id] && lastTopSet(lastByExercise[it.exercise_id].sets) && (
                                             <p className="mt-0.5 text-xs font-medium text-brand-600">↩ Dernière fois : {lastTopSet(lastByExercise[it.exercise_id].sets)}</p>
                                         )}
