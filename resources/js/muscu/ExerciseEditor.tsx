@@ -303,15 +303,26 @@ export function ExerciseEditor({
     };
 
     return (
-        <div className="space-y-3">
+        <div>
             {items.map((it, i) => {
                 const collapsed = it.collapsed ?? false;
                 const workingSets = it.sets.filter((s) => !s.is_warmup);
                 const doneWorking = workingSets.filter((s) => s.done).length;
                 const topSet = lastTopSet(it.sets);
                 const allDone = execution && it.sets.length > 0 && it.sets.every((s) => s.done);
+                // A superset run reads as one block: same-group neighbours share a
+                // violet left rail, joined tight (rounding opened between them).
+                const group = it.superset_group;
+                const linkedAbove = group != null && i > 0 && items[i - 1].superset_group === group;
+                const linkedBelow = group != null && i < items.length - 1 && items[i + 1].superset_group === group;
+                const rounding = linkedAbove && linkedBelow ? 'rounded-none' : linkedAbove ? 'rounded-b-2xl rounded-t-none' : linkedBelow ? 'rounded-t-2xl rounded-b-none' : 'rounded-2xl';
+                const color = allDone
+                    ? 'border-emerald-300 bg-emerald-50 shadow-emerald-200/50'
+                    : group != null
+                      ? 'border-neutral-200 border-l-4 border-l-violet-400 bg-white shadow-neutral-200/60'
+                      : 'border-neutral-200 bg-white shadow-neutral-200/60';
                 return (
-                <div key={i} className={`rounded-2xl border p-4 shadow-sm transition-colors ${allDone ? 'border-emerald-300 bg-emerald-50 shadow-emerald-200/50' : 'border-neutral-200 bg-white shadow-neutral-200/60'}`}>
+                <div key={i} className={`border p-4 shadow-sm transition-colors ${rounding} ${color} ${linkedAbove ? 'border-t-0' : ''} ${linkedBelow ? '' : 'mb-3'}`}>
                     <div className={`flex items-start justify-between gap-2 ${collapsed ? '' : 'mb-2'}`}>
                         <button onClick={() => patchItem(i, { collapsed: !collapsed })} className="flex min-w-0 flex-1 items-start gap-2 text-left">
                             <span className="mt-0.5 shrink-0 text-neutral-400">{collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}</span>
