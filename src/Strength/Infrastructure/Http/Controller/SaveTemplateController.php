@@ -27,7 +27,7 @@ final class SaveTemplateController
             'exercises' => ['array'],
             'exercises.*.exercise_id' => ['required', 'string'],
             'exercises.*.name' => ['required', 'string', 'max:160'],
-            'exercises.*.note' => ['nullable', 'string', 'max:280'],
+            'exercises.*.note' => ['nullable', 'string', 'max:500'],
             'exercises.*.per_side' => ['nullable', 'boolean'],
             'exercises.*.superset_group' => ['nullable', 'integer'],
             'exercises.*.sets' => ['array'],
