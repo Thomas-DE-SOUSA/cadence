@@ -74,4 +74,44 @@ describe('Feature: Muscu agenda (template → plan → done)', function (): void
         $templates = app(\Cadence\Strength\Domain\Port\WorkoutTemplateRepository::class)->forTenant(ctx()->tenant);
         expect($templates)->toHaveCount(2);
     });
+
+    it('carries forward the last performed weights when the template is scheduled again', function (): void {
+        $templateId = app(SaveWorkoutTemplateUseCase::class)->execute(
+            new SaveWorkoutTemplateInput(null, 'Push A', [
+                ['exercise_id' => 'bench', 'name' => 'Développé couché', 'sets' => [['weight_kg' => 80, 'reps' => 8]]],
+            ]),
+            ctx(),
+        );
+
+        // Plan it, then actually do it heavier (82.5 kg) and mark DONE.
+        $first = app(ScheduleWorkoutUseCase::class)->execute(new ScheduleWorkoutInput($templateId, '2026-09-01'), ctx());
+        app(LogStrengthSessionUseCase::class)->execute(
+            new LogStrengthSessionInput($first, '2026-09-01', 'Push A', '', null, [
+                ['exercise_id' => 'bench', 'name' => 'Développé couché', 'sets' => [['weight_kg' => 82.5, 'reps' => 8]]],
+            ], 'DONE', $templateId),
+            ctx(),
+        );
+
+        // Schedule the same template again → the new PLANNED session starts from
+        // the last performed weight (82.5), not the template's static 80.
+        $second = app(ScheduleWorkoutUseCase::class)->execute(new ScheduleWorkoutInput($templateId, '2026-09-08'), ctx());
+
+        $exercises = StrengthSessionModel::query()->find($second)->exercises;
+        expect($exercises[0]['exercise_id'])->toBe('bench');
+        expect((float) $exercises[0]['sets'][0]['weight_kg'])->toBe(82.5);
+    });
+
+    it('falls back to the template target for an exercise never performed', function (): void {
+        $templateId = app(SaveWorkoutTemplateUseCase::class)->execute(
+            new SaveWorkoutTemplateInput(null, 'Legs', [
+                ['exercise_id' => 'squat', 'name' => 'Squat', 'sets' => [['weight_kg' => 100, 'reps' => 5]]],
+            ]),
+            ctx(),
+        );
+
+        $planned = app(ScheduleWorkoutUseCase::class)->execute(new ScheduleWorkoutInput($templateId, '2026-09-01'), ctx());
+
+        $exercises = StrengthSessionModel::query()->find($planned)->exercises;
+        expect((float) $exercises[0]['sets'][0]['weight_kg'])->toBe(100.0);
+    });
 });
