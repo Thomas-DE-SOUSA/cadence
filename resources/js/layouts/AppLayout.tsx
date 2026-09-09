@@ -149,7 +149,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             : null;
 
     return (
-        <div className={`min-h-screen overflow-x-hidden text-neutral-900${mode === 'muscu' ? ' mode-muscu' : ''}`}>
+        <div className={`min-h-screen text-neutral-900${mode === 'muscu' ? ' mode-muscu' : ''}`}>
             {/* Top navigation bar */}
             <header className="fixed inset-x-0 top-0 z-30 border-b border-neutral-200/80 bg-white/85 shadow-[0_1px_2px_rgba(16,16,20,0.04),0_8px_24px_-12px_rgba(16,16,20,0.12)] backdrop-blur-lg">
                 <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:px-8">
