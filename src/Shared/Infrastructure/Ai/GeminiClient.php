@@ -17,9 +17,13 @@ final class GeminiClient
 {
     private const BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
+    /**
+     * @param list<string> $fallbackModels tried, in order, if the primary model is unavailable (e.g. HTTP 503) on blocking calls
+     */
     public function __construct(
         private readonly string $apiKey,
-        private readonly string $model = 'gemini-3.6-flash',
+        private readonly string $model = 'gemini-flash-latest',
+        private readonly array $fallbackModels = [],
     ) {
     }
 
@@ -57,20 +61,33 @@ final class GeminiClient
     {
         $this->guardKey();
 
-        $response = $this->post($this->model.':generateContent', [
+        $body = [
             'systemInstruction' => ['parts' => [['text' => $system]]],
             'contents' => [['role' => 'user', 'parts' => [['text' => $user]]]],
             'generationConfig' => array_merge(['maxOutputTokens' => 8192, 'temperature' => 0.4], $generationConfig),
-        ], false);
+        ];
 
-        $text = '';
-        foreach ((array) $response->json('candidates.0.content.parts') as $part) {
-            if (is_array($part) && is_string($part['text'] ?? null)) {
-                $text .= $part['text'];
+        $lastError = null;
+        foreach ([$this->model, ...$this->fallbackModels] as $model) {
+            try {
+                $response = $this->post($model.':generateContent', $body, false);
+            } catch (RuntimeException $e) {
+                $lastError = $e;
+
+                continue; // model unavailable (e.g. 503) → try the next one
             }
+
+            $text = '';
+            foreach ((array) $response->json('candidates.0.content.parts') as $part) {
+                if (is_array($part) && is_string($part['text'] ?? null)) {
+                    $text .= $part['text'];
+                }
+            }
+
+            return trim($text);
         }
 
-        return trim($text);
+        throw $lastError ?? new RuntimeException('Gemini est indisponible.');
     }
 
     /** Blocking multimodal call: a text prompt + one inline image, returns text (JSON mode friendly). */

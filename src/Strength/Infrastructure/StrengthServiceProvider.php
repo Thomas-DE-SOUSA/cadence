@@ -51,7 +51,11 @@ final class StrengthServiceProvider extends ServiceProvider
         $this->app->bind(WeightEntryRepository::class, EloquentWeightEntryRepository::class);
         $this->app->bind(NutritionEntryRepository::class, EloquentNutritionEntryRepository::class);
         $this->app->bind(FoodEstimator::class, fn (): GeminiFoodEstimator => new GeminiFoodEstimator(
-            new GeminiClient((string) config('services.gemini.key', ''), (string) config('services.gemini.model')),
+            new GeminiClient(
+                (string) config('services.gemini.key', ''),
+                (string) config('services.gemini.model'),
+                ['gemini-3.7-flash', 'gemini-3.8-flash'],
+            ),
         ));
     }
 
