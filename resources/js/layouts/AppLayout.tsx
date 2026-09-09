@@ -149,7 +149,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             : null;
 
     return (
-        <div className={`min-h-screen text-neutral-900${mode === 'muscu' ? ' mode-muscu' : ''}`}>
+        <div className={`min-h-screen overflow-x-hidden text-neutral-900${mode === 'muscu' ? ' mode-muscu' : ''}`}>
             {/* Top navigation bar */}
             <header className="fixed inset-x-0 top-0 z-30 border-b border-neutral-200/80 bg-white/85 shadow-[0_1px_2px_rgba(16,16,20,0.04),0_8px_24px_-12px_rgba(16,16,20,0.12)] backdrop-blur-lg">
                 <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:px-8">
@@ -231,12 +231,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
                             <Link
                                 key={href}
                                 href={href}
-                                className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors ${
+                                className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors ${
                                     active ? 'text-brand-600' : 'text-neutral-400'
                                 }`}
                             >
-                                <Icon size={20} />
-                                {label.split(' ')[0]}
+                                <Icon size={20} className="shrink-0" />
+                                <span className="max-w-full truncate">{label.split(' ')[0]}</span>
                             </Link>
                         );
                     })}
