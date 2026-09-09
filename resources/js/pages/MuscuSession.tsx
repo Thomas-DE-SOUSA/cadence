@@ -30,32 +30,73 @@ function mmss(total: number): string {
     return `${String(m).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
+interface ChronoState {
+    running: boolean;
+    startedAt: number | null; // epoch ms of the current running segment
+    accumulated: number; // seconds banked from previous segments
+}
+
 /**
- * Manual count-up stopwatch. A full-width button opens a popup; the chrono
- * starts from 0 on first open and keeps running even when the popup is closed —
- * closing never stops it. While active, the button shows the running time
- * instead of the "Chrono" label.
+ * Manual count-up stopwatch that survives leaving the app. Time is measured from
+ * a persisted start timestamp (localStorage), not by counting ticks — so it keeps
+ * running while the PWA is backgrounded or closed and restores the real elapsed
+ * time on return. A full-width button opens a popup; the button shows the running
+ * time instead of the "Chrono" label. Keyed per session so each workout has its own.
  */
-function SessionChrono() {
+function SessionChrono({ storageKey }: { storageKey: string }) {
+    const key = `cadence.chrono.${storageKey}`;
     const [open, setOpen] = useState(false);
-    const [running, setRunning] = useState(false);
-    const [elapsed, setElapsed] = useState(0);
+    const [state, setState] = useState<ChronoState>(() => {
+        try {
+            const raw = localStorage.getItem(key);
+            if (raw !== null) {
+                const s = JSON.parse(raw) as Partial<ChronoState>;
+                if (typeof s.accumulated === 'number') {
+                    return { running: s.running === true, startedAt: typeof s.startedAt === 'number' ? s.startedAt : null, accumulated: s.accumulated };
+                }
+            }
+        } catch {
+            /* ignore corrupt state */
+        }
+        return { running: false, startedAt: null, accumulated: 0 };
+    });
+    const [, tick] = useState(0);
 
+    const persist = (next: ChronoState) => {
+        setState(next);
+        try {
+            localStorage.setItem(key, JSON.stringify(next));
+        } catch {
+            /* ignore */
+        }
+    };
+
+    const elapsed = Math.floor(state.accumulated + (state.running && state.startedAt !== null ? (Date.now() - state.startedAt) / 1000 : 0));
+
+    // While running, re-render every second AND when the app regains focus,
+    // recomputing from the timestamp — correct even after the browser throttled
+    // or suspended timers in the background.
     useEffect(() => {
-        if (!running) return;
-        const t = window.setInterval(() => setElapsed((s) => s + 1), 1000);
-        return () => window.clearInterval(t);
-    }, [running]);
+        if (!state.running) return;
+        const t = window.setInterval(() => tick((n) => n + 1), 1000);
+        const refresh = () => tick((n) => n + 1);
+        document.addEventListener('visibilitychange', refresh);
+        window.addEventListener('focus', refresh);
+        return () => {
+            window.clearInterval(t);
+            document.removeEventListener('visibilitychange', refresh);
+            window.removeEventListener('focus', refresh);
+        };
+    }, [state.running]);
 
+    const start = () => persist({ running: true, startedAt: Date.now(), accumulated: state.accumulated });
+    const stop = () => persist({ running: false, startedAt: null, accumulated: elapsed });
+    const reset = () => persist({ running: false, startedAt: null, accumulated: 0 });
     const openModal = () => {
-        if (!running && elapsed === 0) setRunning(true); // start from 0 on first open
+        if (!state.running && elapsed === 0) start(); // start from 0 on first open
         setOpen(true);
     };
-    const reset = () => {
-        setElapsed(0);
-        setRunning(false);
-    };
-    const active = running || elapsed > 0;
+    const active = state.running || elapsed > 0;
 
     return (
         <>
@@ -76,10 +117,10 @@ function SessionChrono() {
                         <p className="text-center text-xs font-semibold uppercase tracking-wide text-neutral-400">Chrono</p>
                         <p className="mb-6 mt-1 text-center text-5xl font-bold tabular-nums text-neutral-900">{mmss(elapsed)}</p>
                         <div className="flex gap-2">
-                            {running ? (
+                            {state.running ? (
                                 <button
                                     type="button"
-                                    onClick={() => setRunning(false)}
+                                    onClick={stop}
                                     className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white"
                                 >
                                     <Square size={15} /> Arrêter
@@ -87,7 +128,7 @@ function SessionChrono() {
                             ) : (
                                 <button
                                     type="button"
-                                    onClick={() => setRunning(true)}
+                                    onClick={start}
                                     className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-600 py-2.5 text-sm font-semibold text-white"
                                 >
                                     <Play size={15} /> Démarrer
@@ -183,7 +224,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
 
             {started ? (
                 <div className="mb-4">
-                    <SessionChrono />
+                    <SessionChrono storageKey={session?.id ?? 'adhoc'} />
                 </div>
             ) : session ? (
                 <p className="mb-4 text-sm capitalize text-neutral-500">
