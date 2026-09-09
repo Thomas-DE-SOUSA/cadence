@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
-import { Check, ChevronDown, ChevronRight, Copy, Link2, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, ChevronUp, Copy, Link2, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
 
 export interface CatalogItem {
     id: string;
@@ -285,6 +285,14 @@ export function ExerciseEditor({
     };
     const removeItem = (i: number) => setItems((prev) => prev.filter((_, idx) => idx !== i));
     const patchItem = (i: number, patch: Partial<Item>) => setItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
+    const moveItem = (i: number, dir: -1 | 1) =>
+        setItems((prev) => {
+            const j = i + dir;
+            if (j < 0 || j >= prev.length) return prev;
+            const next = [...prev];
+            [next[i], next[j]] = [next[j], next[i]];
+            return next;
+        });
     const addSet = (i: number) =>
         setItems((prev) =>
             prev.map((it, idx) => {
@@ -357,6 +365,16 @@ export function ExerciseEditor({
                             </div>
                         </button>
                         <div className="flex shrink-0 items-center gap-1">
+                            {!execution && items.length > 1 && (
+                                <div className="flex flex-col">
+                                    <button onClick={() => moveItem(i, -1)} disabled={i === 0} title="Monter" className="rounded p-0.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 disabled:opacity-30">
+                                        <ChevronUp size={14} />
+                                    </button>
+                                    <button onClick={() => moveItem(i, 1)} disabled={i === items.length - 1} title="Descendre" className="rounded p-0.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 disabled:opacity-30">
+                                        <ChevronDown size={14} />
+                                    </button>
+                                </div>
+                            )}
                             {!execution && (
                                 <select
                                     value={it.superset_group ?? ''}
