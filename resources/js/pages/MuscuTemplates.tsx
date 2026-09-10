@@ -47,7 +47,7 @@ export default function MuscuTemplates({ templates }: Props) {
                     </Link>
                 </div>
             ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {templates.map((t) => (
                         <div key={t.id} className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm shadow-neutral-200/60">
                             <div className="flex items-start justify-between gap-2">
