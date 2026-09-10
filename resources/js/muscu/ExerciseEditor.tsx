@@ -365,7 +365,7 @@ export function ExerciseEditor({
                             </div>
                         </button>
                         <div className="flex shrink-0 items-center gap-1">
-                            {!execution && items.length > 1 && (
+                            {items.length > 1 && (
                                 <div className="flex flex-col">
                                     <button onClick={() => moveItem(i, -1)} disabled={i === 0} title="Monter" className="rounded p-0.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 disabled:opacity-30">
                                         <ChevronUp size={14} />

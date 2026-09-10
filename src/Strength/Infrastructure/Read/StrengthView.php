@@ -179,7 +179,7 @@ final class StrengthView
      */
     public static function progression(array $sessions, OneRepMaxCalculator $calc): array
     {
-        /** @var array<string, array{name:string,best:float,series:list<array{date:string,e1rm:int,topWeight:float}>}> $byExercise */
+        /** @var array<string, array{name:string,best:float,series:list<array{date:string,e1rm:int,topWeight:float,topReps:int,position:int,totalExercises:int}>}> $byExercise */
         $byExercise = [];
 
         // Only done sessions count toward progression; oldest first so the
@@ -189,27 +189,47 @@ final class StrengthView
 
         foreach ($ordered as $session) {
             $snap = $session->toSnapshot();
+            $total = count($snap['exercises']);
+            $position = 0;
             foreach ($snap['exercises'] as $rawExercise) {
                 if (! is_array($rawExercise)) {
                     continue;
                 }
+                // Position = where the exercise sat in the session as performed
+                // (order is the session's own copy, so a live reorder is honoured).
+                $position++;
                 $exercise = PerformedExercise::fromArray($rawExercise);
-                $e1rm = $calc->bestForExercise($exercise);
-                if ($e1rm <= 0.0) {
-                    continue; // bodyweight / timed — no 1RM to track
-                }
 
+                // The best working set by estimated 1RM is the session's data point:
+                // it captures weight AND reps on one comparable number.
+                $bestE1rm = 0.0;
                 $topWeight = 0.0;
+                $topReps = 0;
                 foreach ($exercise->workingSets() as $set) {
-                    $topWeight = max($topWeight, $set->weightKg ?? 0.0);
+                    $e = $calc->forSet($set);
+                    if ($e > $bestE1rm) {
+                        $bestE1rm = $e;
+                        $topWeight = $set->weightKg ?? 0.0;
+                        $topReps = $set->reps ?? 0;
+                    }
+                }
+                if ($bestE1rm <= 0.0) {
+                    continue; // bodyweight / timed — no 1RM to track
                 }
 
                 $key = $exercise->exerciseId;
                 if (! isset($byExercise[$key])) {
                     $byExercise[$key] = ['name' => $exercise->name, 'best' => 0.0, 'series' => []];
                 }
-                $byExercise[$key]['best'] = max($byExercise[$key]['best'], $e1rm);
-                $byExercise[$key]['series'][] = ['date' => $snap['date'], 'e1rm' => (int) round($e1rm), 'topWeight' => round($topWeight, 1)];
+                $byExercise[$key]['best'] = max($byExercise[$key]['best'], $bestE1rm);
+                $byExercise[$key]['series'][] = [
+                    'date' => $snap['date'],
+                    'e1rm' => (int) round($bestE1rm),
+                    'topWeight' => round($topWeight, 1),
+                    'topReps' => $topReps,
+                    'position' => $position,
+                    'totalExercises' => $total,
+                ];
             }
         }
 
