@@ -145,33 +145,46 @@ function ExerciseCard({ ex, samePos }: { ex: ExerciseProg; samePos: boolean }) {
 
 function ByExercise({ progression }: { progression: ExerciseProg[] }) {
     const [samePos, setSamePos] = useState(false);
+    const [selectedId, setSelectedId] = useState(progression[0]?.exerciseId ?? '');
     if (progression.length === 0) return null;
+
+    const selected = progression.find((e) => e.exerciseId === selectedId) ?? progression[0];
 
     return (
         <section>
-            <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="inline-flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wide text-neutral-500">
-                    <TrendingUp size={15} className="text-brand-600" /> Progression par exercice
-                </h2>
+            <h2 className="mb-3 inline-flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wide text-neutral-500">
+                <TrendingUp size={15} className="text-brand-600" /> Progression par exercice
+            </h2>
+
+            <div className="mb-3 flex items-center gap-2">
+                <select
+                    value={selected.exerciseId}
+                    onChange={(e) => setSelectedId(e.target.value)}
+                    className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-800 focus:border-brand-300 focus:outline-none"
+                >
+                    {progression.map((ex) => (
+                        <option key={ex.exerciseId} value={ex.exerciseId}>
+                            {ex.name}
+                        </option>
+                    ))}
+                </select>
                 <button
                     onClick={() => setSamePos((v) => !v)}
-                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
                         samePos ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-neutral-200 bg-white text-neutral-500'
                     }`}
+                    title="Ne comparer que les séances où l'exo était à sa position habituelle (fatigue comparable)"
                 >
-                    À position égale {samePos ? '✓' : ''}
+                    Position égale {samePos ? '✓' : ''}
                 </button>
             </div>
-            <p className="mb-3 text-xs text-neutral-400">
-                L'e1RM combine poids <span className="font-semibold">et</span> reps sur un seul nombre comparable. « À position égale » ne garde que les séances où
-                l'exo était à sa position habituelle (fatigue comparable) ; un badge <span className="font-semibold text-amber-700">orange</span> signale une position
-                différente.
+
+            <ExerciseCard ex={selected} samePos={samePos} />
+
+            <p className="mt-2 text-xs text-neutral-400">
+                e1RM = poids <span className="font-semibold">et</span> reps sur un seul nombre. Badge <span className="font-semibold text-amber-700">orange</span> = position
+                différente de d'habitude (comparaison à nuancer, fatigue).
             </p>
-            <div className="space-y-3">
-                {progression.map((ex) => (
-                    <ExerciseCard key={ex.exerciseId} ex={ex} samePos={samePos} />
-                ))}
-            </div>
         </section>
     );
 }
