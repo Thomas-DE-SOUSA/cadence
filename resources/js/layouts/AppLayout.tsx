@@ -158,23 +158,30 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 shadow-md shadow-brand-500/30">
                             {mode === 'muscu' ? <Dumbbell className="h-5 w-5 text-white" /> : <BrandMark className="h-6 w-auto text-white" />}
                         </span>
-                        <span className="whitespace-nowrap text-[15px] font-black tracking-tight text-neutral-900">
+                        <span className="hidden whitespace-nowrap text-[15px] font-black tracking-tight text-neutral-900 sm:inline">
                             {mode === 'muscu' ? 'Muscu' : 'Cadence'}
                         </span>
                     </Link>
 
-                    {/* World switch — tap to jump to the other side */}
-                    <Link
-                        href={mode === 'muscu' ? '/' : '/muscu'}
-                        title={mode === 'muscu' ? 'Passer à la course' : 'Passer à la muscu'}
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-transform hover:-translate-y-0.5 ${
-                            mode === 'muscu'
-                                ? 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                                : 'border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100'
-                        }`}
-                    >
-                        {mode === 'muscu' ? <BrandMark className="h-5 w-auto" /> : <Dumbbell className="h-5 w-5" />}
-                    </Link>
+                    {/* World selector — always-visible segmented toggle (Course | Muscu) */}
+                    <div className="flex shrink-0 items-center rounded-full border border-neutral-200 bg-neutral-100 p-0.5 text-sm font-semibold">
+                        <Link
+                            href="/"
+                            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
+                                mode === 'run' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-800'
+                            }`}
+                        >
+                            <BrandMark className="h-4 w-auto" /> Course
+                        </Link>
+                        <Link
+                            href="/muscu"
+                            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
+                                mode === 'muscu' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-800'
+                            }`}
+                        >
+                            <Dumbbell size={15} /> Muscu
+                        </Link>
+                    </div>
 
                     {/* Primary nav (desktop) */}
                     <nav className="ml-2 hidden flex-1 items-center gap-1 md:flex">
