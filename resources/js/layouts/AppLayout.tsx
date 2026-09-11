@@ -153,30 +153,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
             {/* Top navigation bar */}
             <header className="fixed inset-x-0 top-0 z-30 border-b border-neutral-200/80 bg-white/85 shadow-[0_1px_2px_rgba(16,16,20,0.04),0_8px_24px_-12px_rgba(16,16,20,0.12)] backdrop-blur-lg">
                 <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:px-8">
-                    {/* Brand — reflects the current world */}
-                    <Link href={mode === 'muscu' ? '/muscu' : '/'} className="flex shrink-0 items-center gap-2.5">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 shadow-md shadow-brand-500/30">
-                            {mode === 'muscu' ? <Dumbbell className="h-5 w-5 text-white" /> : <BrandMark className="h-6 w-auto text-white" />}
-                        </span>
-                        <span className="hidden whitespace-nowrap text-[15px] font-black tracking-tight text-neutral-900 sm:inline">
-                            {mode === 'muscu' ? 'Muscu' : 'Cadence'}
-                        </span>
-                    </Link>
-
-                    {/* World selector — always-visible segmented toggle (Course | Muscu) */}
+                    {/* World selector — always-visible segmented toggle; active tab in its world colour */}
                     <div className="flex shrink-0 items-center rounded-full border border-neutral-200 bg-neutral-100 p-0.5 text-sm font-semibold">
                         <Link
                             href="/"
-                            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
-                                mode === 'run' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-800'
+                            className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-colors ${
+                                mode === 'run' ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/30' : 'text-neutral-500 hover:text-neutral-800'
                             }`}
                         >
                             <BrandMark className="h-4 w-auto" /> Course
                         </Link>
                         <Link
                             href="/muscu"
-                            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
-                                mode === 'muscu' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-800'
+                            className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-colors ${
+                                mode === 'muscu' ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/30' : 'text-neutral-500 hover:text-neutral-800'
                             }`}
                         >
                             <Dumbbell size={15} /> Muscu
