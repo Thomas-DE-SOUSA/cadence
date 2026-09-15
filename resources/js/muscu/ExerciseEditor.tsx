@@ -470,7 +470,6 @@ export function ExerciseEditor({
                 <div key={i} className={`border p-4 shadow-sm transition-colors ${rounding} ${color} ${linkedAbove ? 'border-t-0' : ''} ${linkedBelow ? '' : 'mb-3'}`}>
                     <div className={`flex items-start justify-between gap-2 ${collapsed ? '' : 'mb-2'}`}>
                         <button onClick={() => patchItem(i, { collapsed: !collapsed })} className="flex min-w-0 flex-1 items-start gap-2 text-left">
-                            <span className="mt-0.5 shrink-0 text-neutral-400">{collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}</span>
                             <div className="min-w-0">
                                 <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-neutral-800">
                                     <span className="break-words">{it.name}</span>
@@ -502,13 +501,6 @@ export function ExerciseEditor({
                             </div>
                         </button>
                         <div className="flex shrink-0 items-center gap-1">
-                            <button
-                                onClick={() => setHistoryFor({ id: it.exercise_id, name: it.name })}
-                                title="Historique de l'exercice"
-                                className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-brand-600"
-                            >
-                                <History size={15} />
-                            </button>
                             {items.length > 1 && (
                                 <div className="flex flex-col">
                                     <button onClick={() => moveItem(i, -1)} disabled={i === 0} title="Monter" className="rounded p-0.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 disabled:opacity-30">
@@ -545,6 +537,21 @@ export function ExerciseEditor({
                                     <Trash2 size={15} />
                                 </button>
                             )}
+                            {/* Always present, pinned far-right so they line up across every card. */}
+                            <button
+                                onClick={() => setHistoryFor({ id: it.exercise_id, name: it.name })}
+                                title="Historique de l'exercice"
+                                className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-brand-600"
+                            >
+                                <History size={15} />
+                            </button>
+                            <button
+                                onClick={() => patchItem(i, { collapsed: !collapsed })}
+                                title={collapsed ? 'Agrandir' : 'Réduire'}
+                                className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+                            >
+                                {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                            </button>
                         </div>
                     </div>
 
