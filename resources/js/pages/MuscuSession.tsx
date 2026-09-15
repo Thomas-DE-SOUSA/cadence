@@ -281,11 +281,20 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
         }
     };
 
-    // Going back mid-session saves progress (as PLANNED) so a misclick can't
-    // wipe the ticked sets — the save itself redirects to the agenda.
+    // Going back mid-session asks for confirmation so a misclick can't drop the
+    // workout. Confirming resets the in-progress run (draft + rest chrono) and
+    // returns to the agenda; the planned session on the server is left untouched.
     const goBack = () => {
-        if (started && items.length > 0) post('PLANNED', elapsed);
-        else router.visit('/muscu');
+        if (started && items.length > 0) {
+            if (!confirm('Êtes-vous sûr de vouloir quitter la séance ? Votre progression en cours sera perdue.')) return;
+            clearDraft();
+            try {
+                localStorage.removeItem(`cadence.chrono.${session?.id ?? 'adhoc'}`);
+            } catch {
+                /* ignore */
+            }
+        }
+        router.visit('/muscu');
     };
 
     const totalSets = items.reduce((n, it) => n + it.sets.filter((s) => !s.is_warmup).length, 0);
