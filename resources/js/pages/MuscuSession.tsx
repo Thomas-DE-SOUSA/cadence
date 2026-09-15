@@ -407,10 +407,12 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
 
             {started ? (
                 // Sticky just under the fixed header so the chrono stays in view
-                // while scrolling the exercises. Solid bg + no z-index/blur on
-                // purpose — a stacking context here would trap the chrono popup
+                // while scrolling. The band uses the page's own background (via
+                // bg-page-fixed) so it blends in seamlessly and just hides the
+                // scrolling cards — no out-of-place strip. No z-index/blur here
+                // on purpose: a stacking context would trap the chrono popup
                 // under the bottom action bar.
-                <div className="sticky top-16 -mx-4 mb-4 border-b border-neutral-200/70 bg-white px-4 py-2 shadow-sm sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 lg:-mx-10 lg:px-10">
+                <div className="sticky top-16 -mx-4 mb-4 bg-page-fixed px-4 pb-3 pt-1 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 lg:-mx-10 lg:px-10">
                     <SessionChrono storageKey={session?.id ?? 'adhoc'} restartSignal={chronoRestart} />
                 </div>
             ) : session ? (

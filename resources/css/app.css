@@ -36,6 +36,24 @@ body {
     color: #1a1a1e;
 }
 
+/* Mirror the body background exactly (color + fixed gradient) so a sticky bar
+   painted with it blends seamlessly into the page — used by the session chrono
+   bar so scrolling content is hidden without an out-of-place solid strip. */
+.bg-page-fixed {
+    background-color: #f4f6f4;
+    background-image:
+        radial-gradient(1100px 460px at 80% -160px, rgba(28, 133, 90, 0.09), transparent 70%),
+        radial-gradient(900px 400px at 0% -120px, rgba(28, 133, 90, 0.05), transparent 70%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+html.dark .bg-page-fixed {
+    background-color: #0e1014;
+    background-image:
+        radial-gradient(1100px 460px at 80% -160px, rgba(28, 133, 90, 0.16), transparent 70%),
+        radial-gradient(900px 400px at 0% -120px, rgba(28, 133, 90, 0.08), transparent 70%);
+}
+
 button:not(:disabled),
 [role='button'] {
     cursor: pointer;
