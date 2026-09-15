@@ -281,21 +281,48 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
         }
     };
 
-    // Going back mid-session asks for confirmation so a misclick can't drop the
-    // workout. Confirming resets the in-progress run (draft + rest chrono) and
-    // returns to the agenda; the planned session on the server is left untouched.
+    const QUIT_MESSAGE = 'Êtes-vous sûr de vouloir quitter la séance ? Votre progression en cours sera perdue.';
+
+    // Discard the in-progress run (local draft + rest chrono). The planned
+    // session on the server is left untouched.
+    const discardRun = () => {
+        clearDraft();
+        try {
+            localStorage.removeItem(`cadence.chrono.${session?.id ?? 'adhoc'}`);
+        } catch {
+            /* ignore */
+        }
+    };
+
+    // In-app back button: confirm before leaving a running session.
     const goBack = () => {
         if (started && items.length > 0) {
-            if (!confirm('Êtes-vous sûr de vouloir quitter la séance ? Votre progression en cours sera perdue.')) return;
-            clearDraft();
-            try {
-                localStorage.removeItem(`cadence.chrono.${session?.id ?? 'adhoc'}`);
-            } catch {
-                /* ignore */
-            }
+            if (!confirm(QUIT_MESSAGE)) return;
+            discardRun();
         }
         router.visit('/muscu');
     };
+
+    // The in-app button above can't catch the phone's Android/browser back
+    // gesture, which fires a history popstate instead. While a session is
+    // running, keep a sentinel history entry so a back press lands here and we
+    // can confirm before actually leaving — cancelling re-arms the sentinel.
+    useEffect(() => {
+        if (!started) return;
+        window.history.pushState(window.history.state, '', window.location.href);
+        const onPopState = () => {
+            if (confirm(QUIT_MESSAGE)) {
+                discardRun();
+                window.removeEventListener('popstate', onPopState);
+                window.history.back();
+            } else {
+                window.history.pushState(window.history.state, '', window.location.href);
+            }
+        };
+        window.addEventListener('popstate', onPopState);
+        return () => window.removeEventListener('popstate', onPopState);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [started]);
 
     const totalSets = items.reduce((n, it) => n + it.sets.filter((s) => !s.is_warmup).length, 0);
     const canStart = session !== null && !started && session.status !== 'DONE';
