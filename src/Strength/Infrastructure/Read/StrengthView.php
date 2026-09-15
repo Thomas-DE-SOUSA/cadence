@@ -250,6 +250,75 @@ final class StrengthView
     }
 
     /**
+     * Full history of one exercise across every done session: each occurrence
+     * with its date, its position in that session (the session's own order, so a
+     * weekly reorder is reflected) and all of its sets. Most recent first. Lets
+     * the athlete read real progression on the exercise regardless of where it
+     * sat in the session that day.
+     *
+     * @param list<StrengthSession> $sessions
+     *
+     * @return array{exerciseId:string,name:string,entries:list<array{date:string,position:int,totalExercises:int,supersetGroup:?int,perSide:bool,bestE1rm:int,sets:list<array{weightKg:?float,reps:?int,rpe:?float,durationSeconds:?int,isWarmup:bool,e1rm:int}>}>}
+     */
+    public static function exerciseHistory(array $sessions, string $exerciseId, OneRepMaxCalculator $calc): array
+    {
+        // Only done sessions carry performed values; most recent first.
+        $ordered = array_values(array_filter($sessions, static fn (StrengthSession $s): bool => $s->status()->isDone()));
+        usort($ordered, static fn (StrengthSession $a, StrengthSession $b): int => strcmp($b->toSnapshot()['date'], $a->toSnapshot()['date']));
+
+        $name = '';
+        $entries = [];
+        foreach ($ordered as $session) {
+            $snap = $session->toSnapshot();
+            $total = count($snap['exercises']);
+            $position = 0;
+            foreach ($snap['exercises'] as $raw) {
+                if (! is_array($raw)) {
+                    continue;
+                }
+                $position++;
+                if ((string) ($raw['exercise_id'] ?? '') !== $exerciseId) {
+                    continue;
+                }
+                $exercise = PerformedExercise::fromArray($raw);
+                if ($name === '') {
+                    $name = $exercise->name;
+                }
+
+                $bestE1rm = 0.0;
+                foreach ($exercise->workingSets() as $ws) {
+                    $bestE1rm = max($bestE1rm, $calc->forSet($ws));
+                }
+
+                $sets = [];
+                foreach ($exercise->sets as $set) {
+                    $sets[] = [
+                        'weightKg' => $set->weightKg,
+                        'reps' => $set->reps,
+                        'rpe' => $set->rpe,
+                        'durationSeconds' => $set->durationSeconds,
+                        'isWarmup' => $set->isWarmup,
+                        'e1rm' => (int) round($calc->forSet($set)),
+                    ];
+                }
+
+                $entries[] = [
+                    'date' => $snap['date'],
+                    'position' => $position,
+                    'totalExercises' => $total,
+                    'supersetGroup' => $exercise->supersetGroup,
+                    'perSide' => $exercise->perSide,
+                    'bestE1rm' => (int) round($bestE1rm),
+                    'sets' => $sets,
+                ];
+                break; // an exercise appears at most once per session
+            }
+        }
+
+        return ['exerciseId' => $exerciseId, 'name' => $name, 'entries' => $entries];
+    }
+
+    /**
      * Sessions + volume per ISO week over the last 8 weeks (done sessions).
      *
      * @param list<StrengthSession> $sessions

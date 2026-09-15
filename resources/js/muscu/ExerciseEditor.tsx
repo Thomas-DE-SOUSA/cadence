@@ -1,6 +1,6 @@
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
-import { Check, ChevronDown, ChevronRight, ChevronUp, Copy, Link2, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, ChevronUp, Copy, History, Link2, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
 
 export interface CatalogItem {
     id: string;
@@ -335,38 +335,49 @@ export function ExerciseEditor({
                 return (
                 <div key={i} className={`border p-4 shadow-sm transition-colors ${rounding} ${color} ${linkedAbove ? 'border-t-0' : ''} ${linkedBelow ? '' : 'mb-3'}`}>
                     <div className={`flex items-start justify-between gap-2 ${collapsed ? '' : 'mb-2'}`}>
-                        <button onClick={() => patchItem(i, { collapsed: !collapsed })} className="flex min-w-0 flex-1 items-start gap-2 text-left">
-                            <span className="mt-0.5 shrink-0 text-neutral-400">{collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}</span>
-                            <div className="min-w-0">
+                        <div className="flex min-w-0 flex-1 items-start gap-2">
+                            <button onClick={() => patchItem(i, { collapsed: !collapsed })} title={collapsed ? 'Déplier' : 'Replier'} className="mt-0.5 shrink-0 text-neutral-400">
+                                {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                            </button>
+                            <div className="min-w-0 flex-1">
                                 <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-neutral-800">
-                                    <span className="break-words">{it.name}</span>
+                                    <Link
+                                        href={`/muscu/exercice/${it.exercise_id}/historique`}
+                                        title="Voir l'historique de l'exercice"
+                                        className="inline-flex items-center gap-1 break-words decoration-dotted decoration-neutral-300 underline-offset-4 hover:text-brand-600 hover:underline"
+                                    >
+                                        {it.name}
+                                        <History size={13} className="shrink-0 text-neutral-300" />
+                                    </Link>
                                     {it.superset_group != null && (
                                         <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700">
                                             <Link2 size={11} /> Superset {supersetLabel(it.superset_group)}
                                         </span>
                                     )}
                                 </p>
-                                {collapsed ? (
-                                    <p className="text-xs text-neutral-500">
-                                        {execution ? `${doneWorking}/${workingSets.length} série${workingSets.length > 1 ? 's' : ''}` : `${workingSets.length} série${workingSets.length > 1 ? 's' : ''}`}
-                                        {topSet ? ` · ${topSet}` : ''}
-                                    </p>
-                                ) : (
-                                    <>
-                                        {(it.muscleLabel || it.equipmentLabel) && (
-                                            <p className="text-xs text-neutral-400">
-                                                {it.muscleLabel}
-                                                {it.equipmentLabel ? ` · ${it.equipmentLabel}` : ''}
-                                            </p>
-                                        )}
-                                        {it.note !== '' && <p className="mt-1 whitespace-pre-line text-xs text-neutral-500">{it.note}</p>}
-                                        {execution && lastByExercise[it.exercise_id] && lastTopSet(lastByExercise[it.exercise_id].sets) && (
-                                            <p className="mt-0.5 text-xs font-medium text-brand-600">↩ Dernière fois : {lastTopSet(lastByExercise[it.exercise_id].sets)}</p>
-                                        )}
-                                    </>
-                                )}
+                                <button onClick={() => patchItem(i, { collapsed: !collapsed })} title={collapsed ? 'Déplier' : 'Replier'} className="block w-full text-left">
+                                    {collapsed ? (
+                                        <p className="text-xs text-neutral-500">
+                                            {execution ? `${doneWorking}/${workingSets.length} série${workingSets.length > 1 ? 's' : ''}` : `${workingSets.length} série${workingSets.length > 1 ? 's' : ''}`}
+                                            {topSet ? ` · ${topSet}` : ''}
+                                        </p>
+                                    ) : (
+                                        <>
+                                            {(it.muscleLabel || it.equipmentLabel) && (
+                                                <p className="text-xs text-neutral-400">
+                                                    {it.muscleLabel}
+                                                    {it.equipmentLabel ? ` · ${it.equipmentLabel}` : ''}
+                                                </p>
+                                            )}
+                                            {it.note !== '' && <p className="mt-1 whitespace-pre-line text-xs text-neutral-500">{it.note}</p>}
+                                            {execution && lastByExercise[it.exercise_id] && lastTopSet(lastByExercise[it.exercise_id].sets) && (
+                                                <p className="mt-0.5 text-xs font-medium text-brand-600">↩ Dernière fois : {lastTopSet(lastByExercise[it.exercise_id].sets)}</p>
+                                            )}
+                                        </>
+                                    )}
+                                </button>
                             </div>
-                        </button>
+                        </div>
                         <div className="flex shrink-0 items-center gap-1">
                             {items.length > 1 && (
                                 <div className="flex flex-col">

@@ -26,6 +26,7 @@ use Cadence\Strength\Infrastructure\Http\Controller\RemoveScheduledWorkoutContro
 use Cadence\Strength\Infrastructure\Http\Controller\SaveTemplateController;
 use Cadence\Strength\Infrastructure\Http\Controller\ScheduleWorkoutController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowAgendaController;
+use Cadence\Strength\Infrastructure\Http\Controller\ShowExerciseHistoryController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowProgressionController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowSessionEditorController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowTemplateEditorController;
@@ -65,6 +66,7 @@ final class StrengthServiceProvider extends ServiceProvider
             // Agenda (home) + progression.
             Route::get('/', ShowAgendaController::class)->name('muscu');
             Route::get('/progression', ShowProgressionController::class)->name('muscu.progression');
+            Route::get('/exercice/{exerciseId}/historique', ShowExerciseHistoryController::class)->name('muscu.exercise.history');
 
             // Body-weight tracker (morning/evening readings → weekly averages).
             Route::get('/poids', ShowWeightController::class)->name('muscu.weight');
