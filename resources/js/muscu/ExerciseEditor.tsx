@@ -266,6 +266,7 @@ export function ExerciseEditor({
     equipments,
     lastByExercise = {},
     execution = false,
+    onSetValidated,
 }: {
     items: Item[];
     setItems: (updater: (prev: Item[]) => Item[]) => void;
@@ -274,6 +275,8 @@ export function ExerciseEditor({
     equipments: Option[];
     lastByExercise?: Record<string, { sets: SetRow[] }>;
     execution?: boolean;
+    /** Called when a set is ticked as done (not when un-ticked) — used to (re)start the rest timer. */
+    onSetValidated?: () => void;
 }) {
     const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -450,7 +453,11 @@ export function ExerciseEditor({
                                 />
                                 {execution ? (
                                     <button
-                                        onClick={() => patchSet(i, s, { done: !set.done })}
+                                        onClick={() => {
+                                            const nowDone = !set.done;
+                                            patchSet(i, s, { done: nowDone });
+                                            if (nowDone) onSetValidated?.();
+                                        }}
                                         title={set.done ? 'Série faite' : 'Marquer comme faite'}
                                         className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
                                             set.done ? 'bg-emerald-500 text-white' : 'border border-neutral-300 text-neutral-300 hover:border-emerald-400 hover:text-emerald-400'

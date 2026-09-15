@@ -81,7 +81,7 @@ function readDraft(key: string): SessionDraft | null {
  * time on return. A full-width button opens a popup; the button shows the running
  * time instead of the "Chrono" label. Keyed per session so each workout has its own.
  */
-function SessionChrono({ storageKey }: { storageKey: string }) {
+function SessionChrono({ storageKey, restartSignal = 0 }: { storageKey: string; restartSignal?: number }) {
     const key = `cadence.chrono.${storageKey}`;
     const [open, setOpen] = useState(false);
     const [state, setState] = useState<ChronoState>(() => {
@@ -108,6 +108,19 @@ function SessionChrono({ storageKey }: { storageKey: string }) {
             /* ignore */
         }
     };
+
+    // Validating a set acts as a rest timer: (re)start the chrono from zero
+    // whenever the signal counter increases. Comparing against the previous
+    // value (rather than skipping the first render) fires reliably even if the
+    // component remounts mid-session.
+    const prevSignal = useRef(restartSignal);
+    useEffect(() => {
+        if (restartSignal > prevSignal.current) {
+            prevSignal.current = restartSignal;
+            persist({ running: true, startedAt: Date.now(), accumulated: 0 });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [restartSignal]);
 
     const elapsed = Math.floor(state.accumulated + (state.running && state.startedAt !== null ? (Date.now() - state.startedAt) / 1000 : 0));
 
@@ -209,6 +222,8 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
     const resuming = !!session && session.status === 'PLANNED' && session.exercises.some((e) => e.sets.some((s) => !s.done));
     const [started, setStarted] = useState(draft?.started ?? resuming);
     const [elapsed, setElapsed] = useState(draft?.elapsed ?? 0);
+    // Bumped each time a set is validated, to (re)start the rest chrono.
+    const [chronoRestart, setChronoRestart] = useState(0);
 
     // Tell the user we brought their session back — doubles as the "alert" so a
     // restore is never silent.
@@ -299,7 +314,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
 
             {started ? (
                 <div className="mb-4">
-                    <SessionChrono storageKey={session?.id ?? 'adhoc'} />
+                    <SessionChrono storageKey={session?.id ?? 'adhoc'} restartSignal={chronoRestart} />
                 </div>
             ) : session ? (
                 <p className="mb-4 text-sm capitalize text-neutral-500">
@@ -337,7 +352,16 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
             )}
 
             <div className="pb-28">
-                <ExerciseEditor items={items} setItems={setItems} catalog={catalog} muscles={muscles} equipments={equipments} lastByExercise={lastByExercise} execution={started} />
+                <ExerciseEditor
+                    items={items}
+                    setItems={setItems}
+                    catalog={catalog}
+                    muscles={muscles}
+                    equipments={equipments}
+                    lastByExercise={lastByExercise}
+                    execution={started}
+                    onSetValidated={() => setChronoRestart((n) => n + 1)}
+                />
             </div>
 
             <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 p-3 backdrop-blur">
