@@ -9,9 +9,12 @@ use Cadence\Strength\Domain\Port\ExerciseRepository;
 use Cadence\Strength\Domain\Port\StrengthSessionRepository;
 use Cadence\Strength\Domain\Service\OneRepMaxCalculator;
 use Cadence\Strength\Infrastructure\Read\StrengthView;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 
+/**
+ * Returns one exercise's full history as JSON. Consumed on demand by the
+ * in-session history sheet (fetch), so the athlete never leaves the session.
+ */
 final class ShowExerciseHistoryController
 {
     public function __construct(
@@ -22,7 +25,7 @@ final class ShowExerciseHistoryController
     ) {
     }
 
-    public function __invoke(string $exerciseId): Response
+    public function __invoke(string $exerciseId): JsonResponse
     {
         $tenant = $this->tenantContext->current();
 
@@ -38,6 +41,6 @@ final class ShowExerciseHistoryController
             }
         }
 
-        return Inertia::render('MuscuExerciseHistory', $history);
+        return response()->json($history);
     }
 }

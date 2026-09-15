@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, ChevronUp, Copy, History, Link2, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
 
@@ -258,6 +258,137 @@ function ExercisePicker({
  * grid and the add-exercise picker. `lastByExercise` (optional) powers the
  * "repeat last time" prefill on the session screen.
  */
+interface HistorySet {
+    weightKg: number | null;
+    reps: number | null;
+    rpe: number | null;
+    durationSeconds: number | null;
+    isWarmup: boolean;
+    e1rm: number;
+}
+interface HistoryEntry {
+    date: string;
+    position: number;
+    totalExercises: number;
+    supersetGroup: number | null;
+    perSide: boolean;
+    bestE1rm: number;
+    sets: HistorySet[];
+}
+
+const ordinal = (n: number): string => (n === 1 ? '1ᵉʳ' : `${n}ᵉ`);
+const historyDate = (date: string): string =>
+    new Date(date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const setText = (s: HistorySet): string => {
+    if (s.weightKg != null && s.reps != null) return `${s.weightKg} kg × ${s.reps}`;
+    if (s.reps != null) return `${s.reps} reps`;
+    if (s.durationSeconds != null) return `${s.durationSeconds}s`;
+    return '—';
+};
+
+/**
+ * In-session history sheet for one exercise. Loads on demand (JSON) so the
+ * athlete can check past performances without leaving the running session.
+ * Shows every done session with this exercise: date, its position that day
+ * (order rotates weekly, so this matters), all sets and the best e1RM.
+ */
+function ExerciseHistoryModal({ exerciseId, name, onClose }: { exerciseId: string; name: string; onClose: () => void }) {
+    const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
+    const [failed, setFailed] = useState(false);
+
+    useEffect(() => {
+        let alive = true;
+        setEntries(null);
+        setFailed(false);
+        fetch(`/muscu/exercice/${encodeURIComponent(exerciseId)}/historique`, { headers: { Accept: 'application/json' } })
+            .then((r) => (r.ok ? r.json() : Promise.reject(new Error('http'))))
+            .then((d: { entries?: HistoryEntry[] }) => {
+                if (alive) setEntries(Array.isArray(d.entries) ? d.entries : []);
+            })
+            .catch(() => {
+                if (alive) setFailed(true);
+            });
+        return () => {
+            alive = false;
+        };
+    }, [exerciseId]);
+
+    const bestOverall = (entries ?? []).reduce((m, e) => Math.max(m, e.bestE1rm), 0);
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/50 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
+            <div className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-start justify-between gap-2 border-b border-neutral-100 p-4">
+                    <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                            <History size={13} /> Historique
+                        </p>
+                        <p className="truncate text-base font-bold text-neutral-900">{name}</p>
+                        {bestOverall > 0 && <p className="text-xs font-semibold text-brand-600">record e1RM {bestOverall} kg</p>}
+                    </div>
+                    <button onClick={onClose} className="shrink-0 rounded-lg p-2 text-neutral-400 hover:bg-neutral-100">
+                        <X size={18} />
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-3">
+                    {failed ? (
+                        <p className="py-8 text-center text-sm text-neutral-500">Impossible de charger l'historique.</p>
+                    ) : entries === null ? (
+                        <p className="py-8 text-center text-sm text-neutral-400">Chargement…</p>
+                    ) : entries.length === 0 ? (
+                        <p className="py-8 text-center text-sm text-neutral-500">Aucune séance terminée avec cet exercice.</p>
+                    ) : (
+                        <div className="space-y-2.5">
+                            {entries.map((entry, i) => {
+                                const isRecord = entry.bestE1rm > 0 && entry.bestE1rm === bestOverall;
+                                return (
+                                    <div key={i} className="rounded-xl border border-neutral-200 bg-white p-3">
+                                        <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5">
+                                            <p className="text-sm font-semibold capitalize text-neutral-800">{historyDate(entry.date)}</p>
+                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-500">
+                                                    {ordinal(entry.position)} / {entry.totalExercises}
+                                                </span>
+                                                {entry.supersetGroup != null && (
+                                                    <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-violet-700">
+                                                        <Link2 size={11} /> {supersetLabel(entry.supersetGroup)}
+                                                    </span>
+                                                )}
+                                                {entry.bestE1rm > 0 && (
+                                                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${isRecord ? 'bg-brand-100 text-brand-700' : 'bg-neutral-100 text-neutral-500'}`}>
+                                                        e1RM {entry.bestE1rm} kg
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            {entry.sets.map((s, j) => (
+                                                <div
+                                                    key={j}
+                                                    className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-1 text-sm ${s.isWarmup ? 'text-neutral-400' : 'bg-neutral-50 text-neutral-800'}`}
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        <span className="w-4 shrink-0 text-right text-xs font-medium text-neutral-400">{j + 1}</span>
+                                                        <span className={s.isWarmup ? '' : 'font-semibold'}>{setText(s)}</span>
+                                                        {entry.perSide && !s.isWarmup && <span className="text-[10px] text-neutral-400">/ côté</span>}
+                                                        {s.isWarmup && <span className="text-[10px] uppercase tracking-wide">échauff.</span>}
+                                                    </span>
+                                                    {s.rpe != null && <span className="text-xs text-neutral-400">RPE {s.rpe}</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function ExerciseEditor({
     items,
     setItems,
@@ -279,6 +410,9 @@ export function ExerciseEditor({
     onSetValidated?: () => void;
 }) {
     const [pickerOpen, setPickerOpen] = useState(false);
+    // Which exercise's history sheet is open (null = closed). Opened by the
+    // per-exercise history button; loads on demand so the session isn't left.
+    const [historyFor, setHistoryFor] = useState<{ id: string; name: string } | null>(null);
 
     const addExercise = (e: CatalogItem) => {
         const last = lastByExercise[e.id];
@@ -335,50 +469,46 @@ export function ExerciseEditor({
                 return (
                 <div key={i} className={`border p-4 shadow-sm transition-colors ${rounding} ${color} ${linkedAbove ? 'border-t-0' : ''} ${linkedBelow ? '' : 'mb-3'}`}>
                     <div className={`flex items-start justify-between gap-2 ${collapsed ? '' : 'mb-2'}`}>
-                        <div className="flex min-w-0 flex-1 items-start gap-2">
-                            <button onClick={() => patchItem(i, { collapsed: !collapsed })} title={collapsed ? 'Déplier' : 'Replier'} className="mt-0.5 shrink-0 text-neutral-400">
-                                {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                            </button>
-                            <div className="min-w-0 flex-1">
+                        <button onClick={() => patchItem(i, { collapsed: !collapsed })} className="flex min-w-0 flex-1 items-start gap-2 text-left">
+                            <span className="mt-0.5 shrink-0 text-neutral-400">{collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}</span>
+                            <div className="min-w-0">
                                 <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-neutral-800">
-                                    <Link
-                                        href={`/muscu/exercice/${it.exercise_id}/historique`}
-                                        title="Voir l'historique de l'exercice"
-                                        className="inline-flex items-center gap-1 break-words decoration-dotted decoration-neutral-300 underline-offset-4 hover:text-brand-600 hover:underline"
-                                    >
-                                        {it.name}
-                                        <History size={13} className="shrink-0 text-neutral-300" />
-                                    </Link>
+                                    <span className="break-words">{it.name}</span>
                                     {it.superset_group != null && (
                                         <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700">
                                             <Link2 size={11} /> Superset {supersetLabel(it.superset_group)}
                                         </span>
                                     )}
                                 </p>
-                                <button onClick={() => patchItem(i, { collapsed: !collapsed })} title={collapsed ? 'Déplier' : 'Replier'} className="block w-full text-left">
-                                    {collapsed ? (
-                                        <p className="text-xs text-neutral-500">
-                                            {execution ? `${doneWorking}/${workingSets.length} série${workingSets.length > 1 ? 's' : ''}` : `${workingSets.length} série${workingSets.length > 1 ? 's' : ''}`}
-                                            {topSet ? ` · ${topSet}` : ''}
-                                        </p>
-                                    ) : (
-                                        <>
-                                            {(it.muscleLabel || it.equipmentLabel) && (
-                                                <p className="text-xs text-neutral-400">
-                                                    {it.muscleLabel}
-                                                    {it.equipmentLabel ? ` · ${it.equipmentLabel}` : ''}
-                                                </p>
-                                            )}
-                                            {it.note !== '' && <p className="mt-1 whitespace-pre-line text-xs text-neutral-500">{it.note}</p>}
-                                            {execution && lastByExercise[it.exercise_id] && lastTopSet(lastByExercise[it.exercise_id].sets) && (
-                                                <p className="mt-0.5 text-xs font-medium text-brand-600">↩ Dernière fois : {lastTopSet(lastByExercise[it.exercise_id].sets)}</p>
-                                            )}
-                                        </>
-                                    )}
-                                </button>
+                                {collapsed ? (
+                                    <p className="text-xs text-neutral-500">
+                                        {execution ? `${doneWorking}/${workingSets.length} série${workingSets.length > 1 ? 's' : ''}` : `${workingSets.length} série${workingSets.length > 1 ? 's' : ''}`}
+                                        {topSet ? ` · ${topSet}` : ''}
+                                    </p>
+                                ) : (
+                                    <>
+                                        {(it.muscleLabel || it.equipmentLabel) && (
+                                            <p className="text-xs text-neutral-400">
+                                                {it.muscleLabel}
+                                                {it.equipmentLabel ? ` · ${it.equipmentLabel}` : ''}
+                                            </p>
+                                        )}
+                                        {it.note !== '' && <p className="mt-1 whitespace-pre-line text-xs text-neutral-500">{it.note}</p>}
+                                        {execution && lastByExercise[it.exercise_id] && lastTopSet(lastByExercise[it.exercise_id].sets) && (
+                                            <p className="mt-0.5 text-xs font-medium text-brand-600">↩ Dernière fois : {lastTopSet(lastByExercise[it.exercise_id].sets)}</p>
+                                        )}
+                                    </>
+                                )}
                             </div>
-                        </div>
+                        </button>
                         <div className="flex shrink-0 items-center gap-1">
+                            <button
+                                onClick={() => setHistoryFor({ id: it.exercise_id, name: it.name })}
+                                title="Historique de l'exercice"
+                                className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-brand-600"
+                            >
+                                <History size={15} />
+                            </button>
                             {items.length > 1 && (
                                 <div className="flex flex-col">
                                     <button onClick={() => moveItem(i, -1)} disabled={i === 0} title="Monter" className="rounded p-0.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 disabled:opacity-30">
@@ -502,6 +632,7 @@ export function ExerciseEditor({
             </button>
 
             {pickerOpen && <ExercisePicker catalog={catalog} muscles={muscles} equipments={equipments} onPick={addExercise} onClose={() => setPickerOpen(false)} />}
+            {historyFor && <ExerciseHistoryModal exerciseId={historyFor.id} name={historyFor.name} onClose={() => setHistoryFor(null)} />}
         </div>
     );
 }
