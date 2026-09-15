@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowLeft, Check, CircleCheck, Flag, Play, RotateCcw, Square, Timer, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,6 +34,44 @@ interface ChronoState {
     running: boolean;
     startedAt: number | null; // epoch ms of the current running segment
     accumulated: number; // seconds banked from previous segments
+}
+
+/**
+ * A locally-persisted snapshot of an in-progress session. Written to
+ * localStorage on every edit (so validating a set is auto-saved) and restored
+ * on return, so an accidental back-navigation, a reload or the PWA being killed
+ * never wipes the workout. Cleared once the session is saved to the backend.
+ */
+interface SessionDraft {
+    savedAt: number;
+    date: string;
+    title: string;
+    started: boolean;
+    elapsed: number;
+    items: Item[];
+}
+
+const DRAFT_PREFIX = 'cadence.session-draft.';
+
+function readDraft(key: string): SessionDraft | null {
+    try {
+        const raw = localStorage.getItem(key);
+        if (raw === null) return null;
+        const d = JSON.parse(raw) as Partial<SessionDraft>;
+        if (Array.isArray(d.items) && typeof d.date === 'string') {
+            return {
+                savedAt: typeof d.savedAt === 'number' ? d.savedAt : 0,
+                date: d.date,
+                title: typeof d.title === 'string' ? d.title : '',
+                started: d.started === true,
+                elapsed: typeof d.elapsed === 'number' ? d.elapsed : 0,
+                items: d.items as Item[],
+            };
+        }
+    } catch {
+        /* ignore corrupt draft */
+    }
+    return null;
 }
 
 /**
@@ -154,17 +192,30 @@ function SessionChrono({ storageKey }: { storageKey: string }) {
 }
 
 export default function MuscuSession({ catalog, muscles, equipments, session, lastByExercise }: Props) {
-    const [date, setDate] = useState(session?.date ?? today());
-    const [title, setTitle] = useState(session?.title ?? '');
+    const draftKey = `${DRAFT_PREFIX}${session?.id ?? 'new'}`;
+    // Restore a locally-saved draft (unless the session is already finished on
+    // the server) so returning to a session — even after a reload or an
+    // accidental back — never loses the in-progress work.
+    const [draft] = useState<SessionDraft | null>(() => (session?.status === 'DONE' ? null : readDraft(draftKey)));
+
+    const [date, setDate] = useState(draft?.date ?? session?.date ?? today());
+    const [title, setTitle] = useState(draft?.title ?? session?.title ?? '');
     const [done, setDone] = useState(session?.status === 'DONE');
-    const [items, setItems] = useState<Item[]>(session ? itemsFromServer(session.exercises) : []);
+    const [items, setItems] = useState<Item[]>(draft ? draft.items : session ? itemsFromServer(session.exercises) : []);
     const [saving, setSaving] = useState(false);
     // A planned session with any unchecked set is already in progress (its sets
     // were reset to "to-do" when it was started) — resume it instead of showing
     // the "Démarrer" gate, so returning to it never loses the ticked sets.
     const resuming = !!session && session.status === 'PLANNED' && session.exercises.some((e) => e.sets.some((s) => !s.done));
-    const [started, setStarted] = useState(resuming);
-    const [elapsed, setElapsed] = useState(0);
+    const [started, setStarted] = useState(draft?.started ?? resuming);
+    const [elapsed, setElapsed] = useState(draft?.elapsed ?? 0);
+
+    // Tell the user we brought their session back — doubles as the "alert" so a
+    // restore is never silent.
+    useEffect(() => {
+        if (draft) toast.success('Séance en cours restaurée.');
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Session chrono runs automatically once started.
     useEffect(() => {
@@ -173,12 +224,36 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
         return () => clearInterval(t);
     }, [started]);
 
+    // Persist a draft on every edit — validating a set mutates `items`, so each
+    // validated série is auto-saved. Read the elapsed time from a ref so the
+    // once-a-second tick doesn't rewrite the whole draft every second.
+    const elapsedRef = useRef(elapsed);
+    elapsedRef.current = elapsed;
+    useEffect(() => {
+        if (items.length === 0) return;
+        try {
+            const d: SessionDraft = { savedAt: Date.now(), date, title, started, elapsed: elapsedRef.current, items };
+            localStorage.setItem(draftKey, JSON.stringify(d));
+        } catch {
+            /* ignore quota / serialization errors */
+        }
+    }, [items, title, date, started, draftKey]);
+
+    const clearDraft = () => {
+        try {
+            localStorage.removeItem(draftKey);
+        } catch {
+            /* ignore */
+        }
+    };
+
     const post = (status: 'PLANNED' | 'DONE', duration: number | null) => {
         setSaving(true);
         router.post(
             '/muscu/agenda',
             { id: session?.id ?? null, date, title, note: '', status, templateId: session?.templateId ?? null, durationSeconds: duration, exercises: items },
             {
+                onSuccess: () => clearDraft(),
                 onError: (errors) => toast.error(Object.values(errors)[0] ?? "Impossible d'enregistrer la séance."),
                 onFinish: () => setSaving(false),
             },
@@ -187,7 +262,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
 
     const removeFromAgenda = () => {
         if (session && confirm("Retirer cette séance de l'agenda ?")) {
-            router.post(`/muscu/agenda/${session.id}/supprimer`, {}, { preserveScroll: true });
+            router.post(`/muscu/agenda/${session.id}/supprimer`, {}, { preserveScroll: true, onSuccess: () => clearDraft() });
         }
     };
 
