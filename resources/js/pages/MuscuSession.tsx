@@ -206,10 +206,15 @@ function SessionChrono({ storageKey, restartSignal = 0 }: { storageKey: string; 
 
 export default function MuscuSession({ catalog, muscles, equipments, session, lastByExercise }: Props) {
     const draftKey = `${DRAFT_PREFIX}${session?.id ?? 'new'}`;
-    // Restore a locally-saved draft (unless the session is already finished on
-    // the server) so returning to a session — even after a reload or an
-    // accidental back — never loses the in-progress work.
-    const [draft] = useState<SessionDraft | null>(() => (session?.status === 'DONE' ? null : readDraft(draftKey)));
+    // Restore a locally-saved draft so returning to a session — even after a
+    // reload or an accidental back — never loses the in-progress work. Only a
+    // genuinely started run is restored: otherwise merely opening a planned
+    // session (never started) would wrongly "restore" itself.
+    const [draft] = useState<SessionDraft | null>(() => {
+        if (session?.status === 'DONE') return null;
+        const d = readDraft(draftKey);
+        return d && d.started ? d : null;
+    });
 
     const [date, setDate] = useState(draft?.date ?? session?.date ?? today());
     const [title, setTitle] = useState(draft?.title ?? session?.title ?? '');
@@ -239,13 +244,15 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
         return () => clearInterval(t);
     }, [started]);
 
-    // Persist a draft on every edit — validating a set mutates `items`, so each
-    // validated série is auto-saved. Read the elapsed time from a ref so the
-    // once-a-second tick doesn't rewrite the whole draft every second.
+    // Persist a draft on every edit of a *started* session — validating a set
+    // mutates `items`, so each validated série is auto-saved. A planned session
+    // that hasn't been started is never drafted (so it can't self-restore).
+    // Read the elapsed time from a ref so the once-a-second tick doesn't
+    // rewrite the whole draft every second.
     const elapsedRef = useRef(elapsed);
     elapsedRef.current = elapsed;
     useEffect(() => {
-        if (items.length === 0) return;
+        if (!started || items.length === 0) return;
         try {
             const d: SessionDraft = { savedAt: Date.now(), date, title, started, elapsed: elapsedRef.current, items };
             localStorage.setItem(draftKey, JSON.stringify(d));
