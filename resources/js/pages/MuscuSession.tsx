@@ -1,7 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowLeft, Check, CircleCheck, Flag, Play, RotateCcw, Square, Timer, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Check, CircleCheck, Flag, Play, RotateCcw, Square, Timer, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/layouts/AppLayout';
 import { ExerciseEditor, itemsFromServer, type CatalogItem, type Item, type Option, type SetRow } from '@/muscu/ExerciseEditor';
@@ -204,6 +204,46 @@ function SessionChrono({ storageKey, restartSignal = 0 }: { storageKey: string; 
     );
 }
 
+interface ConfirmOptions {
+    title: string;
+    message?: string;
+    confirmLabel: string;
+    tone?: 'danger' | 'brand';
+    onConfirm: () => void;
+}
+
+/** Styled replacement for the native confirm() dialog, matching the app's sheets. */
+function ConfirmDialog({ opts, onClose }: { opts: ConfirmOptions | null; onClose: () => void }) {
+    if (opts === null) return null;
+    const danger = opts.tone === 'danger';
+    return (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-neutral-900/50 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
+            <div className="w-full max-w-sm rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+                <div className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${danger ? 'bg-rose-100 text-rose-600' : 'bg-brand-100 text-brand-600'}`}>
+                    <AlertTriangle size={22} />
+                </div>
+                <p className="text-center text-lg font-bold text-neutral-900">{opts.title}</p>
+                {opts.message && <p className="mt-1.5 text-center text-sm text-neutral-500">{opts.message}</p>}
+                <div className="mt-6 flex flex-col gap-2">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            opts.onConfirm();
+                            onClose();
+                        }}
+                        className={`w-full rounded-xl py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 ${danger ? 'bg-rose-600' : 'bg-brand-600'}`}
+                    >
+                        {opts.confirmLabel}
+                    </button>
+                    <button type="button" onClick={onClose} className="w-full rounded-xl py-3 text-sm font-semibold text-neutral-600 hover:bg-neutral-100">
+                        Annuler
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function MuscuSession({ catalog, muscles, equipments, session, lastByExercise }: Props) {
     const draftKey = `${DRAFT_PREFIX}${session?.id ?? 'new'}`;
     // Restore a locally-saved draft so returning to a session — even after a
@@ -229,6 +269,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
     const [elapsed, setElapsed] = useState(draft?.elapsed ?? 0);
     // Bumped each time a set is validated, to (re)start the rest chrono.
     const [chronoRestart, setChronoRestart] = useState(0);
+    const [confirmOpts, setConfirmOpts] = useState<ConfirmOptions | null>(null);
 
     // Tell the user we brought their session back — doubles as the "alert" so a
     // restore is never silent.
@@ -283,12 +324,16 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
     };
 
     const removeFromAgenda = () => {
-        if (session && confirm("Retirer cette séance de l'agenda ?")) {
-            router.post(`/muscu/agenda/${session.id}/supprimer`, {}, { preserveScroll: true, onSuccess: () => clearDraft() });
-        }
+        if (!session) return;
+        const id = session.id;
+        setConfirmOpts({
+            title: 'Retirer cette séance ?',
+            message: 'Elle sera retirée de ton agenda.',
+            confirmLabel: 'Retirer',
+            tone: 'danger',
+            onConfirm: () => router.post(`/muscu/agenda/${id}/supprimer`, {}, { preserveScroll: true, onSuccess: () => clearDraft() }),
+        });
     };
-
-    const QUIT_MESSAGE = 'Êtes-vous sûr de vouloir quitter la séance ? Votre progression en cours sera perdue.';
 
     // Discard the in-progress run (local draft + rest chrono). The planned
     // session on the server is left untouched.
@@ -301,30 +346,35 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
         }
     };
 
-    // In-app back button: confirm before leaving a running session.
+    // Ask to confirm leaving a running session, then discard and go back.
+    const requestQuit = () =>
+        setConfirmOpts({
+            title: 'Quitter la séance ?',
+            message: 'Votre progression en cours sera perdue.',
+            confirmLabel: 'Quitter',
+            tone: 'danger',
+            onConfirm: () => {
+                discardRun();
+                router.visit('/muscu');
+            },
+        });
+
+    // In-app back button.
     const goBack = () => {
-        if (started && items.length > 0) {
-            if (!confirm(QUIT_MESSAGE)) return;
-            discardRun();
-        }
-        router.visit('/muscu');
+        if (started && items.length > 0) requestQuit();
+        else router.visit('/muscu');
     };
 
-    // The in-app button above can't catch the phone's Android/browser back
-    // gesture, which fires a history popstate instead. While a session is
-    // running, keep a sentinel history entry so a back press lands here and we
-    // can confirm before actually leaving — cancelling re-arms the sentinel.
+    // The in-app button can't catch the phone's Android/browser back gesture,
+    // which fires a history popstate instead. While a session is running, keep a
+    // sentinel history entry so a back press lands here: we re-arm the sentinel
+    // (staying on the page) and open the same confirmation dialog.
     useEffect(() => {
         if (!started) return;
         window.history.pushState(window.history.state, '', window.location.href);
         const onPopState = () => {
-            if (confirm(QUIT_MESSAGE)) {
-                discardRun();
-                window.removeEventListener('popstate', onPopState);
-                window.history.back();
-            } else {
-                window.history.pushState(window.history.state, '', window.location.href);
-            }
+            window.history.pushState(window.history.state, '', window.location.href);
+            requestQuit();
         };
         window.addEventListener('popstate', onPopState);
         return () => window.removeEventListener('popstate', onPopState);
@@ -431,6 +481,8 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
                     )}
                 </div>
             </div>
+
+            <ConfirmDialog opts={confirmOpts} onClose={() => setConfirmOpts(null)} />
         </>
     );
 }
