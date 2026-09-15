@@ -406,7 +406,11 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
             </div>
 
             {started ? (
-                <div className="mb-4">
+                // Sticky just under the fixed header so the chrono stays in view
+                // while scrolling the exercises. Solid bg + no z-index/blur on
+                // purpose — a stacking context here would trap the chrono popup
+                // under the bottom action bar.
+                <div className="sticky top-16 -mx-4 mb-4 border-b border-neutral-200/70 bg-white px-4 py-2 shadow-sm sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 lg:-mx-10 lg:px-10">
                     <SessionChrono storageKey={session?.id ?? 'adhoc'} restartSignal={chronoRestart} />
                 </div>
             ) : session ? (
