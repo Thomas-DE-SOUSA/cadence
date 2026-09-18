@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, ChevronUp, Copy, History, Link2, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
+import { MuscleMap } from '@/muscu/MuscleMap';
 
 export interface CatalogItem {
     id: string;
@@ -366,7 +367,7 @@ function ProgressionChart({ values, dates }: { values: number[]; dates: string[]
  * progression chart (selectable metric), personal records, then every done
  * session with its date, position that day (order rotates weekly), and sets.
  */
-function ExerciseHistoryModal({ exerciseId, name, onClose }: { exerciseId: string; name: string; onClose: () => void }) {
+function ExerciseHistoryModal({ exerciseId, name, muscle, onClose }: { exerciseId: string; name: string; muscle?: string; onClose: () => void }) {
     const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
     const [failed, setFailed] = useState(false);
     const [metric, setMetric] = useState<MetricKey>('weight');
@@ -420,11 +421,14 @@ function ExerciseHistoryModal({ exerciseId, name, onClose }: { exerciseId: strin
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/50 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
             <div className="flex max-h-[88vh] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-start justify-between gap-2 border-b border-neutral-100 p-4">
-                    <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                            <History size={13} /> Historique
-                        </p>
-                        <p className="truncate text-base font-bold text-neutral-900">{name}</p>
+                    <div className="flex min-w-0 items-center gap-3">
+                        <MuscleMap muscle={muscle} className="h-14 w-14 shrink-0" />
+                        <div className="min-w-0">
+                            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                                <History size={13} /> Historique
+                            </p>
+                            <p className="truncate text-base font-bold text-neutral-900">{name}</p>
+                        </div>
                     </div>
                     <button onClick={onClose} className="shrink-0 rounded-lg p-2 text-neutral-400 hover:bg-neutral-100">
                         <X size={18} />
@@ -555,7 +559,13 @@ export function ExerciseEditor({
     const [pickerOpen, setPickerOpen] = useState(false);
     // Which exercise's history sheet is open (null = closed). Opened by the
     // per-exercise history button; loads on demand so the session isn't left.
-    const [historyFor, setHistoryFor] = useState<{ id: string; name: string } | null>(null);
+    const [historyFor, setHistoryFor] = useState<{ id: string; name: string; muscle?: string } | null>(null);
+    // Catalog lookup → the exercise's primary muscle, for the MuscleMap thumbnail.
+    const catalogById = useMemo(() => {
+        const m: Record<string, CatalogItem> = {};
+        for (const c of catalog) m[c.id] = c;
+        return m;
+    }, [catalog]);
 
     const addExercise = (e: CatalogItem) => {
         const last = lastByExercise[e.id];
@@ -609,8 +619,9 @@ export function ExerciseEditor({
                     className={`pb-4 ${group != null ? 'border-l-4 border-l-violet-400 pl-3' : ''} ${i < items.length - 1 ? 'mb-4 border-b border-neutral-200' : ''}`}
                 >
                     <div className={`flex items-start justify-between gap-2 ${collapsed ? '' : 'mb-2'}`}>
-                        <button onClick={() => patchItem(i, { collapsed: !collapsed })} className="flex min-w-0 flex-1 items-start gap-2 text-left">
-                            <div className="min-w-0">
+                        <button onClick={() => patchItem(i, { collapsed: !collapsed })} className="flex min-w-0 flex-1 items-start gap-2.5 text-left">
+                            <MuscleMap muscle={catalogById[it.exercise_id]?.muscle} className="mt-0.5 h-9 w-9 shrink-0" />
+                            <div className="min-w-0 flex-1">
                                 <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-neutral-800">
                                     <span className={`break-words ${execution ? 'text-brand-600' : ''}`}>{it.name}</span>
                                     {it.superset_group != null && (
@@ -679,7 +690,7 @@ export function ExerciseEditor({
                             )}
                             {/* Always present, pinned far-right so they line up across every card. */}
                             <button
-                                onClick={() => setHistoryFor({ id: it.exercise_id, name: it.name })}
+                                onClick={() => setHistoryFor({ id: it.exercise_id, name: it.name, muscle: catalogById[it.exercise_id]?.muscle })}
                                 title="Historique de l'exercice"
                                 className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-brand-600"
                             >
@@ -786,7 +797,7 @@ export function ExerciseEditor({
             </button>
 
             {pickerOpen && <ExercisePicker catalog={catalog} muscles={muscles} equipments={equipments} onPick={addExercise} onClose={() => setPickerOpen(false)} />}
-            {historyFor && <ExerciseHistoryModal exerciseId={historyFor.id} name={historyFor.name} onClose={() => setHistoryFor(null)} />}
+            {historyFor && <ExerciseHistoryModal exerciseId={historyFor.id} name={historyFor.name} muscle={historyFor.muscle} onClose={() => setHistoryFor(null)} />}
         </div>
     );
 }
