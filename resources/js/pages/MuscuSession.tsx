@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 import { AlertTriangle, ArrowLeft, Check, CircleCheck, Flag, Play, RotateCcw, Square, Timer, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -162,7 +163,8 @@ function SessionChrono({ storageKey, restartSignal = 0 }: { storageKey: string; 
                 {active ? <span className="tabular-nums">{mmss(elapsed)}</span> : 'Chrono'}
             </button>
 
-            {open && (
+            {open &&
+                createPortal(
                 <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/40 sm:items-center" onClick={() => setOpen(false)}>
                     <div className="w-full max-w-sm rounded-t-2xl bg-white p-6 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
                         <p className="text-center text-xs font-semibold uppercase tracking-wide text-neutral-400">Chrono</p>
@@ -198,8 +200,9 @@ function SessionChrono({ storageKey, restartSignal = 0 }: { storageKey: string; 
                             Fermer
                         </button>
                     </div>
-                </div>
-            )}
+                </div>,
+                    document.body,
+                )}
         </>
     );
 }
