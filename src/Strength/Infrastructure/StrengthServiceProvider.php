@@ -55,7 +55,7 @@ final class StrengthServiceProvider extends ServiceProvider
             new GeminiClient(
                 (string) config('services.gemini.key', ''),
                 (string) config('services.gemini.model'),
-                ['gemini-3.7-flash', 'gemini-3.8-flash'],
+                ['gemini-2.5-flash', 'gemini-2.0-flash'],
             ),
         ));
     }

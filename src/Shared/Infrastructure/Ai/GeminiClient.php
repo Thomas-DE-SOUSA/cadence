@@ -126,22 +126,52 @@ final class GeminiClient
      */
     private function post(string $path, array $body, bool $stream): \Illuminate\Http\Client\Response
     {
-        try {
-            $request = Http::withHeaders(['x-goog-api-key' => $this->apiKey])->timeout(180);
-            if ($stream) {
-                $request = $request->withOptions(['stream' => true]);
+        // Blocking calls retry transient overload — Gemini's free tier throws
+        // "high demand" 503/429 spikes that clear within seconds — with backoff.
+        $maxAttempts = $stream ? 1 : 3;
+        $delayMs = 600;
+        $lastError = null;
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $request = Http::withHeaders(['x-goog-api-key' => $this->apiKey])->timeout($stream ? 180 : 45);
+                if ($stream) {
+                    $request = $request->withOptions(['stream' => true]);
+                }
+                $response = $request->post(self::BASE.$path, $body);
+            } catch (Throwable $e) {
+                $lastError = new RuntimeException('Gemini est indisponible : '.$e->getMessage(), 0, $e);
+                if ($attempt < $maxAttempts) {
+                    usleep($delayMs * 1000);
+                    $delayMs *= 2;
+
+                    continue;
+                }
+
+                throw $lastError;
             }
-            $response = $request->post(self::BASE.$path, $body);
-        } catch (Throwable $e) {
-            throw new RuntimeException('Gemini est indisponible : '.$e->getMessage(), 0, $e);
+
+            if ($response->failed()) {
+                $status = $response->status();
+                $detail = $response->json('error.message');
+                $message = 'Gemini est indisponible (HTTP '.$status.')'.(is_string($detail) ? ' : '.$detail : '').'.';
+
+                // Retry transient overload/rate-limit; fail fast on client errors (4xx).
+                if (in_array($status, [429, 500, 502, 503, 504], true) && $attempt < $maxAttempts) {
+                    $lastError = new RuntimeException($message);
+                    usleep($delayMs * 1000);
+                    $delayMs *= 2;
+
+                    continue;
+                }
+
+                throw new RuntimeException($message);
+            }
+
+            return $response;
         }
 
-        if ($response->failed()) {
-            $detail = $response->json('error.message');
-            throw new RuntimeException('Gemini est indisponible (HTTP '.$response->status().')'.(is_string($detail) ? ' : '.$detail : '').'.');
-        }
-
-        return $response;
+        throw $lastError ?? new RuntimeException('Gemini est indisponible.');
     }
 
     /**
