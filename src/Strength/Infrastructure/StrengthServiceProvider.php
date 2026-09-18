@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Cadence\Strength\Infrastructure;
 
-use Cadence\Shared\Infrastructure\Ai\GeminiClient;
+use Cadence\Shared\Infrastructure\Ai\AnthropicClient;
 use Cadence\Strength\Application\Port\FoodEstimator;
 use Cadence\Strength\Domain\Port\ExerciseRepository;
 use Cadence\Strength\Domain\Port\MuscuProfileRepository;
@@ -12,7 +12,7 @@ use Cadence\Strength\Domain\Port\NutritionEntryRepository;
 use Cadence\Strength\Domain\Port\StrengthSessionRepository;
 use Cadence\Strength\Domain\Port\WeightEntryRepository;
 use Cadence\Strength\Domain\Port\WorkoutTemplateRepository;
-use Cadence\Strength\Infrastructure\Ai\GeminiFoodEstimator;
+use Cadence\Strength\Infrastructure\Ai\AnthropicFoodEstimator;
 use Cadence\Strength\Infrastructure\Http\Controller\AddCustomExerciseController;
 use Cadence\Strength\Infrastructure\Http\Controller\DeleteNutritionEntryController;
 use Cadence\Strength\Infrastructure\Http\Controller\EstimateNutritionController;
@@ -52,11 +52,12 @@ final class StrengthServiceProvider extends ServiceProvider
         $this->app->bind(MuscuProfileRepository::class, EloquentMuscuProfileRepository::class);
         $this->app->bind(WeightEntryRepository::class, EloquentWeightEntryRepository::class);
         $this->app->bind(NutritionEntryRepository::class, EloquentNutritionEntryRepository::class);
-        $this->app->bind(FoodEstimator::class, fn (): GeminiFoodEstimator => new GeminiFoodEstimator(
-            new GeminiClient(
-                (string) config('services.gemini.key', ''),
-                'gemini-3.6-flash', // current, stable; the -latest alias is 503-prone under load
-                ['gemini-flash-latest', 'gemini-flash-lite-latest'],
+        // Food estimation runs on Claude (Haiku) — reliable, strict-JSON output,
+        // no free-tier overload spikes. Swap the model via ANTHROPIC_MODEL.
+        $this->app->bind(FoodEstimator::class, fn (): AnthropicFoodEstimator => new AnthropicFoodEstimator(
+            new AnthropicClient(
+                (string) config('services.anthropic.key', ''),
+                (string) config('services.anthropic.model', 'claude-haiku-4-5'),
             ),
         ));
     }
