@@ -19,5 +19,7 @@ interface NutritionEntryRepository
      */
     public function forDate(TenantId $tenant, string $date): array;
 
+    public function find(TenantId $tenant, string $id): ?NutritionEntry;
+
     public function delete(TenantId $tenant, string $id): void;
 }

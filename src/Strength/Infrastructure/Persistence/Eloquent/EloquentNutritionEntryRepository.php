@@ -25,6 +25,7 @@ final class EloquentNutritionEntryRepository implements NutritionEntryRepository
                 'protein_g' => $entry->proteinG,
                 'fat_g' => $entry->fatG,
                 'carbs_g' => $entry->carbsG,
+                'status' => $entry->status,
             ]);
         } catch (Throwable $e) {
             throw new PersistenceFailure('Could not persist the nutrition entry.', 0, $e);
@@ -40,6 +41,16 @@ final class EloquentNutritionEntryRepository implements NutritionEntryRepository
             ->get();
 
         return array_values($models->map(fn (NutritionEntryModel $m): NutritionEntry => $this->toDomain($m))->all());
+    }
+
+    public function find(TenantId $tenant, string $id): ?NutritionEntry
+    {
+        $model = NutritionEntryModel::query()
+            ->where('tenant_id', $tenant->value)
+            ->where('id', $id)
+            ->first();
+
+        return $model !== null ? $this->toDomain($model) : null;
     }
 
     public function delete(TenantId $tenant, string $id): void
@@ -61,6 +72,7 @@ final class EloquentNutritionEntryRepository implements NutritionEntryRepository
             $m->protein_g,
             $m->fat_g,
             $m->carbs_g,
+            $m->status ?? 'done',
         );
     }
 }

@@ -15,6 +15,7 @@ use Cadence\Strength\Domain\Port\WorkoutTemplateRepository;
 use Cadence\Strength\Infrastructure\Ai\GeminiFoodEstimator;
 use Cadence\Strength\Infrastructure\Http\Controller\AddCustomExerciseController;
 use Cadence\Strength\Infrastructure\Http\Controller\DeleteNutritionEntryController;
+use Cadence\Strength\Infrastructure\Http\Controller\EstimateNutritionController;
 use Cadence\Strength\Infrastructure\Http\Controller\LogNutritionController;
 use Cadence\Strength\Infrastructure\Http\Controller\SaveMuscuProfileController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowMuscuProfileController;
@@ -75,6 +76,7 @@ final class StrengthServiceProvider extends ServiceProvider
             // Nutrition: daily food log (AI-estimated) vs. lean-bulk targets.
             Route::get('/nutrition', ShowNutritionController::class)->name('muscu.nutrition');
             Route::post('/nutrition', LogNutritionController::class)->name('muscu.nutrition.log');
+            Route::post('/nutrition/{id}/estimer', EstimateNutritionController::class)->name('muscu.nutrition.estimate');
             Route::post('/nutrition/{id}/supprimer', DeleteNutritionEntryController::class)->name('muscu.nutrition.delete');
 
             // Muscu profile (goal, level, equipment, priorities…).

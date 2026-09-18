@@ -6,16 +6,15 @@ namespace Cadence\Strength\Infrastructure\Http\Controller;
 
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Application\TenantContext;
-use Cadence\Strength\Application\Port\Exception\FoodEstimationFailed;
 use Cadence\Strength\Application\UseCase\LogFood\LogFoodInput;
-use Cadence\Strength\Application\UseCase\LogFood\LogFoodUseCase;
+use Cadence\Strength\Application\UseCase\LogFood\LogPendingFoodUseCase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 final class LogNutritionController
 {
     public function __construct(
-        private readonly LogFoodUseCase $useCase,
+        private readonly LogPendingFoodUseCase $useCase,
         private readonly TenantContext $tenantContext,
     ) {
     }
@@ -32,21 +31,14 @@ final class LogNutritionController
         ]);
 
         $date = isset($data['date']) ? (string) $data['date'] : null;
-        $back = redirect()->route('muscu.nutrition', $date !== null ? ['date' => $date] : []);
 
-        try {
-            $saved = $this->useCase->execute(
-                new LogFoodInput((string) $data['text'], (string) $data['meal'], $date),
-                new ExecutionContext($this->tenantContext->current()),
-            );
-        } catch (FoodEstimationFailed) {
-            return $back->with('error', "L'estimation IA a échoué. Réessaie dans un instant.");
-        }
+        // Save instantly as "pending"; the client then triggers the AI estimation
+        // (muscu.nutrition.estimate), so this request never waits on Gemini.
+        $this->useCase->execute(
+            new LogFoodInput((string) $data['text'], (string) $data['meal'], $date),
+            new ExecutionContext($this->tenantContext->current()),
+        );
 
-        if ($saved === []) {
-            return $back->with('error', "Je n'ai rien reconnu à estimer. Reformule un peu.");
-        }
-
-        return $back->with('status', count($saved).' aliment(s) ajouté(s).');
+        return redirect()->route('muscu.nutrition', $date !== null ? ['date' => $date] : []);
     }
 }

@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Loader2, Moon, Sun, Sunrise, Trash2, Utensils } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -18,6 +18,7 @@ interface Entry {
     protein: number;
     fat: number;
     carbs: number;
+    status: 'pending' | 'done' | 'failed';
 }
 interface Meal extends Macro {
     key: 'matin' | 'midi' | 'soir';
@@ -99,6 +100,21 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
     };
 
     const remove = (id: string) => router.post(`/muscu/nutrition/${id}/supprimer`, { date }, { preserveScroll: true });
+
+    // Deferred AI estimation: a freshly-logged entry is "pending" and gets its
+    // macros filled in by a background request, one at a time (so the initial
+    // log stays instant and never waits on the AI). Failed ones can be retried.
+    const estimating = useRef<Set<string>>(new Set());
+    const estimate = (id: string) => {
+        if (estimating.current.has(id)) return;
+        estimating.current.add(id);
+        router.post(`/muscu/nutrition/${id}/estimer`, { date }, { preserveScroll: true, onFinish: () => estimating.current.delete(id) });
+    };
+    useEffect(() => {
+        const next = meals.flatMap((m) => m.entries).find((e) => e.status === 'pending' && !estimating.current.has(e.id));
+        if (next) estimate(next.id);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [meals]);
 
     const kcalPct = Math.min(100, daily.kcal > 0 ? (totals.kcal / daily.kcal) * 100 : 0);
     const kcalOver = totals.kcal > daily.kcal;
@@ -224,10 +240,18 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
                                     {m.entries.map((e) => (
                                         <li key={e.id} className="flex items-start justify-between gap-2 border-b border-neutral-100 py-2.5 last:border-b-0">
                                             <div className="min-w-0">
-                                                <p className="text-sm font-medium text-neutral-800">{e.description}</p>
-                                                <p className="text-xs text-neutral-500">
-                                                    {e.kcal} kcal · P {e.protein} · G {e.carbs} · L {e.fat}
-                                                </p>
+                                                <p className={`text-sm font-medium ${e.status === 'pending' ? 'text-neutral-400' : 'text-neutral-800'}`}>{e.description}</p>
+                                                {e.status === 'pending' ? (
+                                                    <p className="flex items-center gap-1.5 text-xs text-neutral-400">
+                                                        <Loader2 size={12} className="animate-spin" /> Estimation en cours…
+                                                    </p>
+                                                ) : e.status === 'failed' ? (
+                                                    <button onClick={() => estimate(e.id)} className="text-xs font-semibold text-brand-600">Estimation échouée — réessayer</button>
+                                                ) : (
+                                                    <p className="text-xs text-neutral-500">
+                                                        {e.kcal} kcal · P {e.protein} · G {e.carbs} · L {e.fat}
+                                                    </p>
+                                                )}
                                             </div>
                                             <button onClick={() => remove(e.id)} className="shrink-0 rounded-md p-1.5 text-neutral-400 hover:bg-red-50 hover:text-red-500" aria-label="Supprimer">
                                                 <Trash2 size={15} />

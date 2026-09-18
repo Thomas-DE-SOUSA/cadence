@@ -23,9 +23,14 @@ final readonly class NutritionEntry
         public int $proteinG,
         public int $fatG,
         public int $carbsG,
+        public string $status = 'done', // pending = awaiting AI estimation, done, failed
     ) {
         if (trim($description) === '') {
             throw new InvalidArgumentException('A nutrition entry needs a description.');
+        }
+
+        if (! in_array($status, ['pending', 'done', 'failed'], true)) {
+            throw new InvalidArgumentException(sprintf('Unknown nutrition status "%s".', $status));
         }
 
         foreach (['kcal' => $kcal, 'proteinG' => $proteinG, 'fatG' => $fatG, 'carbsG' => $carbsG] as $label => $value) {

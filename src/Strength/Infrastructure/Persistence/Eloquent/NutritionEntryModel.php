@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $protein_g
  * @property int $fat_g
  * @property int $carbs_g
+ * @property string $status
  */
 final class NutritionEntryModel extends Model
 {
@@ -26,7 +27,7 @@ final class NutritionEntryModel extends Model
     protected $keyType = 'string';
 
     /** @var list<string> */
-    protected $fillable = ['id', 'tenant_id', 'logged_date', 'meal', 'description', 'kcal', 'protein_g', 'fat_g', 'carbs_g'];
+    protected $fillable = ['id', 'tenant_id', 'logged_date', 'meal', 'description', 'kcal', 'protein_g', 'fat_g', 'carbs_g', 'status'];
 
     /** @var array<string, string> */
     protected $casts = [

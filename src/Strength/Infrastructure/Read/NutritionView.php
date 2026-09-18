@@ -59,6 +59,7 @@ final class NutritionView
                     'protein' => $e->proteinG,
                     'fat' => $e->fatG,
                     'carbs' => $e->carbsG,
+                    'status' => $e->status,
                 ];
                 $sub['kcal'] += $e->kcal;
                 $sub['protein'] += $e->proteinG;

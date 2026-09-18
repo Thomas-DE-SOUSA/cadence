@@ -5,9 +5,12 @@ declare(strict_types=1);
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Domain\TenantId;
 use Cadence\Strength\Application\Port\EstimatedFood;
+use Cadence\Strength\Application\Port\Exception\FoodEstimationFailed;
 use Cadence\Strength\Application\Port\FoodEstimator;
+use Cadence\Strength\Application\UseCase\LogFood\EstimateFoodUseCase;
 use Cadence\Strength\Application\UseCase\LogFood\LogFoodInput;
 use Cadence\Strength\Application\UseCase\LogFood\LogFoodUseCase;
+use Cadence\Strength\Application\UseCase\LogFood\LogPendingFoodUseCase;
 use Cadence\Strength\Application\UseCase\RemoveNutritionEntry\RemoveNutritionEntryUseCase;
 use Cadence\Strength\Domain\Port\NutritionEntryRepository;
 use Cadence\Strength\Infrastructure\Read\NutritionView;
@@ -26,6 +29,15 @@ final class FakeFoodEstimator implements FoodEstimator
     public function estimate(string $text): array
     {
         return $this->foods;
+    }
+}
+
+/** An estimator that always fails, standing in for a Gemini outage. */
+final class ThrowingFoodEstimator implements FoodEstimator
+{
+    public function estimate(string $text): array
+    {
+        throw new FoodEstimationFailed('outage');
     }
 }
 
@@ -98,5 +110,42 @@ describe('Feature: nutrition daily tracking', function (): void {
 
         expect(app(NutritionEntryRepository::class)->forDate(nutritionCtx('tenant-thomas')->tenant, '2026-09-09'))->toHaveCount(1);
         expect(app(NutritionEntryRepository::class)->forDate(nutritionCtx('tenant-other')->tenant, '2026-09-09'))->toHaveCount(0);
+    });
+
+    it('logs a pending entry instantly, then estimation fills the macros', function (): void {
+        $entry = app(LogPendingFoodUseCase::class)->execute(new LogFoodInput('skyr + flocons', 'matin', '2026-09-09'), nutritionCtx());
+        expect($entry->status)->toBe('pending');
+
+        $pending = app(NutritionEntryRepository::class)->forDate(nutritionCtx()->tenant, '2026-09-09');
+        expect($pending)->toHaveCount(1);
+        expect($pending[0]->status)->toBe('pending');
+        expect($pending[0]->kcal)->toBe(0);
+
+        bindEstimator([new EstimatedFood('Skyr', 100, 17, 0, 8), new EstimatedFood('Flocons', 190, 6, 4, 33)]);
+        $saved = app(EstimateFoodUseCase::class)->execute($entry->id, nutritionCtx());
+        expect($saved)->toHaveCount(2);
+
+        $entries = app(NutritionEntryRepository::class)->forDate(nutritionCtx()->tenant, '2026-09-09');
+        expect($entries)->toHaveCount(2);
+        expect(collect($entries)->pluck('status')->all())->toBe(['done', 'done']);
+        expect(NutritionView::day('2026-09-09', $entries)['totals']['kcal'])->toBe(290);
+    });
+
+    it('marks the entry failed on estimation error and can be retried', function (): void {
+        $entry = app(LogPendingFoodUseCase::class)->execute(new LogFoodInput('un truc', 'soir', '2026-09-09'), nutritionCtx());
+
+        app()->instance(FoodEstimator::class, new ThrowingFoodEstimator());
+        expect(app(EstimateFoodUseCase::class)->execute($entry->id, nutritionCtx()))->toBe([]);
+
+        $failed = app(NutritionEntryRepository::class)->forDate(nutritionCtx()->tenant, '2026-09-09');
+        expect($failed)->toHaveCount(1);
+        expect($failed[0]->status)->toBe('failed');
+
+        bindEstimator([new EstimatedFood('Truc', 50, 1, 1, 1)]);
+        expect(app(EstimateFoodUseCase::class)->execute($entry->id, nutritionCtx()))->toHaveCount(1);
+
+        $done = app(NutritionEntryRepository::class)->forDate(nutritionCtx()->tenant, '2026-09-09');
+        expect($done)->toHaveCount(1);
+        expect($done[0]->status)->toBe('done');
     });
 });
