@@ -296,17 +296,22 @@ const setText = (s: HistorySet): string => {
     return '—';
 };
 
-type MetricKey = 'weight' | 'e1rm' | 'volume';
-const METRICS: { key: MetricKey; label: string }[] = [
-    { key: 'weight', label: 'Plus gros poids' },
-    { key: 'e1rm', label: 'Meilleur 1RM' },
-    { key: 'volume', label: 'Volume' },
-];
+type MetricKey = 'weight' | 'e1rm' | 'volume' | 'reps' | 'totalReps';
+const METRIC_LABEL: Record<MetricKey, string> = {
+    weight: 'Plus gros poids',
+    e1rm: 'Meilleur 1RM',
+    volume: 'Volume',
+    reps: 'Reps max',
+    totalReps: 'Reps totales',
+};
 const workingSets = (e: HistoryEntry): HistorySet[] => e.sets.filter((s) => !s.isWarmup);
 const entryMetric = (e: HistoryEntry, k: MetricKey): number => {
+    const ws = workingSets(e);
     if (k === 'e1rm') return e.bestE1rm;
-    if (k === 'weight') return workingSets(e).reduce((m, s) => Math.max(m, s.weightKg ?? 0), 0);
-    return workingSets(e).reduce((m, s) => Math.max(m, (s.weightKg ?? 0) * (s.reps ?? 0)), 0); // best set volume
+    if (k === 'weight') return ws.reduce((m, s) => Math.max(m, s.weightKg ?? 0), 0);
+    if (k === 'reps') return ws.reduce((m, s) => Math.max(m, s.reps ?? 0), 0);
+    if (k === 'totalReps') return ws.reduce((m, s) => m + (s.reps ?? 0), 0);
+    return ws.reduce((m, s) => Math.max(m, (s.weightKg ?? 0) * (s.reps ?? 0)), 0); // best set volume
 };
 
 /** Hand-rolled SVG line chart (no chart lib in the project). Chronological left → right. */
@@ -340,9 +345,9 @@ function ProgressionChart({ values, dates }: { values: number[]; dates: string[]
                     </g>
                 );
             })}
-            {n > 1 && <polyline points={line} fill="none" stroke="rgb(242 103 34)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />}
+            {n > 1 && <polyline points={line} fill="none" stroke="var(--color-brand-500, #2979ff)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />}
             {values.map((v, i) => (
-                <circle key={i} cx={x(i)} cy={y(v)} r={n > 30 ? 1.5 : 2.5} fill="rgb(242 103 34)" />
+                <circle key={i} cx={x(i)} cy={y(v)} r={n > 30 ? 1.5 : 2.5} fill="var(--color-brand-500, #2979ff)" />
             ))}
             {n > 0 && (
                 <>
@@ -369,7 +374,7 @@ function ProgressionChart({ values, dates }: { values: number[]; dates: string[]
 function ExerciseHistoryModal({ exerciseId, name, onClose }: { exerciseId: string; name: string; onClose: () => void }) {
     const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
     const [failed, setFailed] = useState(false);
-    const [metric, setMetric] = useState<MetricKey>('weight');
+    const [metric, setMetric] = useState<MetricKey | null>(null);
 
     useEffect(() => {
         let alive = true;
@@ -391,28 +396,50 @@ function ExerciseHistoryModal({ exerciseId, name, onClose }: { exerciseId: strin
     const all = entries ?? [];
     const bestOverall = all.reduce((m, e) => Math.max(m, e.bestE1rm), 0);
 
-    // Personal records across every set ever logged for this exercise.
+    // Personal records across every set / session ever logged.
     let pgp = 0; // plus gros poids
     let best1rm = 0;
     let bestVol = 0;
     let bestVolSet: { w: number; r: number } | null = null;
+    let bestReps = 0;
+    let bestTotalReps = 0;
     for (const e of all) {
+        let sessionReps = 0;
         for (const s of e.sets) {
             if (s.isWarmup) continue;
             const w = s.weightKg ?? 0;
             const r = s.reps ?? 0;
             pgp = Math.max(pgp, w);
             best1rm = Math.max(best1rm, s.e1rm);
+            bestReps = Math.max(bestReps, r);
+            sessionReps += r;
             if (w * r > bestVol) {
                 bestVol = w * r;
                 bestVolSet = { w, r };
             }
         }
+        bestTotalReps = Math.max(bestTotalReps, sessionReps);
     }
+
+    // Weighted vs bodyweight exercise → different metrics & records, so
+    // bodyweight moves (pompes, gainage, tractions…) still get a real curve.
+    const hasWeight = pgp > 0;
+    const shownMetrics: MetricKey[] = hasWeight ? ['weight', 'e1rm', 'volume', 'reps'] : ['reps', 'totalReps'];
+    const activeMetric: MetricKey = metric && shownMetrics.includes(metric) ? metric : shownMetrics[0];
+    const records = hasWeight
+        ? [
+              { label: 'Plus gros poids', value: pgp > 0 ? `${pgp} kg` : '—' },
+              { label: 'Meilleur 1RM', value: best1rm > 0 ? `${best1rm} kg` : '—' },
+              { label: 'Meilleur volume de série', value: bestVolSet ? `${bestVolSet.w} kg × ${bestVolSet.r}` : '—' },
+          ]
+        : [
+              { label: 'Reps max (une série)', value: bestReps > 0 ? `${bestReps} reps` : '—' },
+              { label: 'Meilleur total (séance)', value: bestTotalReps > 0 ? `${bestTotalReps} reps` : '—' },
+          ];
 
     // Chart data, chronological (oldest → newest).
     const chrono = [...all].reverse();
-    const chartValues = chrono.map((e) => entryMetric(e, metric));
+    const chartValues = chrono.map((e) => entryMetric(e, activeMetric));
     const chartDates = chrono.map((e) => e.date);
     const hasChart = chartValues.some((v) => v > 0);
 
@@ -442,40 +469,34 @@ function ExerciseHistoryModal({ exerciseId, name, onClose }: { exerciseId: strin
                         <>
                             {/* Progression chart + metric selector */}
                             <div className="mb-1 flex flex-wrap gap-1.5">
-                                {METRICS.map((m) => (
+                                {shownMetrics.map((m) => (
                                     <button
-                                        key={m.key}
-                                        onClick={() => setMetric(m.key)}
+                                        key={m}
+                                        onClick={() => setMetric(m)}
                                         className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                                            metric === m.key ? 'bg-brand-600 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+                                            activeMetric === m ? 'bg-brand-600 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
                                         }`}
                                     >
-                                        {m.label}
+                                        {METRIC_LABEL[m]}
                                     </button>
                                 ))}
                             </div>
                             {hasChart ? (
                                 <ProgressionChart values={chartValues} dates={chartDates} />
                             ) : (
-                                <p className="py-6 text-center text-xs text-neutral-400">Pas de données chiffrées pour cette métrique.</p>
+                                <p className="py-6 text-center text-xs text-neutral-400">Pas assez de données pour tracer une courbe.</p>
                             )}
 
                             {/* Personal records */}
                             <div className="mt-2 rounded-xl border border-neutral-200">
                                 <p className="border-b border-neutral-100 px-3 py-2 text-sm font-bold text-neutral-800">🏅 Records personnels</p>
                                 <div className="divide-y divide-neutral-100 text-sm">
-                                    <div className="flex items-center justify-between px-3 py-2">
-                                        <span className="text-neutral-500">Plus gros poids</span>
-                                        <span className="font-bold text-brand-600">{pgp > 0 ? `${pgp} kg` : '—'}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between px-3 py-2">
-                                        <span className="text-neutral-500">Meilleur 1RM</span>
-                                        <span className="font-bold text-brand-600">{best1rm > 0 ? `${best1rm} kg` : '—'}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between px-3 py-2">
-                                        <span className="text-neutral-500">Meilleur volume de série</span>
-                                        <span className="font-bold text-brand-600">{bestVolSet ? `${bestVolSet.w} kg × ${bestVolSet.r}` : '—'}</span>
-                                    </div>
+                                    {records.map((rec) => (
+                                        <div key={rec.label} className="flex items-center justify-between px-3 py-2">
+                                            <span className="text-neutral-500">{rec.label}</span>
+                                            <span className="font-bold text-brand-600">{rec.value}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
