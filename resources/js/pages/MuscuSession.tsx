@@ -47,7 +47,7 @@ interface SessionDraft {
     date: string;
     title: string;
     started: boolean;
-    elapsed: number;
+    startedAt: number | null; // epoch ms when the session started (for total duration)
     items: Item[];
 }
 
@@ -64,7 +64,7 @@ function readDraft(key: string): SessionDraft | null {
                 date: d.date,
                 title: typeof d.title === 'string' ? d.title : '',
                 started: d.started === true,
-                elapsed: typeof d.elapsed === 'number' ? d.elapsed : 0,
+                startedAt: typeof d.startedAt === 'number' ? d.startedAt : null,
                 items: d.items as Item[],
             };
         }
@@ -266,7 +266,10 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
     // the "Démarrer" gate, so returning to it never loses the ticked sets.
     const resuming = !!session && session.status === 'PLANNED' && session.exercises.some((e) => e.sets.some((s) => !s.done));
     const [started, setStarted] = useState(draft?.started ?? resuming);
-    const [elapsed, setElapsed] = useState(draft?.elapsed ?? 0);
+    // Total-session chrono: just the start timestamp. Duration is computed as
+    // (now − startedAt) on finish — robust to backgrounding/reload, and never
+    // shown during the session (it only feeds the agenda). Not a ticking state.
+    const [startedAt, setStartedAt] = useState<number | null>(draft?.startedAt ?? null);
     // Bumped each time a set is validated, to (re)start the rest chrono.
     const [chronoRestart, setChronoRestart] = useState(0);
     const [confirmOpts, setConfirmOpts] = useState<ConfirmOptions | null>(null);
@@ -278,24 +281,24 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Session chrono runs automatically once started.
+    // Stamp the start time the moment the session becomes started (Démarrer, or
+    // a resumed session that has no stamp yet).
     useEffect(() => {
-        if (!started) return;
-        const t = setInterval(() => setElapsed((s) => s + 1), 1000);
-        return () => clearInterval(t);
-    }, [started]);
+        if (started && startedAt === null) setStartedAt(Date.now());
+    }, [started, startedAt]);
+
+    // Elapsed seconds since the session started (null if not started).
+    const sessionDuration = (): number | null => (startedAt !== null ? Math.max(1, Math.round((Date.now() - startedAt) / 1000)) : null);
 
     // Persist a draft on every edit of a *started* session — validating a set
     // mutates `items`, so each validated série is auto-saved. A planned session
     // that hasn't been started is never drafted (so it can't self-restore).
-    // Read the elapsed time from a ref so the once-a-second tick doesn't
-    // rewrite the whole draft every second.
-    const elapsedRef = useRef(elapsed);
-    elapsedRef.current = elapsed;
+    const startedAtRef = useRef(startedAt);
+    startedAtRef.current = startedAt;
     useEffect(() => {
         if (!started || items.length === 0) return;
         try {
-            const d: SessionDraft = { savedAt: Date.now(), date, title, started, elapsed: elapsedRef.current, items };
+            const d: SessionDraft = { savedAt: Date.now(), date, title, started, startedAt: startedAtRef.current, items };
             localStorage.setItem(draftKey, JSON.stringify(d));
         } catch {
             /* ignore quota / serialization errors */
@@ -476,7 +479,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
                     </span>
                     {started ? (
                         <button
-                            onClick={() => post('DONE', elapsed)}
+                            onClick={() => post('DONE', sessionDuration())}
                             disabled={saving || items.length === 0}
                             className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-40"
                         >

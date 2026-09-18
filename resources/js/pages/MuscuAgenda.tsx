@@ -9,8 +9,17 @@ interface DaySession {
     id: string;
     title: string;
     status: 'PLANNED' | 'DONE';
-    totalSets: number;
-    volumeKg: number;
+    durationSeconds: number | null;
+}
+
+/** Session length for the agenda: "45 min", "1 h 05". */
+function formatDuration(sec: number): string {
+    const m = Math.round(sec / 60);
+    if (m < 1) return `${sec}s`;
+    if (m < 60) return `${m} min`;
+    const h = Math.floor(m / 60);
+    const mm = m % 60;
+    return mm ? `${h} h ${String(mm).padStart(2, '0')}` : `${h} h`;
 }
 interface Day {
     date: string;
@@ -127,8 +136,7 @@ export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: 
                                             <CircleCheck size={16} className={s.status === 'DONE' ? 'text-brand-600' : 'text-neutral-300'} />
                                             <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-800">{s.title || 'Séance'}</span>
                                             <span className="shrink-0 text-xs text-neutral-400">
-                                                {s.totalSets > 0 && `${s.totalSets} séries`}
-                                                {s.status === 'DONE' && s.volumeKg > 0 && ` · ${s.volumeKg.toLocaleString('fr-FR')} kg`}
+                                                {s.status === 'DONE' && s.durationSeconds ? formatDuration(s.durationSeconds) : ''}
                                             </span>
                                             <ChevronRight size={16} className="shrink-0 text-neutral-300" />
                                         </Link>
