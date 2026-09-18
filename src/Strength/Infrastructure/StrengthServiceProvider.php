@@ -54,8 +54,8 @@ final class StrengthServiceProvider extends ServiceProvider
         $this->app->bind(FoodEstimator::class, fn (): GeminiFoodEstimator => new GeminiFoodEstimator(
             new GeminiClient(
                 (string) config('services.gemini.key', ''),
-                (string) config('services.gemini.model'),
-                ['gemini-2.5-flash', 'gemini-2.0-flash'],
+                'gemini-3.6-flash', // current, stable; the -latest alias is 503-prone under load
+                ['gemini-flash-latest', 'gemini-flash-lite-latest'],
             ),
         ));
     }
