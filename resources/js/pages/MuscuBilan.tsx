@@ -3,7 +3,6 @@ import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Dumbbell, Scale, Send, Sparkles } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
 
 interface Strength {
     hasData: boolean;
@@ -88,7 +87,7 @@ function StrengthCard({ s }: { s: Strength }) {
     const max = Math.max(...s.muscleBalance.map((m) => m.sets), 1);
     return (
         <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="grid grid-cols-3 gap-4">
                 <Stat value={`${s.sessions}`} label={`séance${s.sessions > 1 ? 's' : ''}`} hint={`${s.prevSessions} sem. préc.`} />
                 <Stat value={fmtKg(s.tonnageKg)} label="kg soulevés" hint={`${fmtKg(s.prevTonnageKg)} préc.`} />
                 <Stat value={`${s.workingSets}`} label="séries" hint={`${s.legSessions} jambes`} />
@@ -123,9 +122,9 @@ function StrengthCard({ s }: { s: Strength }) {
 
 function Stat({ value, label, hint }: { value: string; label: string; hint: string }) {
     return (
-        <div className="rounded-xl bg-neutral-50 px-2 py-3">
-            <p className="text-xl font-extrabold tabular-nums text-neutral-900">{value}</p>
-            <p className="text-[11px] text-neutral-500">{label}</p>
+        <div>
+            <p className="text-xs text-neutral-400">{label}</p>
+            <p className="text-lg font-bold tabular-nums text-neutral-900">{value}</p>
             <p className="text-[10px] text-neutral-400">{hint}</p>
         </div>
     );
@@ -222,12 +221,16 @@ export default function MuscuBilan({ weekStart, weekEnd, goal, strength, thread:
                 </div>
             </div>
 
-            <Card title={<span className="inline-flex items-center gap-1.5"><Dumbbell size={15} className="text-brand-600" /> Ta semaine — muscu</span>}>
+            <section className="border-b border-neutral-200 pb-5">
+                <h2 className="mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-neutral-800">
+                    <Dumbbell size={15} className="text-brand-600" /> Ta semaine — muscu
+                </h2>
                 <StrengthCard s={strength} />
-            </Card>
+            </section>
 
-            <div className="mt-4">
-                <Card title="Le verdict du coach">
+            <div className="mt-5">
+                <section>
+                    <h2 className="mb-4 text-sm font-bold text-neutral-800">Le verdict du coach</h2>
                     {!hasThread && !streaming && !live && (
                         <p className="mb-3 text-sm text-neutral-500">Le coach croise ta course et ta muscu pour te dire si la semaine est bonne et quoi ajuster.</p>
                     )}
@@ -279,7 +282,7 @@ export default function MuscuBilan({ weekStart, weekEnd, goal, strength, thread:
                             </button>
                         </div>
                     )}
-                </Card>
+                </section>
             </div>
         </>
     );

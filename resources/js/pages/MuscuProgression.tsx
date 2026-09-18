@@ -3,7 +3,6 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Activity, CalendarCheck, Dumbbell, Layers, SlidersHorizontal, TrendingUp } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
 
 interface Weekly {
     label: string;
@@ -96,7 +95,7 @@ function ExerciseCard({ ex, samePos }: { ex: ExerciseProg; samePos: boolean }) {
     const recent = [...pts].slice(-5).reverse();
 
     return (
-        <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm shadow-neutral-200/60">
+        <div>
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                     <p className="truncate font-bold text-neutral-900">{ex.name}</p>
@@ -152,7 +151,7 @@ function ByExercise({ progression }: { progression: ExerciseProg[] }) {
 
     return (
         <section>
-            <h2 className="mb-3 inline-flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wide text-neutral-500">
+            <h2 className="mb-3 inline-flex items-center gap-1.5 text-sm font-bold text-neutral-800">
                 <TrendingUp size={15} className="text-brand-600" /> Progression par exercice
             </h2>
 
@@ -193,13 +192,10 @@ function Attendance({ weekly }: { weekly: Weekly[] }) {
     const max = Math.max(...weekly.map((w) => w.sessions), 1);
     const thisWeek = weekly[weekly.length - 1];
     return (
-        <Card
-            title={
-                <span className="inline-flex items-center gap-1.5">
-                    <CalendarCheck size={15} className="text-brand-600" /> Assiduité — 8 dernières semaines
-                </span>
-            }
-        >
+        <section>
+            <h2 className="mb-3 inline-flex items-center gap-1.5 text-sm font-bold text-neutral-800">
+                <CalendarCheck size={15} className="text-brand-600" /> Assiduité — 8 dernières semaines
+            </h2>
             <div className="flex items-end justify-between gap-1.5" style={{ height: 96 }}>
                 {weekly.map((w, i) => (
                     <div key={i} className="flex flex-1 flex-col items-center justify-end gap-1">
@@ -218,20 +214,17 @@ function Attendance({ weekly }: { weekly: Weekly[] }) {
                     {thisWeek.volumeKg > 0 && <> · {thisWeek.volumeKg.toLocaleString('fr-FR')} kg soulevés</>}
                 </p>
             )}
-        </Card>
+        </section>
     );
 }
 
 function MuscleBalance({ muscleVolume }: { muscleVolume: MuscleVolume[] }) {
     const max = Math.max(...muscleVolume.map((m) => m.sets), 1);
     return (
-        <Card
-            title={
-                <span className="inline-flex items-center gap-1.5">
-                    <Layers size={15} className="text-brand-600" /> Volume par muscle — 4 semaines (séries)
-                </span>
-            }
-        >
+        <section>
+            <h2 className="mb-3 inline-flex items-center gap-1.5 text-sm font-bold text-neutral-800">
+                <Layers size={15} className="text-brand-600" /> Volume par muscle — 4 semaines (séries)
+            </h2>
             {muscleVolume.length === 0 ? (
                 <p className="text-sm text-neutral-400">Pas encore de séance faite avec des séries de travail.</p>
             ) : (
@@ -247,7 +240,7 @@ function MuscleBalance({ muscleVolume }: { muscleVolume: MuscleVolume[] }) {
                     ))}
                 </ul>
             )}
-        </Card>
+        </section>
     );
 }
 
@@ -297,7 +290,7 @@ export default function MuscuProgression({ goal, hasProfile, weekly, muscleVolum
                     )}
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="[&>section:not(:last-child)]:mb-5 [&>section:not(:last-child)]:border-b [&>section:not(:last-child)]:border-neutral-200 [&>section:not(:last-child)]:pb-5">
                     <ByExercise progression={progression} />
                     {secondary.map(render)}
                 </div>

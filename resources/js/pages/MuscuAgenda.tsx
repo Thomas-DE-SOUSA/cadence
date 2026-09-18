@@ -90,7 +90,7 @@ export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: 
             </div>
 
             {/* Week nav */}
-            <div className="mb-4 flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-2 py-1.5 shadow-sm shadow-neutral-200/60">
+            <div className="mb-4 flex items-center justify-between border-b border-neutral-200 pb-3">
                 <Link href={`/muscu?week=${weekOffset - 1}`} preserveScroll className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100">
                     <ChevronLeft size={18} />
                 </Link>
@@ -100,9 +100,9 @@ export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: 
                 </Link>
             </div>
 
-            <div className="space-y-2">
-                {days.map((d) => (
-                    <div key={d.date} className={`rounded-2xl border bg-white p-3 shadow-sm shadow-neutral-200/60 ${d.isToday ? 'border-brand-300 ring-1 ring-brand-200/60' : 'border-neutral-200'}`}>
+            <div>
+                {days.map((d, di) => (
+                    <div key={d.date} className={di < days.length - 1 ? 'border-b border-neutral-200 pb-4 mb-4' : ''}>
                         <div className="mb-1.5 flex items-center justify-between">
                             <span className={`text-sm font-bold capitalize ${d.isToday ? 'text-brand-600' : 'text-neutral-700'}`}>{d.dayLabel}</span>
                             <button onClick={() => setPlaceDate(d.date)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-neutral-400 transition hover:bg-brand-50 hover:text-brand-600">
@@ -112,24 +112,25 @@ export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: 
                         {d.sessions.length === 0 ? (
                             <p className="px-1 py-1 text-xs text-neutral-300">—</p>
                         ) : (
-                            <div className="space-y-1.5">
+                            <div>
                                 {d.sessions.map((s) => (
-                                    <div
-                                        key={s.id}
-                                        className={`flex items-center rounded-xl transition ${s.status === 'DONE' ? 'bg-brand-50' : 'bg-neutral-50'}`}
-                                    >
-                                        <Link href={`/muscu/agenda/${s.id}`} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-l-xl px-3 py-2.5">
+                                    <div key={s.id} className="flex items-center border-b border-neutral-100 last:border-b-0">
+                                        <Link
+                                            href={`/muscu/agenda/${s.id}`}
+                                            className="flex min-w-0 flex-1 items-center gap-2.5 py-3 text-left transition-colors hover:bg-neutral-50"
+                                        >
                                             <CircleCheck size={16} className={s.status === 'DONE' ? 'text-brand-600' : 'text-neutral-300'} />
                                             <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-800">{s.title || 'Séance'}</span>
                                             <span className="shrink-0 text-xs text-neutral-400">
                                                 {s.totalSets > 0 && `${s.totalSets} séries`}
                                                 {s.status === 'DONE' && s.volumeKg > 0 && ` · ${s.volumeKg.toLocaleString('fr-FR')} kg`}
                                             </span>
+                                            <ChevronRight size={16} className="shrink-0 text-neutral-300" />
                                         </Link>
                                         <button
                                             onClick={() => removeSession(s.id, s.title)}
                                             title="Retirer de l'agenda"
-                                            className="shrink-0 rounded-r-xl px-3 py-2.5 text-neutral-300 transition hover:text-rose-500"
+                                            className="shrink-0 px-3 py-3 text-neutral-300 transition hover:text-rose-500"
                                         >
                                             <Trash2 size={15} />
                                         </button>

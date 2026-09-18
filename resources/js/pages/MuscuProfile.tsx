@@ -3,7 +3,6 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowLeft, Check } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
 
 interface Option {
     value: string;
@@ -127,7 +126,7 @@ export default function MuscuProfile({ profile, options }: Props) {
             </div>
             <p className="mb-4 text-sm text-neutral-500">Ton profil personnalise tes graphes de progression, tes cycles et les conseils du coach.</p>
 
-            <Card className="pb-2">
+            <div>
                 <Field label="Objectif" hint="Le levier principal : il oriente ce qu'on met en avant partout.">
                     <Pills options={options.goals} value={goal} onChange={setGoal} />
                 </Field>
@@ -181,7 +180,7 @@ export default function MuscuProfile({ profile, options }: Props) {
                         className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-700 placeholder:text-neutral-400 focus:border-neutral-400 focus:outline-none"
                     />
                 </Field>
-            </Card>
+            </div>
 
             <div className="mt-4 flex justify-end">
                 <button

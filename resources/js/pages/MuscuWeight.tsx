@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 import { Check, Moon, Scale, Sunrise, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
 
 interface Week {
     weekStart: string;
@@ -164,13 +163,10 @@ export default function MuscuWeight({ today, weeks, recent }: Props) {
                 <p className="mt-1 text-sm text-neutral-500">Pèse-toi matin et soir ; on compare la moyenne de chaque semaine.</p>
             </div>
 
-            <Card
-                title={
-                    <span className="inline-flex items-center gap-1.5">
-                        <Scale size={15} className="text-brand-600" /> Nouvelle pesée
-                    </span>
-                }
-            >
+            <section className="border-b border-neutral-200 pb-5">
+                <h2 className="mb-3 inline-flex items-center gap-1.5 text-sm font-bold text-neutral-800">
+                    <Scale size={15} className="text-brand-600" /> Nouvelle pesée
+                </h2>
                 <div className="space-y-3">
                     <div className="flex gap-2">
                         <button type="button" onClick={() => setMoment('MORNING')} className={toggleClass(moment === 'MORNING')}>
@@ -208,24 +204,20 @@ export default function MuscuWeight({ today, weeks, recent }: Props) {
                         <Check size={16} /> {saving ? 'Enregistrement…' : 'Enregistrer la pesée'}
                     </button>
                 </div>
-            </Card>
+            </section>
 
-            <div className="mt-4">
-                <Card
-                    title={
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="inline-flex items-center gap-1.5">
-                                <TrendingUp size={15} className="text-brand-600" /> Moyenne par semaine
-                            </span>
-                            {overall !== null && overall !== 0 && (
-                                <span className={`text-xs font-semibold normal-case ${overall < 0 ? 'text-emerald-600' : 'text-neutral-500'}`}>
-                                    {overall < 0 ? '↓' : '↑'} {Math.abs(overall).toFixed(1)} kg sur la période
-                                </span>
-                            )}
-                        </div>
-                    }
-                >
-                    {weeks.length === 0 ? (
+            <section className={`mt-5 ${recent.length > 0 ? 'border-b border-neutral-200 pb-5' : ''}`}>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="inline-flex items-center gap-1.5 text-sm font-bold text-neutral-800">
+                        <TrendingUp size={15} className="text-brand-600" /> Moyenne par semaine
+                    </h2>
+                    {overall !== null && overall !== 0 && (
+                        <span className={`text-xs font-semibold ${overall < 0 ? 'text-emerald-600' : 'text-neutral-500'}`}>
+                            {overall < 0 ? '↓' : '↑'} {Math.abs(overall).toFixed(1)} kg sur la période
+                        </span>
+                    )}
+                </div>
+                {weeks.length === 0 ? (
                         <p className="text-sm text-neutral-400">Aucune pesée pour l'instant — commence ce matin 👆</p>
                     ) : weeks.length === 1 ? (
                         <p className="py-4 text-center text-sm text-neutral-500">
@@ -233,26 +225,24 @@ export default function MuscuWeight({ today, weeks, recent }: Props) {
                             <br />
                             de moyenne cette semaine — la courbe se dessinera semaine après semaine.
                         </p>
-                    ) : (
-                        <WeightChart weeks={weeks} />
-                    )}
-                </Card>
-            </div>
+                ) : (
+                    <WeightChart weeks={weeks} />
+                )}
+            </section>
 
             {recent.length > 0 && (
-                <div className="mt-4">
-                    <Card title="Dernières pesées">
-                        <ul className="divide-y divide-neutral-100">
-                            {recent.map((e, i) => (
-                                <li key={i} className="flex items-center justify-between gap-3 py-2 text-sm">
-                                    <span className="flex-1 capitalize text-neutral-600">{shortDate(e.date)}</span>
-                                    <span className="text-neutral-400">{e.momentLabel}</span>
-                                    <span className="w-16 text-right font-semibold tabular-nums text-neutral-900">{e.weightKg.toFixed(1)} kg</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </Card>
-                </div>
+                <section className="mt-5">
+                    <h2 className="mb-2 text-sm font-bold text-neutral-800">Dernières pesées</h2>
+                    <ul className="divide-y divide-neutral-100">
+                        {recent.map((e, i) => (
+                            <li key={i} className="flex items-center justify-between gap-3 py-2 text-sm">
+                                <span className="flex-1 capitalize text-neutral-600">{shortDate(e.date)}</span>
+                                <span className="text-neutral-400">{e.momentLabel}</span>
+                                <span className="w-16 text-right font-semibold tabular-nums text-neutral-900">{e.weightKg.toFixed(1)} kg</span>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
             )}
         </>
     );

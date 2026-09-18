@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Loader2, Moon, Sun, Sunrise, Trash2, Utensils } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
 
 interface Macro {
     kcal: number;
@@ -119,7 +118,7 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
                 </header>
 
                 {/* Date navigation */}
-                <div className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-white px-3 py-2 shadow-sm shadow-neutral-200/60">
+                <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
                     <button onClick={() => go(shiftDate(date, -1))} className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100" aria-label="Jour précédent">
                         <ChevronLeft size={18} />
                     </button>
@@ -142,7 +141,8 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
                 </div>
 
                 {/* Daily summary */}
-                <Card title="Total du jour">
+                <section className="border-b border-neutral-200 pb-5">
+                    <h2 className="mb-3 text-sm font-bold text-neutral-800">Total du jour</h2>
                     <div className="flex items-end justify-between">
                         <div className="flex items-end gap-2">
                             <span className={`text-4xl font-black ${kcalOver ? 'text-red-500' : 'text-neutral-900'}`}>{totals.kcal.toLocaleString('fr-FR')}</span>
@@ -160,10 +160,11 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
                         <MacroRow label="Glucides" done={totals.carbs} target={daily.carbs} />
                         <MacroRow label="Lipides" done={totals.fat} target={daily.fat} />
                     </div>
-                </Card>
+                </section>
 
                 {/* Add food */}
-                <Card title="Ajouter ce que tu as mangé">
+                <section className="border-b border-neutral-200 pb-5">
+                    <h2 className="mb-3 text-sm font-bold text-neutral-800">Ajouter ce que tu as mangé</h2>
                     <div className="mb-2 flex gap-1.5">
                         {(['matin', 'midi', 'soir'] as const).map((m) => (
                             <button
@@ -199,13 +200,13 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
                         )}
                     </button>
                     <p className="mt-2 text-xs text-neutral-400">L'IA estime kcal + macros. Approximatif — supprime et reformule si c'est à côté.</p>
-                </Card>
+                </section>
 
                 {/* Meals */}
                 {meals.map((m) => {
                     const Icon = mealIcon[m.key] ?? Utensils;
                     return (
-                        <Card key={m.key}>
+                        <section key={m.key} className="border-b border-neutral-200 pb-5 last:border-b-0">
                             <div className="mb-3 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Icon className="h-5 w-5 text-brand-600" />
@@ -219,9 +220,9 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
                             {m.entries.length === 0 ? (
                                 <p className="text-sm text-neutral-400">Rien pour l'instant.</p>
                             ) : (
-                                <ul className="space-y-2">
+                                <ul>
                                     {m.entries.map((e) => (
-                                        <li key={e.id} className="flex items-start justify-between gap-2 rounded-lg bg-neutral-50 px-3 py-2">
+                                        <li key={e.id} className="flex items-start justify-between gap-2 border-b border-neutral-100 py-2.5 last:border-b-0">
                                             <div className="min-w-0">
                                                 <p className="text-sm font-medium text-neutral-800">{e.description}</p>
                                                 <p className="text-xs text-neutral-500">
@@ -235,7 +236,7 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
                                     ))}
                                 </ul>
                             )}
-                        </Card>
+                        </section>
                     );
                 })}
 
