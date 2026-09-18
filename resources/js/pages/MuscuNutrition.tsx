@@ -105,16 +105,43 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
     // macros filled in by a background request, one at a time (so the initial
     // log stays instant and never waits on the AI). Failed ones can be retried.
     const estimating = useRef<Set<string>>(new Set());
+    const retries = useRef<Record<string, number>>({});
+    const scheduled = useRef<Set<string>>(new Set());
+    const timers = useRef<number[]>([]);
+    const MAX_RETRIES = 3;
+
     const estimate = (id: string) => {
         if (estimating.current.has(id)) return;
         estimating.current.add(id);
         router.post(`/muscu/nutrition/${id}/estimer`, { date }, { preserveScroll: true, onFinish: () => estimating.current.delete(id) });
     };
+
     useEffect(() => {
-        const next = meals.flatMap((m) => m.entries).find((e) => e.status === 'pending' && !estimating.current.has(e.id));
-        if (next) estimate(next.id);
+        const all = meals.flatMap((m) => m.entries);
+        // Estimate a fresh pending entry right away (one at a time).
+        const pending = all.find((e) => e.status === 'pending' && !estimating.current.has(e.id));
+        if (pending) {
+            estimate(pending.id);
+            return;
+        }
+        // Auto-retry failed ones a few times — Gemini overload spikes are transient,
+        // so the macros fill themselves in once it recovers, no tap needed.
+        for (const e of all) {
+            if (e.status !== 'failed' || estimating.current.has(e.id) || scheduled.current.has(e.id)) continue;
+            if ((retries.current[e.id] ?? 0) >= MAX_RETRIES) continue;
+            scheduled.current.add(e.id);
+            const t = window.setTimeout(() => {
+                scheduled.current.delete(e.id);
+                retries.current[e.id] = (retries.current[e.id] ?? 0) + 1;
+                estimate(e.id);
+            }, 30000);
+            timers.current.push(t);
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [meals]);
+
+    // Cancel any scheduled retry when leaving the page.
+    useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
 
     const kcalPct = Math.min(100, daily.kcal > 0 ? (totals.kcal / daily.kcal) * 100 : 0);
     const kcalOver = totals.kcal > daily.kcal;
@@ -246,7 +273,15 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
                                                         <Loader2 size={12} className="animate-spin" /> Estimation en cours…
                                                     </p>
                                                 ) : e.status === 'failed' ? (
-                                                    <button onClick={() => estimate(e.id)} className="text-xs font-semibold text-brand-600">Estimation échouée — réessayer</button>
+                                                    <button
+                                                        onClick={() => {
+                                                            retries.current[e.id] = 0;
+                                                            estimate(e.id);
+                                                        }}
+                                                        className="text-xs font-semibold text-brand-600"
+                                                    >
+                                                        Estimation échouée — réessayer
+                                                    </button>
                                                 ) : (
                                                     <p className="text-xs text-neutral-500">
                                                         {e.kcal} kcal · P {e.protein} · G {e.carbs} · L {e.fat}
