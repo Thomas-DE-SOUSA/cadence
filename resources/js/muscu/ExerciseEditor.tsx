@@ -49,6 +49,15 @@ export function lastTopSet(sets: SetRow[]): string | null {
     return null;
 }
 
+/** Compact "35kg × 15" for the PRÉCÉDENT column (a single prior set), or "—". */
+function prevLabel(p: SetRow | undefined): string {
+    if (!p) return '—';
+    if (p.weight_kg != null && p.reps != null) return `${p.weight_kg}kg × ${p.reps}`;
+    if (p.reps != null) return `${p.reps} reps`;
+    if (p.duration_seconds != null) return `${p.duration_seconds}s`;
+    return '—';
+}
+
 export function numOrNull(v: string): number | null {
     if (v.trim() === '') return null;
     const n = Number(v.replace(',', '.'));
@@ -279,6 +288,7 @@ interface HistoryEntry {
 const ordinal = (n: number): string => (n === 1 ? '1ᵉʳ' : `${n}ᵉ`);
 const historyDate = (date: string): string =>
     new Date(date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const shortDate = (date: string): string => new Date(date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 const setText = (s: HistorySet): string => {
     if (s.weightKg != null && s.reps != null) return `${s.weightKg} kg × ${s.reps}`;
     if (s.reps != null) return `${s.reps} reps`;
@@ -286,15 +296,80 @@ const setText = (s: HistorySet): string => {
     return '—';
 };
 
+type MetricKey = 'weight' | 'e1rm' | 'volume';
+const METRICS: { key: MetricKey; label: string }[] = [
+    { key: 'weight', label: 'Plus gros poids' },
+    { key: 'e1rm', label: 'Meilleur 1RM' },
+    { key: 'volume', label: 'Volume' },
+];
+const workingSets = (e: HistoryEntry): HistorySet[] => e.sets.filter((s) => !s.isWarmup);
+const entryMetric = (e: HistoryEntry, k: MetricKey): number => {
+    if (k === 'e1rm') return e.bestE1rm;
+    if (k === 'weight') return workingSets(e).reduce((m, s) => Math.max(m, s.weightKg ?? 0), 0);
+    return workingSets(e).reduce((m, s) => Math.max(m, (s.weightKg ?? 0) * (s.reps ?? 0)), 0); // best set volume
+};
+
+/** Hand-rolled SVG line chart (no chart lib in the project). Chronological left → right. */
+function ProgressionChart({ values, dates }: { values: number[]; dates: string[] }) {
+    const W = 320;
+    const H = 132;
+    const padL = 32;
+    const padR = 10;
+    const padT = 12;
+    const padB = 20;
+    const n = values.length;
+    const max = Math.max(...values);
+    const min = Math.min(...values);
+    const lo = min === max ? Math.max(0, min - Math.max(1, min * 0.1)) : min;
+    const range = max - lo || 1;
+    const x = (i: number): number => (n <= 1 ? (padL + (W - padR)) / 2 : padL + (i * (W - padL - padR)) / (n - 1));
+    const y = (v: number): number => padT + (H - padT - padB) * (1 - (v - lo) / range);
+    const ticks = [max, lo + range / 2, lo];
+    const line = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+
+    return (
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Courbe de progression">
+            {ticks.map((t, k) => {
+                const yy = y(t);
+                return (
+                    <g key={k}>
+                        <line x1={padL} y1={yy} x2={W - padR} y2={yy} stroke="rgb(229 229 229)" strokeWidth={1} />
+                        <text x={padL - 4} y={yy + 3} textAnchor="end" fontSize={9} fill="rgb(163 163 163)">
+                            {Math.round(t)}
+                        </text>
+                    </g>
+                );
+            })}
+            {n > 1 && <polyline points={line} fill="none" stroke="rgb(242 103 34)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />}
+            {values.map((v, i) => (
+                <circle key={i} cx={x(i)} cy={y(v)} r={n > 30 ? 1.5 : 2.5} fill="rgb(242 103 34)" />
+            ))}
+            {n > 0 && (
+                <>
+                    <text x={padL} y={H - 6} textAnchor="start" fontSize={9} fill="rgb(163 163 163)">
+                        {shortDate(dates[0])}
+                    </text>
+                    {n > 1 && (
+                        <text x={W - padR} y={H - 6} textAnchor="end" fontSize={9} fill="rgb(163 163 163)">
+                            {shortDate(dates[n - 1])}
+                        </text>
+                    )}
+                </>
+            )}
+        </svg>
+    );
+}
+
 /**
- * In-session history sheet for one exercise. Loads on demand (JSON) so the
- * athlete can check past performances without leaving the running session.
- * Shows every done session with this exercise: date, its position that day
- * (order rotates weekly, so this matters), all sets and the best e1RM.
+ * In-session history sheet for one exercise (Hevy-style, light theme). Loads on
+ * demand (JSON) so the athlete never leaves the running session. Shows a
+ * progression chart (selectable metric), personal records, then every done
+ * session with its date, position that day (order rotates weekly), and sets.
  */
 function ExerciseHistoryModal({ exerciseId, name, onClose }: { exerciseId: string; name: string; onClose: () => void }) {
     const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
     const [failed, setFailed] = useState(false);
+    const [metric, setMetric] = useState<MetricKey>('weight');
 
     useEffect(() => {
         let alive = true;
@@ -313,75 +388,143 @@ function ExerciseHistoryModal({ exerciseId, name, onClose }: { exerciseId: strin
         };
     }, [exerciseId]);
 
-    const bestOverall = (entries ?? []).reduce((m, e) => Math.max(m, e.bestE1rm), 0);
+    const all = entries ?? [];
+    const bestOverall = all.reduce((m, e) => Math.max(m, e.bestE1rm), 0);
+
+    // Personal records across every set ever logged for this exercise.
+    let pgp = 0; // plus gros poids
+    let best1rm = 0;
+    let bestVol = 0;
+    let bestVolSet: { w: number; r: number } | null = null;
+    for (const e of all) {
+        for (const s of e.sets) {
+            if (s.isWarmup) continue;
+            const w = s.weightKg ?? 0;
+            const r = s.reps ?? 0;
+            pgp = Math.max(pgp, w);
+            best1rm = Math.max(best1rm, s.e1rm);
+            if (w * r > bestVol) {
+                bestVol = w * r;
+                bestVolSet = { w, r };
+            }
+        }
+    }
+
+    // Chart data, chronological (oldest → newest).
+    const chrono = [...all].reverse();
+    const chartValues = chrono.map((e) => entryMetric(e, metric));
+    const chartDates = chrono.map((e) => e.date);
+    const hasChart = chartValues.some((v) => v > 0);
 
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/50 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
-            <div className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex max-h-[88vh] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-start justify-between gap-2 border-b border-neutral-100 p-4">
                     <div className="min-w-0">
                         <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-400">
                             <History size={13} /> Historique
                         </p>
                         <p className="truncate text-base font-bold text-neutral-900">{name}</p>
-                        {bestOverall > 0 && <p className="text-xs font-semibold text-brand-600">record e1RM {bestOverall} kg</p>}
                     </div>
                     <button onClick={onClose} className="shrink-0 rounded-lg p-2 text-neutral-400 hover:bg-neutral-100">
                         <X size={18} />
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-3">
+                <div className="flex-1 overflow-y-auto p-4">
                     {failed ? (
                         <p className="py-8 text-center text-sm text-neutral-500">Impossible de charger l'historique.</p>
                     ) : entries === null ? (
                         <p className="py-8 text-center text-sm text-neutral-400">Chargement…</p>
-                    ) : entries.length === 0 ? (
+                    ) : all.length === 0 ? (
                         <p className="py-8 text-center text-sm text-neutral-500">Aucune séance terminée avec cet exercice.</p>
                     ) : (
-                        <div className="space-y-2.5">
-                            {entries.map((entry, i) => {
-                                const isRecord = entry.bestE1rm > 0 && entry.bestE1rm === bestOverall;
-                                return (
-                                    <div key={i} className="rounded-xl border border-neutral-200 bg-white p-3">
-                                        <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5">
-                                            <p className="text-sm font-semibold capitalize text-neutral-800">{historyDate(entry.date)}</p>
-                                            <div className="flex flex-wrap items-center gap-1.5">
-                                                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-500">
-                                                    {ordinal(entry.position)} / {entry.totalExercises}
-                                                </span>
-                                                {entry.supersetGroup != null && (
-                                                    <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-violet-700">
-                                                        <Link2 size={11} /> {supersetLabel(entry.supersetGroup)}
+                        <>
+                            {/* Progression chart + metric selector */}
+                            <div className="mb-1 flex flex-wrap gap-1.5">
+                                {METRICS.map((m) => (
+                                    <button
+                                        key={m.key}
+                                        onClick={() => setMetric(m.key)}
+                                        className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                                            metric === m.key ? 'bg-brand-600 text-white' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+                                        }`}
+                                    >
+                                        {m.label}
+                                    </button>
+                                ))}
+                            </div>
+                            {hasChart ? (
+                                <ProgressionChart values={chartValues} dates={chartDates} />
+                            ) : (
+                                <p className="py-6 text-center text-xs text-neutral-400">Pas de données chiffrées pour cette métrique.</p>
+                            )}
+
+                            {/* Personal records */}
+                            <div className="mt-2 rounded-xl border border-neutral-200">
+                                <p className="border-b border-neutral-100 px-3 py-2 text-sm font-bold text-neutral-800">🏅 Records personnels</p>
+                                <div className="divide-y divide-neutral-100 text-sm">
+                                    <div className="flex items-center justify-between px-3 py-2">
+                                        <span className="text-neutral-500">Plus gros poids</span>
+                                        <span className="font-bold text-brand-600">{pgp > 0 ? `${pgp} kg` : '—'}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between px-3 py-2">
+                                        <span className="text-neutral-500">Meilleur 1RM</span>
+                                        <span className="font-bold text-brand-600">{best1rm > 0 ? `${best1rm} kg` : '—'}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between px-3 py-2">
+                                        <span className="text-neutral-500">Meilleur volume de série</span>
+                                        <span className="font-bold text-brand-600">{bestVolSet ? `${bestVolSet.w} kg × ${bestVolSet.r}` : '—'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Session-by-session history */}
+                            <p className="mb-2 mt-4 text-sm font-bold text-neutral-800">Séances</p>
+                            <div className="space-y-2.5">
+                                {all.map((entry, i) => {
+                                    const isRecord = entry.bestE1rm > 0 && entry.bestE1rm === bestOverall;
+                                    return (
+                                        <div key={i} className="rounded-xl border border-neutral-200 bg-white p-3">
+                                            <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5">
+                                                <p className="text-sm font-semibold capitalize text-neutral-800">{historyDate(entry.date)}</p>
+                                                <div className="flex flex-wrap items-center gap-1.5">
+                                                    <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-500">
+                                                        {ordinal(entry.position)} / {entry.totalExercises}
                                                     </span>
-                                                )}
-                                                {entry.bestE1rm > 0 && (
-                                                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${isRecord ? 'bg-brand-100 text-brand-700' : 'bg-neutral-100 text-neutral-500'}`}>
-                                                        e1RM {entry.bestE1rm} kg
-                                                    </span>
-                                                )}
+                                                    {entry.supersetGroup != null && (
+                                                        <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-violet-700">
+                                                            <Link2 size={11} /> {supersetLabel(entry.supersetGroup)}
+                                                        </span>
+                                                    )}
+                                                    {entry.bestE1rm > 0 && (
+                                                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${isRecord ? 'bg-brand-100 text-brand-700' : 'bg-neutral-100 text-neutral-500'}`}>
+                                                            e1RM {entry.bestE1rm} kg
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                {entry.sets.map((s, j) => (
+                                                    <div
+                                                        key={j}
+                                                        className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-1 text-sm ${s.isWarmup ? 'text-neutral-400' : 'bg-neutral-50 text-neutral-800'}`}
+                                                    >
+                                                        <span className="flex items-center gap-2">
+                                                            <span className="w-4 shrink-0 text-right text-xs font-medium text-neutral-400">{j + 1}</span>
+                                                            <span className={s.isWarmup ? '' : 'font-semibold'}>{setText(s)}</span>
+                                                            {entry.perSide && !s.isWarmup && <span className="text-[10px] text-neutral-400">/ côté</span>}
+                                                            {s.isWarmup && <span className="text-[10px] uppercase tracking-wide">échauff.</span>}
+                                                        </span>
+                                                        {s.rpe != null && <span className="text-xs text-neutral-400">RPE {s.rpe}</span>}
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
-                                        <div className="space-y-1">
-                                            {entry.sets.map((s, j) => (
-                                                <div
-                                                    key={j}
-                                                    className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-1 text-sm ${s.isWarmup ? 'text-neutral-400' : 'bg-neutral-50 text-neutral-800'}`}
-                                                >
-                                                    <span className="flex items-center gap-2">
-                                                        <span className="w-4 shrink-0 text-right text-xs font-medium text-neutral-400">{j + 1}</span>
-                                                        <span className={s.isWarmup ? '' : 'font-semibold'}>{setText(s)}</span>
-                                                        {entry.perSide && !s.isWarmup && <span className="text-[10px] text-neutral-400">/ côté</span>}
-                                                        {s.isWarmup && <span className="text-[10px] uppercase tracking-wide">échauff.</span>}
-                                                    </span>
-                                                    {s.rpe != null && <span className="text-xs text-neutral-400">RPE {s.rpe}</span>}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
                     )}
                 </div>
             </div>
@@ -466,13 +609,24 @@ export function ExerciseEditor({
                     : group != null
                       ? 'border-neutral-200 border-l-4 border-l-violet-400 bg-white shadow-neutral-200/60'
                       : 'border-neutral-200 bg-white shadow-neutral-200/60';
+                const prevWorking = (lastByExercise[it.exercise_id]?.sets ?? []).filter((x) => !x.is_warmup);
+                // During a session: Série · Précédent · Kg · Reps · ✓ (Hevy-style).
+                // While planning: Set · Kg · Reps · RPE · ✗.
+                const gridCols = execution ? 'grid-cols-[1.5rem_minmax(0,1fr)_3.8rem_3rem_1.75rem]' : 'grid-cols-[1.5rem_1fr_1fr_1fr_1.5rem]';
                 return (
-                <div key={i} className={`border p-4 shadow-sm transition-colors ${rounding} ${color} ${linkedAbove ? 'border-t-0' : ''} ${linkedBelow ? '' : 'mb-3'}`}>
+                <div
+                    key={i}
+                    className={
+                        execution
+                            ? `pb-4 ${group != null ? 'border-l-4 border-l-violet-400 pl-3' : ''} ${i < items.length - 1 ? 'mb-4 border-b border-neutral-200' : ''}`
+                            : `border p-4 shadow-sm transition-colors ${rounding} ${color} ${linkedAbove ? 'border-t-0' : ''} ${linkedBelow ? '' : 'mb-3'}`
+                    }
+                >
                     <div className={`flex items-start justify-between gap-2 ${collapsed ? '' : 'mb-2'}`}>
                         <button onClick={() => patchItem(i, { collapsed: !collapsed })} className="flex min-w-0 flex-1 items-start gap-2 text-left">
                             <div className="min-w-0">
                                 <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-neutral-800">
-                                    <span className="break-words">{it.name}</span>
+                                    <span className={`break-words ${execution ? 'text-brand-600' : ''}`}>{it.name}</span>
                                     {it.superset_group != null && (
                                         <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700">
                                             <Link2 size={11} /> Superset {supersetLabel(it.superset_group)}
@@ -557,18 +711,18 @@ export function ExerciseEditor({
 
                     {!collapsed && (
                     <>
-                    <div className="grid grid-cols-[1.5rem_1fr_1fr_1fr_1.5rem] items-center gap-2 px-1 pb-1 text-[10px] font-semibold uppercase tracking-wide text-neutral-400">
-                        <span>Set</span>
-                        <span>Kg</span>
-                        <span>Reps</span>
-                        <span>RPE</span>
+                    <div className={`grid ${gridCols} items-center gap-2 px-1 pb-1 text-[10px] font-semibold uppercase tracking-wide text-neutral-400`}>
+                        <span>{execution ? 'Série' : 'Set'}</span>
+                        {execution ? <span>Précédent</span> : <span>Kg</span>}
+                        {execution ? <span className="text-center">Kg</span> : <span>Reps</span>}
+                        {execution ? <span className="text-center">Reps</span> : <span>RPE</span>}
                         <span />
                     </div>
 
                     {it.sets.map((set, s) => {
                         const workingIndex = it.sets.slice(0, s + 1).filter((x) => !x.is_warmup).length;
                         return (
-                            <div key={s} className={`grid grid-cols-[1.5rem_1fr_1fr_1fr_1.5rem] items-center gap-2 rounded-lg px-1 py-1 transition-colors ${execution && set.done ? 'bg-emerald-50' : ''} ${execution && !set.done ? 'opacity-50' : ''}`}>
+                            <div key={s} className={`grid ${gridCols} items-center gap-2 rounded-lg px-1 py-1 transition-colors ${execution && set.done ? 'bg-emerald-50' : ''} ${execution && !set.done ? 'opacity-50' : ''}`}>
                                 <button
                                     onClick={() => patchSet(i, s, { is_warmup: !set.is_warmup })}
                                     title={set.is_warmup ? 'Échauffement' : 'Série de travail'}
@@ -576,6 +730,11 @@ export function ExerciseEditor({
                                 >
                                     {set.is_warmup ? 'É' : workingIndex}
                                 </button>
+                                {execution && (
+                                    <span className="truncate text-xs tabular-nums text-neutral-400" title="Dernière fois">
+                                        {set.is_warmup ? '—' : prevLabel(prevWorking[workingIndex - 1])}
+                                    </span>
+                                )}
                                 <DecimalInput
                                     value={set.weight_kg}
                                     onChange={(n) => patchSet(i, s, { weight_kg: n })}
@@ -592,13 +751,15 @@ export function ExerciseEditor({
                                     placeholder="—"
                                     className="w-full rounded-lg border border-neutral-200 px-2 py-1.5 text-center text-sm tabular-nums focus:border-neutral-400 focus:outline-none"
                                 />
-                                <DecimalInput
-                                    value={set.rpe}
-                                    onChange={(n) => patchSet(i, s, { rpe: n === null ? null : Math.min(10, Math.max(0, n)) })}
-                                    placeholder="—"
-                                    title="RPE = intensité perçue, de 0 à 10"
-                                    className="w-full rounded-lg border border-neutral-200 px-2 py-1.5 text-center text-sm tabular-nums focus:border-neutral-400 focus:outline-none"
-                                />
+                                {!execution && (
+                                    <DecimalInput
+                                        value={set.rpe}
+                                        onChange={(n) => patchSet(i, s, { rpe: n === null ? null : Math.min(10, Math.max(0, n)) })}
+                                        placeholder="—"
+                                        title="RPE = intensité perçue, de 0 à 10"
+                                        className="w-full rounded-lg border border-neutral-200 px-2 py-1.5 text-center text-sm tabular-nums focus:border-neutral-400 focus:outline-none"
+                                    />
+                                )}
                                 {execution ? (
                                     <button
                                         onClick={() => {

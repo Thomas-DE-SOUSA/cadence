@@ -461,6 +461,12 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
                     execution={started}
                     onSetValidated={() => setChronoRestart((n) => n + 1)}
                 />
+
+                {started && items.length > 0 && (
+                    <button onClick={goBack} className="mt-2 w-full py-3 text-center text-sm font-semibold text-rose-500 hover:text-rose-600">
+                        Quitter la séance
+                    </button>
+                )}
             </div>
 
             <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 p-3 backdrop-blur">
