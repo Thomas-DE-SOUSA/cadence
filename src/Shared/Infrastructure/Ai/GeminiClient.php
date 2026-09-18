@@ -67,10 +67,17 @@ final class GeminiClient
             'generationConfig' => array_merge(['maxOutputTokens' => 8192, 'temperature' => 0.4], $generationConfig),
         ];
 
+        // One shared time budget across every retry AND fallback model, kept
+        // safely under PHP's 30s max_execution_time so a Gemini spike can never
+        // turn into a 500 (it degrades to a clean "unavailable" error instead).
+        $deadline = microtime(true) + 26.0;
         $lastError = null;
         foreach ([$this->model, ...$this->fallbackModels] as $model) {
+            if (microtime(true) >= $deadline) {
+                break;
+            }
             try {
-                $response = $this->post($model.':generateContent', $body, false);
+                $response = $this->post($model.':generateContent', $body, false, $deadline);
             } catch (RuntimeException $e) {
                 $lastError = $e;
 
@@ -102,7 +109,7 @@ final class GeminiClient
                 ['inlineData' => ['mimeType' => $mimeType, 'data' => $imageBase64]],
             ]]],
             'generationConfig' => array_merge(['maxOutputTokens' => 4096, 'temperature' => 0.2], $generationConfig),
-        ], false);
+        ], false, microtime(true) + 26.0);
 
         $text = '';
         foreach ((array) $response->json('candidates.0.content.parts') as $part) {
@@ -124,51 +131,65 @@ final class GeminiClient
     /**
      * @param array<string,mixed> $body
      */
-    private function post(string $path, array $body, bool $stream): \Illuminate\Http\Client\Response
+    private function post(string $path, array $body, bool $stream, ?float $deadline = null): \Illuminate\Http\Client\Response
     {
-        // Blocking calls retry transient overload — Gemini's free tier throws
-        // "high demand" 503/429 spikes that clear within seconds — with backoff.
-        $maxAttempts = $stream ? 1 : 3;
-        $delayMs = 600;
-        $lastError = null;
-
-        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+        // Streaming: a single long-lived attempt (the coach reads incrementally).
+        if ($stream) {
             try {
-                $request = Http::withHeaders(['x-goog-api-key' => $this->apiKey])->timeout($stream ? 180 : 45);
-                if ($stream) {
-                    $request = $request->withOptions(['stream' => true]);
-                }
-                $response = $request->post(self::BASE.$path, $body);
+                $response = Http::withHeaders(['x-goog-api-key' => $this->apiKey])->timeout(180)->withOptions(['stream' => true])->post(self::BASE.$path, $body);
             } catch (Throwable $e) {
-                $lastError = new RuntimeException('Gemini est indisponible : '.$e->getMessage(), 0, $e);
-                if ($attempt < $maxAttempts) {
-                    usleep($delayMs * 1000);
-                    $delayMs *= 2;
-
-                    continue;
-                }
-
-                throw $lastError;
+                throw new RuntimeException('Gemini est indisponible : '.$e->getMessage(), 0, $e);
             }
-
             if ($response->failed()) {
-                $status = $response->status();
                 $detail = $response->json('error.message');
-                $message = 'Gemini est indisponible (HTTP '.$status.')'.(is_string($detail) ? ' : '.$detail : '').'.';
-
-                // Retry transient overload/rate-limit; fail fast on client errors (4xx).
-                if (in_array($status, [429, 500, 502, 503, 504], true) && $attempt < $maxAttempts) {
-                    $lastError = new RuntimeException($message);
-                    usleep($delayMs * 1000);
-                    $delayMs *= 2;
-
-                    continue;
-                }
-
-                throw new RuntimeException($message);
+                throw new RuntimeException('Gemini est indisponible (HTTP '.$response->status().')'.(is_string($detail) ? ' : '.$detail : '').'.');
             }
 
             return $response;
+        }
+
+        // Blocking: retry transient overload (Gemini free-tier "high demand"
+        // 503/429 spikes) with backoff, but each attempt's timeout is capped by
+        // the time left before the shared deadline — so the whole thing stays
+        // under PHP's execution limit and never becomes a 500.
+        $deadline ??= microtime(true) + 26.0;
+        $delayMs = 500;
+        $lastError = null;
+
+        while (true) {
+            $remaining = $deadline - microtime(true);
+            if ($remaining <= 1.0) {
+                break;
+            }
+            $timeout = (int) max(3, min(12, (int) floor($remaining)));
+
+            try {
+                $response = Http::withHeaders(['x-goog-api-key' => $this->apiKey])->timeout($timeout)->post(self::BASE.$path, $body);
+            } catch (Throwable $e) {
+                $lastError = new RuntimeException('Gemini est indisponible : '.$e->getMessage(), 0, $e);
+                $response = null;
+            }
+
+            if ($response !== null) {
+                if (! $response->failed()) {
+                    return $response;
+                }
+                $status = $response->status();
+                $detail = $response->json('error.message');
+                $message = 'Gemini est indisponible (HTTP '.$status.')'.(is_string($detail) ? ' : '.$detail : '').'.';
+                // Non-transient (4xx other than 429) → give up on this model now.
+                if (! in_array($status, [429, 500, 502, 503, 504], true)) {
+                    throw new RuntimeException($message);
+                }
+                $lastError = new RuntimeException($message);
+            }
+
+            // Back off only if there's budget left for another attempt.
+            if ($deadline - microtime(true) <= $delayMs / 1000 + 3) {
+                break;
+            }
+            usleep($delayMs * 1000);
+            $delayMs = (int) min($delayMs * 2, 2000);
         }
 
         throw $lastError ?? new RuntimeException('Gemini est indisponible.');
