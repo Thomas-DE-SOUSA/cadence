@@ -49,8 +49,12 @@ export default function MuscuTemplates({ templates }: Props) {
             ) : (
                 <div>
                     {templates.map((t) => (
-                        <div key={t.id} className="flex items-start gap-3 border-b border-neutral-100 py-3">
-                            <Link href={`/muscu/seances/${t.id}/modifier`} className="min-w-0 flex-1 text-left transition-colors hover:opacity-70">
+                        <div key={t.id} className="flex items-start gap-3 border-b border-neutral-200 py-4 last:border-b-0">
+                            <Link href={`/muscu/seances/${t.id}/modifier`} className="flex min-w-0 flex-1 items-start gap-3 text-left transition-colors hover:opacity-70">
+                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                                    <Dumbbell size={18} />
+                                </span>
+                                <div className="min-w-0 flex-1">
                                 <p className="truncate font-bold text-neutral-900">{t.name}</p>
                                 <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-neutral-400">
                                     <span>
@@ -65,6 +69,7 @@ export default function MuscuTemplates({ templates }: Props) {
                                 {t.exerciseNames.length > 0 && (
                                     <p className="mt-1 line-clamp-2 text-sm text-neutral-500">{t.exerciseNames.join(' · ')}</p>
                                 )}
+                                </div>
                             </Link>
                             <div className="flex shrink-0 items-center gap-1">
                                 <Link href={`/muscu/seances/${t.id}/modifier`} className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700">

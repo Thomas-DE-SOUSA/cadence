@@ -190,25 +190,25 @@ html.dark {
    ============================================================ */
 .mode-muscu,
 html.dark .mode-muscu {
-    /* Warehouse Malta orange — 500 is the exact brand hex (#F26722). */
-    --color-brand-50: #fef4ee;
-    --color-brand-100: #fde0d0;
-    --color-brand-200: #fabf9c;
-    --color-brand-300: #f79b6a;
-    --color-brand-400: #f47f42;
-    --color-brand-500: #f26722;
-    --color-brand-600: #d85311;
-    --color-brand-700: #a54617;
-    --color-brand-800: #853913;
-    --color-brand-900: #6d2e0f;
+    /* Hevy-style vivid blue — 500 is the accent (#2979FF). */
+    --color-brand-50: #eef5ff;
+    --color-brand-100: #d9e8ff;
+    --color-brand-200: #b3d0ff;
+    --color-brand-300: #80b0ff;
+    --color-brand-400: #4d8dff;
+    --color-brand-500: #2979ff;
+    --color-brand-600: #1466e6;
+    --color-brand-700: #1152b8;
+    --color-brand-800: #114694;
+    --color-brand-900: #123c78;
 }
 
 html.dark .mode-muscu {
-    /* Dark-tinted chips + readable orange accent text in dark mode. */
-    --color-brand-50: #2a1c12;
-    --color-brand-100: #35230f;
-    --color-brand-600: #f47f42;
-    --color-brand-700: #f79b6a;
+    /* Dark-tinted chips + readable blue accent text in dark mode. */
+    --color-brand-50: #12213b;
+    --color-brand-100: #14294d;
+    --color-brand-600: #4d8dff;
+    --color-brand-700: #80b0ff;
 }
 
 html.dark body {

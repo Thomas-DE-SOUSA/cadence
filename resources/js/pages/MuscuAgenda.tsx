@@ -101,18 +101,21 @@ export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: 
             </div>
 
             <div>
-                {days.map((d, di) => (
-                    <div key={d.date} className={di < days.length - 1 ? 'border-b border-neutral-200 pb-4 mb-4' : ''}>
-                        <div className="mb-1.5 flex items-center justify-between">
-                            <span className={`text-sm font-bold capitalize ${d.isToday ? 'text-brand-600' : 'text-neutral-700'}`}>{d.dayLabel}</span>
-                            <button onClick={() => setPlaceDate(d.date)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-neutral-400 transition hover:bg-brand-50 hover:text-brand-600">
+                {days.map((d) => (
+                    <div key={d.date} className="mb-5 last:mb-0">
+                        <div className={`mb-1 flex items-center justify-between rounded-lg px-3 py-2 ${d.isToday ? 'bg-brand-50' : 'bg-neutral-100/70'}`}>
+                            <span className={`flex items-center gap-2 text-sm font-bold capitalize ${d.isToday ? 'text-brand-700' : 'text-neutral-700'}`}>
+                                {d.dayLabel}
+                                {d.isToday && <span className="rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Auj.</span>}
+                            </span>
+                            <button onClick={() => setPlaceDate(d.date)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-neutral-500 transition hover:bg-white hover:text-brand-600">
                                 <CalendarPlus size={14} /> Poser
                             </button>
                         </div>
                         {d.sessions.length === 0 ? (
-                            <p className="px-1 py-1 text-xs text-neutral-300">—</p>
+                            <p className="px-3 py-1 text-xs text-neutral-300">Rien de prévu</p>
                         ) : (
-                            <div>
+                            <div className="px-1">
                                 {d.sessions.map((s) => (
                                     <div key={s.id} className="flex items-center border-b border-neutral-100 last:border-b-0">
                                         <Link
