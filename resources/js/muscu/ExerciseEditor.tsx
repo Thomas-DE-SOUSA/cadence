@@ -623,7 +623,7 @@ export function ExerciseEditor({
                 const prevWorking = (lastByExercise[it.exercise_id]?.sets ?? []).filter((x) => !x.is_warmup);
                 // During a session: Série · Précédent · Kg · Reps · ✓ (Hevy-style).
                 // While planning: Set · Kg · Reps · RPE · ✗.
-                const gridCols = execution ? 'grid-cols-[1.5rem_minmax(0,1fr)_3.8rem_3rem_1.75rem]' : 'grid-cols-[1.5rem_1fr_1fr_1fr_1.5rem]';
+                const gridCols = execution ? 'grid-cols-[1.4rem_minmax(0,1fr)_3.6rem_2.8rem_1.6rem_1.1rem]' : 'grid-cols-[1.5rem_1fr_1fr_1fr_1.5rem]';
                 return (
                 <div
                     key={i}
@@ -724,6 +724,7 @@ export function ExerciseEditor({
                         {execution ? <span className="text-center">Kg</span> : <span>Reps</span>}
                         {execution ? <span className="text-center">Reps</span> : <span>RPE</span>}
                         <span />
+                        {execution && <span />}
                     </div>
 
                     {it.sets.map((set, s) => {
@@ -784,6 +785,11 @@ export function ExerciseEditor({
                                 ) : (
                                     <button onClick={() => removeSet(i, s)} className="text-neutral-300 hover:text-rose-500">
                                         <X size={14} />
+                                    </button>
+                                )}
+                                {execution && (
+                                    <button onClick={() => removeSet(i, s)} title="Supprimer la série" className="flex justify-center text-neutral-300 hover:text-rose-500">
+                                        <X size={13} />
                                     </button>
                                 )}
                             </div>
