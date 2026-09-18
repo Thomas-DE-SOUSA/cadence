@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { Dumbbell, Pencil, Plus, Trash2 } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
+import { useConfirm } from '@/components/ConfirmDialog';
 
 interface Template {
     id: string;
@@ -15,12 +16,14 @@ interface Props {
 }
 
 export default function MuscuTemplates({ templates }: Props) {
-    const remove = (t: Template) => {
-        const msg =
+    const { confirm, node: confirmNode } = useConfirm();
+
+    const remove = async (t: Template) => {
+        const message =
             t.usageCount > 0
-                ? `⚠️ « ${t.name} » est posée ${t.usageCount} fois sur ton agenda.\n\nSupprimer le modèle n'efface PAS ces séances (elles gardent leur propre copie), mais tu ne pourras plus le reposer sur de nouveaux jours.\n\nSupprimer quand même ?`
-                : `Supprimer la séance « ${t.name} » ?`;
-        if (confirm(msg)) {
+                ? `Elle est posée ${t.usageCount}× sur ton agenda. Ces séances gardent leur copie, mais tu ne pourras plus la reposer sur de nouveaux jours.`
+                : 'Ce modèle de séance sera supprimé.';
+        if (await confirm({ title: `Supprimer « ${t.name} » ?`, message, confirmLabel: 'Supprimer' })) {
             router.post(`/muscu/seances/${t.id}/supprimer`, {}, { preserveScroll: true });
         }
     };
@@ -83,6 +86,7 @@ export default function MuscuTemplates({ templates }: Props) {
                     ))}
                 </div>
             )}
+            {confirmNode}
         </>
     );
 }

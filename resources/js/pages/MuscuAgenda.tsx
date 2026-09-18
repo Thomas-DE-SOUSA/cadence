@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { CalendarPlus, ChevronLeft, ChevronRight, CircleCheck, Dumbbell, Plus, Trash2, X } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
+import { useConfirm } from '@/components/ConfirmDialog';
 
 interface DaySession {
     id: string;
@@ -72,9 +73,10 @@ function PlacePicker({ date, templates, onClose }: { date: string; templates: Te
 
 export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: Props) {
     const [placeDate, setPlaceDate] = useState<string | null>(null);
+    const { confirm, node: confirmNode } = useConfirm();
 
-    const removeSession = (id: string, title: string) => {
-        if (confirm(`Retirer « ${title || 'la séance'} » de l'agenda ?`)) {
+    const removeSession = async (id: string, title: string) => {
+        if (await confirm({ title: 'Retirer cette séance ?', message: `« ${title || 'la séance'} » sera retirée de ton agenda.`, confirmLabel: 'Retirer' })) {
             router.post(`/muscu/agenda/${id}/supprimer`, {}, { preserveScroll: true });
         }
     };
@@ -146,6 +148,7 @@ export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: 
             </div>
 
             {placeDate && <PlacePicker date={placeDate} templates={templates} onClose={() => setPlaceDate(null)} />}
+            {confirmNode}
         </>
     );
 }

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ArrowLeft, Clock, Gauge, Mountain, Route as RouteIcon, Timer, Trash2 } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Card } from '@/components/Card';
+import { useConfirm } from '@/components/ConfirmDialog';
 import { HelpTip } from '@/components/HelpTip';
 import type { Activity } from '@/types';
 import { BestEfforts } from '@/features/activity/components/BestEfforts';
@@ -50,9 +51,10 @@ function HeroStat({
 
 export default function ActivityDetail({ activity }: Props) {
     const del = useForm();
+    const { confirm, node: confirmNode } = useConfirm();
 
-    function remove() {
-        if (window.confirm('Supprimer définitivement cette activité ?')) {
+    async function remove() {
+        if (await confirm({ title: 'Supprimer cette activité ?', message: 'Cette action est définitive.', confirmLabel: 'Supprimer' })) {
             del.delete(`/activites/${activity.id}`);
         }
     }
@@ -237,6 +239,7 @@ export default function ActivityDetail({ activity }: Props) {
                     </Card>
                 </div>
             </div>
+            {confirmNode}
         </>
     );
 }
