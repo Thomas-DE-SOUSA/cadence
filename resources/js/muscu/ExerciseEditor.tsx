@@ -597,18 +597,8 @@ export function ExerciseEditor({
                 const workingSets = it.sets.filter((s) => !s.is_warmup);
                 const doneWorking = workingSets.filter((s) => s.done).length;
                 const topSet = lastTopSet(it.sets);
-                const allDone = execution && it.sets.length > 0 && it.sets.every((s) => s.done);
-                // A superset run reads as one block: same-group neighbours share a
-                // violet left rail, joined tight (rounding opened between them).
+                // Supersets keep a violet left rail so same-group neighbours read together.
                 const group = it.superset_group;
-                const linkedAbove = group != null && i > 0 && items[i - 1].superset_group === group;
-                const linkedBelow = group != null && i < items.length - 1 && items[i + 1].superset_group === group;
-                const rounding = linkedAbove && linkedBelow ? 'rounded-none' : linkedAbove ? 'rounded-b-2xl rounded-t-none' : linkedBelow ? 'rounded-t-2xl rounded-b-none' : 'rounded-2xl';
-                const color = allDone
-                    ? 'border-emerald-300 bg-emerald-50 shadow-emerald-200/50'
-                    : group != null
-                      ? 'border-neutral-200 border-l-4 border-l-violet-400 bg-white shadow-neutral-200/60'
-                      : 'border-neutral-200 bg-white shadow-neutral-200/60';
                 const prevWorking = (lastByExercise[it.exercise_id]?.sets ?? []).filter((x) => !x.is_warmup);
                 // During a session: Série · Précédent · Kg · Reps · ✓ (Hevy-style).
                 // While planning: Set · Kg · Reps · RPE · ✗.
@@ -616,11 +606,7 @@ export function ExerciseEditor({
                 return (
                 <div
                     key={i}
-                    className={
-                        execution
-                            ? `pb-4 ${group != null ? 'border-l-4 border-l-violet-400 pl-3' : ''} ${i < items.length - 1 ? 'mb-4 border-b border-neutral-200' : ''}`
-                            : `border p-4 shadow-sm transition-colors ${rounding} ${color} ${linkedAbove ? 'border-t-0' : ''} ${linkedBelow ? '' : 'mb-3'}`
-                    }
+                    className={`pb-4 ${group != null ? 'border-l-4 border-l-violet-400 pl-3' : ''} ${i < items.length - 1 ? 'mb-4 border-b border-neutral-200' : ''}`}
                 >
                     <div className={`flex items-start justify-between gap-2 ${collapsed ? '' : 'mb-2'}`}>
                         <button onClick={() => patchItem(i, { collapsed: !collapsed })} className="flex min-w-0 flex-1 items-start gap-2 text-left">
