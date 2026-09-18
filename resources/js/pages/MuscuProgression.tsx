@@ -76,10 +76,10 @@ function Spark({ points }: { points: ProgPoint[] }) {
     const area = `${pad},${H - pad} ${line} ${x(n - 1).toFixed(1)},${H - pad}`;
     return (
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 60 }} preserveAspectRatio="none" aria-hidden>
-            {n > 1 && <polygon points={area} fill="rgb(242 103 34 / 0.10)" />}
-            {n > 1 && <polyline points={line} fill="none" stroke="rgb(242 103 34)" strokeWidth={2} vectorEffect="non-scaling-stroke" />}
+            {n > 1 && <polygon points={area} fill="var(--color-brand-500, #2979ff)" fillOpacity={0.1} />}
+            {n > 1 && <polyline points={line} fill="none" stroke="var(--color-brand-500, #2979ff)" strokeWidth={2} vectorEffect="non-scaling-stroke" />}
             {points.map((p, i) => (
-                <circle key={i} cx={x(i)} cy={y(p.e1rm)} r={i === n - 1 ? 3 : 2} fill="rgb(242 103 34)" />
+                <circle key={i} cx={x(i)} cy={y(p.e1rm)} r={i === n - 1 ? 3 : 2} fill="var(--color-brand-500, #2979ff)" />
             ))}
         </svg>
     );

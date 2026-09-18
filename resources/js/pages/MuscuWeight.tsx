@@ -98,8 +98,8 @@ function WeightChart({ weeks }: { weeks: Week[] }) {
                 <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="block">
                     <defs>
                         <linearGradient id="weight-area" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0" stopColor="#f26722" stopOpacity="0.16" />
-                            <stop offset="1" stopColor="#f26722" stopOpacity="0" />
+                            <stop offset="0" stopColor="var(--color-brand-500, #2979ff)" stopOpacity="0.16" />
+                            <stop offset="1" stopColor="var(--color-brand-500, #2979ff)" stopOpacity="0" />
                         </linearGradient>
                     </defs>
 
@@ -107,12 +107,12 @@ function WeightChart({ weeks }: { weeks: Week[] }) {
 
                     {areaPath && <path d={areaPath} fill="url(#weight-area)" />}
                     {weeks.length > 1 && (
-                        <path d={linePath} fill="none" stroke="#f26722" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+                        <path d={linePath} fill="none" stroke="var(--color-brand-500, #2979ff)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
                     )}
 
                     {weeks.map((w, i) => (
                         <g key={w.weekStart}>
-                            <circle cx={x(i)} cy={y(w.avgKg)} r={4} fill="#f26722" stroke="#fff" strokeWidth={2} />
+                            <circle cx={x(i)} cy={y(w.avgKg)} r={4} fill="var(--color-brand-500, #2979ff)" stroke="#fff" strokeWidth={2} />
                             <text x={x(i)} y={y(w.avgKg) - 11} textAnchor="middle" fontSize={12} className="fill-neutral-800 font-bold">
                                 {w.avgKg.toFixed(1)}
                             </text>
