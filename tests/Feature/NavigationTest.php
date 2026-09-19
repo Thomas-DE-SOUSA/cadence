@@ -14,7 +14,7 @@ describe('Feature: Section navigation', function (): void {
         );
     })->with([
         ['/progression', 'Progression'],
-        ['/allures', 'Paces'],
-        ['/profil', 'Profile'],
+        ['/paces', 'Paces'],
+        ['/profile', 'Profile'],
     ]);
 });

@@ -15,7 +15,7 @@ interface Props {
     templates: Template[];
 }
 
-export default function MuscuTemplates({ templates }: Props) {
+export default function StrengthTemplates({ templates }: Props) {
     const { confirm, node: confirmNode } = useConfirm();
 
     const remove = async (t: Template) => {
@@ -24,7 +24,7 @@ export default function MuscuTemplates({ templates }: Props) {
                 ? `Elle est posée ${t.usageCount}× sur ton agenda. Ces séances gardent leur copie, mais tu ne pourras plus la reposer sur de nouveaux jours.`
                 : 'Ce modèle de séance sera supprimé.';
         if (await confirm({ title: `Supprimer « ${t.name} » ?`, message, confirmLabel: 'Supprimer' })) {
-            router.post(`/muscu/seances/${t.id}/supprimer`, {}, { preserveScroll: true });
+            router.post(`/strength/sessions/${t.id}/delete`, {}, { preserveScroll: true });
         }
     };
 
@@ -36,7 +36,7 @@ export default function MuscuTemplates({ templates }: Props) {
                     <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Mes séances</h1>
                     <p className="mt-1 text-sm text-neutral-500">Tes séances-modèles, à poser sur l'agenda autant de fois que tu veux.</p>
                 </div>
-                <Link href="/muscu/seances/nouveau" className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">
+                <Link href="/strength/sessions/new" className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">
                     <Plus size={16} /> Séance
                 </Link>
             </div>
@@ -45,7 +45,7 @@ export default function MuscuTemplates({ templates }: Props) {
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-200 px-6 py-16 text-center">
                     <Dumbbell size={32} className="mb-3 text-neutral-400" />
                     <p className="max-w-sm text-sm text-neutral-500">Crée ta première séance-modèle (Push, Jambes…). Tu la poseras ensuite sur tes jours d'entraînement.</p>
-                    <Link href="/muscu/seances/nouveau" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">
+                    <Link href="/strength/sessions/new" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">
                         <Plus size={16} /> Nouvelle séance
                     </Link>
                 </div>
@@ -53,7 +53,7 @@ export default function MuscuTemplates({ templates }: Props) {
                 <div>
                     {templates.map((t) => (
                         <div key={t.id} className="flex items-start gap-3 border-b border-neutral-200 py-4 last:border-b-0">
-                            <Link href={`/muscu/seances/${t.id}/modifier`} className="flex min-w-0 flex-1 items-start gap-3 text-left transition-colors hover:opacity-70">
+                            <Link href={`/strength/sessions/${t.id}/edit`} className="flex min-w-0 flex-1 items-start gap-3 text-left transition-colors hover:opacity-70">
                                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
                                     <Dumbbell size={18} />
                                 </span>
@@ -75,7 +75,7 @@ export default function MuscuTemplates({ templates }: Props) {
                                 </div>
                             </Link>
                             <div className="flex shrink-0 items-center gap-1">
-                                <Link href={`/muscu/seances/${t.id}/modifier`} className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700">
+                                <Link href={`/strength/sessions/${t.id}/edit`} className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700">
                                     <Pencil size={15} />
                                 </Link>
                                 <button onClick={() => remove(t)} className="rounded-lg p-1.5 text-neutral-400 hover:bg-rose-50 hover:text-rose-500">
@@ -91,4 +91,4 @@ export default function MuscuTemplates({ templates }: Props) {
     );
 }
 
-MuscuTemplates.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
+StrengthTemplates.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;

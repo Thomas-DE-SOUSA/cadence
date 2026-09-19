@@ -151,7 +151,7 @@ function ExercisePicker({
     const createExercise = () => {
         if (newName.trim() === '') return;
         router.post(
-            '/muscu/exercices',
+            '/strength/exercises',
             { name: newName.trim(), primaryMuscle: newMuscle, equipment: newEquip },
             {
                 preserveState: true,
@@ -380,7 +380,7 @@ function ExerciseHistoryModal({ exerciseId, name, onClose }: { exerciseId: strin
         let alive = true;
         setEntries(null);
         setFailed(false);
-        fetch(`/muscu/exercice/${encodeURIComponent(exerciseId)}/historique`, { headers: { Accept: 'application/json' } })
+        fetch(`/strength/exercise/${encodeURIComponent(exerciseId)}/history`, { headers: { Accept: 'application/json' } })
             .then((r) => (r.ok ? r.json() : Promise.reject(new Error('http'))))
             .then((d: { entries?: HistoryEntry[] }) => {
                 if (alive) setEntries(Array.isArray(d.entries) ? d.entries : []);
@@ -621,7 +621,7 @@ export function ExerciseEditor({
                 // Supersets keep a violet left rail so same-group neighbours read together.
                 const group = it.superset_group;
                 const prevWorking = (lastByExercise[it.exercise_id]?.sets ?? []).filter((x) => !x.is_warmup);
-                // During a session: Série · Précédent · Kg · Reps · ✓ (Hevy-style).
+                // During a session: Set · Previous · Kg · Reps · ✓ (Hevy-style).
                 // While planning: Set · Kg · Reps · RPE · ✗.
                 const gridCols = execution ? 'grid-cols-[1.4rem_minmax(0,1fr)_3.6rem_2.8rem_1.6rem_1.1rem]' : 'grid-cols-[1.5rem_1fr_1fr_1fr_1.5rem]';
                 return (

@@ -182,14 +182,14 @@ html.dark {
 }
 
 /* ============================================================
-   Muscu world — the strength side. Wrapping the app in
-   `.mode-muscu` remaps the brand scale to warehouse orange, so
+   Strength world. Wrapping the app in
+   `.mode-strength` remaps the brand scale to warehouse orange, so
    every brand-tinted chrome element (logo, nav, buttons, chips)
    turns orange without touching a single utility class. The
-   compound `html.dark .mode-muscu` wins over the dark green.
+   compound `html.dark .mode-strength` wins over the dark green.
    ============================================================ */
-.mode-muscu,
-html.dark .mode-muscu {
+.mode-strength,
+html.dark .mode-strength {
     /* Hevy-style vivid blue — 500 is the accent (#2979FF). */
     --color-brand-50: #eef5ff;
     --color-brand-100: #d9e8ff;
@@ -203,7 +203,7 @@ html.dark .mode-muscu {
     --color-brand-900: #123c78;
 }
 
-html.dark .mode-muscu {
+html.dark .mode-strength {
     /* Dark-tinted chips + readable blue accent text in dark mode. */
     --color-brand-50: #12213b;
     --color-brand-100: #14294d;

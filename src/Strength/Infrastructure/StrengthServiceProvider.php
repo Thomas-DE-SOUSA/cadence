@@ -7,7 +7,7 @@ namespace Cadence\Strength\Infrastructure;
 use Cadence\Shared\Infrastructure\Ai\AnthropicClient;
 use Cadence\Strength\Application\Port\FoodEstimator;
 use Cadence\Strength\Domain\Port\ExerciseRepository;
-use Cadence\Strength\Domain\Port\MuscuProfileRepository;
+use Cadence\Strength\Domain\Port\StrengthProfileRepository;
 use Cadence\Strength\Domain\Port\NutritionEntryRepository;
 use Cadence\Strength\Domain\Port\StrengthSessionRepository;
 use Cadence\Strength\Domain\Port\WeightEntryRepository;
@@ -17,8 +17,8 @@ use Cadence\Strength\Infrastructure\Http\Controller\AddCustomExerciseController;
 use Cadence\Strength\Infrastructure\Http\Controller\DeleteNutritionEntryController;
 use Cadence\Strength\Infrastructure\Http\Controller\EstimateNutritionController;
 use Cadence\Strength\Infrastructure\Http\Controller\LogNutritionController;
-use Cadence\Strength\Infrastructure\Http\Controller\SaveMuscuProfileController;
-use Cadence\Strength\Infrastructure\Http\Controller\ShowMuscuProfileController;
+use Cadence\Strength\Infrastructure\Http\Controller\SaveStrengthProfileController;
+use Cadence\Strength\Infrastructure\Http\Controller\ShowStrengthProfileController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowNutritionController;
 use Cadence\Strength\Infrastructure\Http\Controller\DeleteTemplateController;
 use Cadence\Strength\Infrastructure\Http\Controller\LogStrengthSessionController;
@@ -34,7 +34,7 @@ use Cadence\Strength\Infrastructure\Http\Controller\ShowTemplateEditorController
 use Cadence\Strength\Infrastructure\Http\Controller\ShowTemplatesController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowWeightController;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentExerciseRepository;
-use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentMuscuProfileRepository;
+use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentStrengthProfileRepository;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentNutritionEntryRepository;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentStrengthSessionRepository;
 use Cadence\Strength\Infrastructure\Persistence\Eloquent\EloquentWeightEntryRepository;
@@ -49,7 +49,7 @@ final class StrengthServiceProvider extends ServiceProvider
         $this->app->bind(ExerciseRepository::class, EloquentExerciseRepository::class);
         $this->app->bind(StrengthSessionRepository::class, EloquentStrengthSessionRepository::class);
         $this->app->bind(WorkoutTemplateRepository::class, EloquentWorkoutTemplateRepository::class);
-        $this->app->bind(MuscuProfileRepository::class, EloquentMuscuProfileRepository::class);
+        $this->app->bind(StrengthProfileRepository::class, EloquentStrengthProfileRepository::class);
         $this->app->bind(WeightEntryRepository::class, EloquentWeightEntryRepository::class);
         $this->app->bind(NutritionEntryRepository::class, EloquentNutritionEntryRepository::class);
         // Food estimation runs on Claude (Haiku) — reliable, strict-JSON output,
@@ -64,41 +64,41 @@ final class StrengthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Route::middleware(['web', 'auth'])->prefix('muscu')->group(function (): void {
-            // Agenda (home) + progression.
-            Route::get('/', ShowAgendaController::class)->name('muscu');
-            Route::get('/progression', ShowProgressionController::class)->name('muscu.progression');
-            Route::get('/exercice/{exerciseId}/historique', ShowExerciseHistoryController::class)->name('muscu.exercise.history');
+        Route::middleware(['web', 'auth'])->prefix('strength')->group(function (): void {
+            // Schedule (home) + progression.
+            Route::get('/', ShowAgendaController::class)->name('strength');
+            Route::get('/progression', ShowProgressionController::class)->name('strength.progression');
+            Route::get('/exercise/{exerciseId}/history', ShowExerciseHistoryController::class)->name('strength.exercise.history');
 
             // Body-weight tracker (morning/evening readings → weekly averages).
-            Route::get('/poids', ShowWeightController::class)->name('muscu.weight');
-            Route::post('/poids', LogWeightEntryController::class)->name('muscu.weight.save');
+            Route::get('/weight', ShowWeightController::class)->name('strength.weight');
+            Route::post('/weight', LogWeightEntryController::class)->name('strength.weight.save');
 
             // Nutrition: daily food log (AI-estimated) vs. lean-bulk targets.
-            Route::get('/nutrition', ShowNutritionController::class)->name('muscu.nutrition');
-            Route::post('/nutrition', LogNutritionController::class)->name('muscu.nutrition.log');
-            Route::post('/nutrition/{id}/estimer', EstimateNutritionController::class)->name('muscu.nutrition.estimate');
-            Route::post('/nutrition/{id}/supprimer', DeleteNutritionEntryController::class)->name('muscu.nutrition.delete');
+            Route::get('/nutrition', ShowNutritionController::class)->name('strength.nutrition');
+            Route::post('/nutrition', LogNutritionController::class)->name('strength.nutrition.log');
+            Route::post('/nutrition/{id}/estimate', EstimateNutritionController::class)->name('strength.nutrition.estimate');
+            Route::post('/nutrition/{id}/delete', DeleteNutritionEntryController::class)->name('strength.nutrition.delete');
 
-            // Muscu profile (goal, level, equipment, priorities…).
-            Route::get('/profil', ShowMuscuProfileController::class)->name('muscu.profile');
-            Route::post('/profil', SaveMuscuProfileController::class)->name('muscu.profile.save');
+            // Strength profile (goal, level, equipment, priorities…).
+            Route::get('/profile', ShowStrengthProfileController::class)->name('strength.profile');
+            Route::post('/profile', SaveStrengthProfileController::class)->name('strength.profile.save');
 
-            // Séance templates (the reusable library).
-            Route::get('/seances', ShowTemplatesController::class)->name('muscu.templates');
-            Route::get('/seances/nouveau', ShowTemplateEditorController::class)->name('muscu.templates.new');
-            Route::post('/seances', SaveTemplateController::class)->name('muscu.templates.save');
-            Route::get('/seances/{id}/modifier', ShowTemplateEditorController::class)->name('muscu.templates.edit');
-            Route::post('/seances/{id}/supprimer', DeleteTemplateController::class)->name('muscu.templates.delete');
+            // Session templates (the reusable library).
+            Route::get('/sessions', ShowTemplatesController::class)->name('strength.templates');
+            Route::get('/sessions/new', ShowTemplateEditorController::class)->name('strength.templates.new');
+            Route::post('/sessions', SaveTemplateController::class)->name('strength.templates.save');
+            Route::get('/sessions/{id}/edit', ShowTemplateEditorController::class)->name('strength.templates.edit');
+            Route::post('/sessions/{id}/delete', DeleteTemplateController::class)->name('strength.templates.delete');
 
-            // Agenda entries (a template placed on a day → planned → done).
-            Route::post('/agenda/planifier', ScheduleWorkoutController::class)->name('muscu.schedule');
-            Route::post('/agenda', LogStrengthSessionController::class)->name('muscu.session.save');
-            Route::get('/agenda/{id}', ShowSessionEditorController::class)->name('muscu.session');
-            Route::post('/agenda/{id}/supprimer', RemoveScheduledWorkoutController::class)->name('muscu.session.delete');
+            // Schedule entries (a template placed on a day → planned → done).
+            Route::post('/schedule/plan', ScheduleWorkoutController::class)->name('strength.schedule');
+            Route::post('/schedule', LogStrengthSessionController::class)->name('strength.session.save');
+            Route::get('/schedule/{id}', ShowSessionEditorController::class)->name('strength.session');
+            Route::post('/schedule/{id}/delete', RemoveScheduledWorkoutController::class)->name('strength.session.delete');
 
             // Custom exercises (shared by every editor).
-            Route::post('/exercices', AddCustomExerciseController::class)->name('muscu.exercises.add');
+            Route::post('/exercises', AddCustomExerciseController::class)->name('strength.exercises.add');
         });
     }
 }

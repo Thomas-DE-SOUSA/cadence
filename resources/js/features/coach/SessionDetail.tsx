@@ -118,7 +118,7 @@ export function SessionDetail({ session, paces }: { session: Session; paces: Pac
         }
     }
 
-    // Objectif vs réalisé — only when the day has a linked run and a pace target.
+    // Target vs actual — only when the day has a linked run and a pace target.
     const actual = session.actual;
     const comparison =
         actual && pace

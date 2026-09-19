@@ -20,6 +20,6 @@ final class DeleteTemplateController
     {
         $this->templates->delete($id, $this->tenantContext->current());
 
-        return redirect()->route('muscu.templates')->with('status', 'Séance supprimée.');
+        return redirect()->route('strength.templates')->with('status', 'Séance supprimée.');
     }
 }

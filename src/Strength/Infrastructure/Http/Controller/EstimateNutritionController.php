@@ -32,6 +32,6 @@ final class EstimateNutritionController
 
         $this->useCase->execute($id, new ExecutionContext($this->tenantContext->current()));
 
-        return redirect()->route('muscu.nutrition', isset($data['date']) ? ['date' => (string) $data['date']] : []);
+        return redirect()->route('strength.nutrition', isset($data['date']) ? ['date' => (string) $data['date']] : []);
     }
 }

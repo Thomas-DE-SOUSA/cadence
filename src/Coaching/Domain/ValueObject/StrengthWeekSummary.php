@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Cadence\Coaching\Domain\ValueObject;
 
 /**
- * The strength (muscu) side of one Mon–Sun week, shaped for the weekly coach:
+ * The strength side of one Mon–Sun week, shaped for the weekly coach:
  * how much was lifted, how often, which muscles, the leg load (which competes
  * with running recovery), the trend vs the previous week, and the body-weight
  * drift. Pure data — the prompt builder formats it.

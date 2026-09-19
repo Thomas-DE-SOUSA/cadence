@@ -115,7 +115,7 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
                 target_count: o.count ? parseInt(o.count, 10) : null,
             })),
         }));
-        form.post('/programme');
+        form.post('/program');
     }
 
     const errors = Object.values(form.errors);
@@ -124,7 +124,7 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
         <>
             <Head title="Nouveau programme" />
             <Link
-                href="/programme"
+                href="/program"
                 className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
             >
                 <ArrowLeft size={16} /> Programmes

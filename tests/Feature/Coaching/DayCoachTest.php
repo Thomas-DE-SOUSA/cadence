@@ -41,7 +41,7 @@ describe('Feature: Day coach', function (): void {
             }
         });
 
-        $this->post('/programme', [
+        $this->post('/program', [
             'name' => 'Prépa Odysséa',
             'plan_key' => 'sub40-10k',
             'start_date' => '2026-08-24T00:00:00.000Z',
@@ -56,7 +56,7 @@ describe('Feature: Day coach', function (): void {
         expect(sessionType($cycleId, $date))->toBe('EASY');
 
         // Athlete sends a message; the coach replies with a proposal.
-        $this->post("/programme/{$programId}/coach/message", [
+        $this->post("/program/{$programId}/coach/message", [
             'cycle_id' => $cycleId,
             'date' => $date,
             'message' => 'Grosse fatigue musculaire, je ne me sens pas de faire cette séance.',
@@ -75,7 +75,7 @@ describe('Feature: Day coach', function (): void {
         expect(sessionType($cycleId, $date))->toBe('EASY');
 
         // Accept → the day becomes REST and the proposal is marked applied.
-        $this->post("/programme/{$programId}/coach/apply", [
+        $this->post("/program/{$programId}/coach/apply", [
             'conversation_id' => $conversation->id,
             'message_id' => $messages[1]['id'],
         ])->assertOk()->assertJson(['ok' => true]);
@@ -99,14 +99,14 @@ describe('Feature: Day coach', function (): void {
             }
         });
 
-        $this->post('/programme', [
+        $this->post('/program', [
             'name' => 'Bloc', 'plan_key' => 'sub40-10k', 'start_date' => '2026-08-24T00:00:00.000Z',
             'priority' => 'A', 'objectives' => [],
         ])->assertRedirect();
         $programId = (string) TrainingProgramModel::query()->value('id');
         $cycleId = (string) CycleModel::query()->value('id');
 
-        $response = $this->post("/programme/{$programId}/coach/stream", [
+        $response = $this->post("/program/{$programId}/coach/stream", [
             'cycle_id' => $cycleId, 'date' => '2026-08-25', 'message' => 'Grosse fatigue.',
         ]);
 
@@ -122,13 +122,13 @@ describe('Feature: Day coach', function (): void {
     });
 
     it('validates the message input', function (): void {
-        $this->post('/programme', [
+        $this->post('/program', [
             'name' => 'Bloc', 'plan_key' => 'sub40-10k', 'start_date' => '2026-08-24T00:00:00.000Z',
             'priority' => 'A', 'objectives' => [],
         ])->assertRedirect();
         $programId = (string) TrainingProgramModel::query()->value('id');
 
-        $this->postJson("/programme/{$programId}/coach/message", ['cycle_id' => '', 'date' => '', 'message' => ''])
+        $this->postJson("/program/{$programId}/coach/message", ['cycle_id' => '', 'date' => '', 'message' => ''])
             ->assertStatus(422)->assertJsonValidationErrors(['cycle_id', 'date', 'message']);
     });
 });

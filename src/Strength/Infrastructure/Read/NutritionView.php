@@ -7,7 +7,7 @@ namespace Cadence\Strength\Infrastructure\Read;
 use Cadence\Strength\Domain\ValueObject\NutritionEntry;
 
 /**
- * The nutrition read model shown in the muscu world: fixed lean-bulk targets
+ * The nutrition read model shown in the strength world: fixed lean-bulk targets
  * (~3600 kcal, 20/40/40 across meals) and a day view that groups logged entries
  * by meal and sums them against those targets. Pure/deterministic.
  */

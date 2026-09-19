@@ -12,7 +12,7 @@ uses(RefreshDatabase::class);
 
 describe('Feature: Programs', function (): void {
     it('creates a program, assigns a run and shows the evaluated objectives', function (): void {
-        $this->post('/programme', [
+        $this->post('/program', [
             'name' => 'Prépa Odysséa 10K',
             'goal' => 'Passer sous 40 min',
             'target_race_name' => 'Odysséa Paris 10 km',
@@ -32,9 +32,9 @@ describe('Feature: Programs', function (): void {
         $this->seed(ActivitySeeder::class);
         $activityId = (string) ActivityModel::query()->value('id');
 
-        $this->post("/programme/{$programId}/assigner", ['activity_id' => $activityId])->assertRedirect();
+        $this->post("/program/{$programId}/assign", ['activity_id' => $activityId])->assertRedirect();
 
-        $this->get("/programme/{$programId}")->assertInertia(
+        $this->get("/program/{$programId}")->assertInertia(
             fn (AssertableInertia $page) => $page
                 ->component('ProgramDetail')
                 ->where('program.name', 'Prépa Odysséa 10K')
@@ -44,14 +44,14 @@ describe('Feature: Programs', function (): void {
     });
 
     it('lists the tenant programs', function (): void {
-        $this->post('/programme', [
+        $this->post('/program', [
             'name' => 'Bloc test',
             'start_date' => '2026-08-20',
             'priority' => 'B',
             'objectives' => [],
         ])->assertRedirect();
 
-        $this->get('/programme')->assertInertia(
+        $this->get('/program')->assertInertia(
             fn (AssertableInertia $page) => $page->component('Programs')->has('programs', 1),
         );
     });

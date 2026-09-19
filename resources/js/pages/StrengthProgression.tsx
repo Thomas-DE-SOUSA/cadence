@@ -244,7 +244,7 @@ function MuscleBalance({ muscleVolume }: { muscleVolume: MuscleVolume[] }) {
     );
 }
 
-export default function MuscuProgression({ goal, hasProfile, weekly, muscleVolume, progression }: Props) {
+export default function StrengthProgression({ goal, hasProfile, weekly, muscleVolume, progression }: Props) {
     const empty = progression.length === 0 && muscleVolume.length === 0 && weekly.every((w) => w.sessions === 0);
 
     // The profile's goal decides which of the attendance/muscle blocks leads.
@@ -268,7 +268,7 @@ export default function MuscuProgression({ goal, hasProfile, weekly, muscleVolum
                     </p>
                 </div>
                 <Link
-                    href="/muscu/profil"
+                    href="/strength/profile"
                     className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
                         hasProfile ? 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50' : 'border-brand-300 bg-brand-50 text-brand-700'
                     }`}
@@ -284,7 +284,7 @@ export default function MuscuProgression({ goal, hasProfile, weekly, muscleVolum
                         Fais quelques séances (marquées « fait ») : tes charges par exercice, ton assiduité et ton volume par muscle apparaîtront ici.
                     </p>
                     {!hasProfile && (
-                        <Link href="/muscu/profil" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white">
+                        <Link href="/strength/profile" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white">
                             <Activity size={15} /> Configurer mon profil
                         </Link>
                     )}
@@ -299,4 +299,4 @@ export default function MuscuProgression({ goal, hasProfile, weekly, muscleVolum
     );
 }
 
-MuscuProgression.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
+StrengthProgression.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;

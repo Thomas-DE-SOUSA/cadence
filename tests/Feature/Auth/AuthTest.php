@@ -20,8 +20,8 @@ describe('Feature: Authentication & multi-account', function (): void {
         asGuest();
 
         $this->get('/')->assertRedirect('/login');
-        $this->get('/programme')->assertRedirect('/login');
-        $this->get('/allures')->assertRedirect('/login');
+        $this->get('/program')->assertRedirect('/login');
+        $this->get('/paces')->assertRedirect('/login');
     });
 
     it('registers a new account with its own private tenant', function (): void {
@@ -62,7 +62,7 @@ describe('Feature: Authentication & multi-account', function (): void {
         $bob = User::factory()->create(['tenant_id' => 'tenant-bob']);
 
         // Alice records an activity — it must land under HER tenant, not the fallback.
-        $this->actingAs($alice)->post('/activites', [
+        $this->actingAs($alice)->post('/activities', [
             'occurred_at' => '2026-08-19T18:00:00+00:00',
             'source' => 'MANUAL',
             'distance_meters' => 10010,

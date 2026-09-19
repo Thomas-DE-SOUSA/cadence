@@ -37,7 +37,7 @@ final class ShowWeeklyReviewController
         $review = $this->reviews->forWeek($weekStart, $tenant);
         $goal = $this->goals->currentGoal($tenant);
 
-        return Inertia::render('MuscuBilan', [
+        return Inertia::render('StrengthReview', [
             'today' => $today,
             'weekStart' => $weekStart,
             'weekEnd' => $weekEnd,

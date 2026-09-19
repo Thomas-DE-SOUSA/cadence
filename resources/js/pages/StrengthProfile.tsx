@@ -82,7 +82,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     );
 }
 
-export default function MuscuProfile({ profile, options }: Props) {
+export default function StrengthProfile({ profile, options }: Props) {
     const [goal, setGoal] = useState(profile.goal);
     const [level, setLevel] = useState(profile.level);
     const [bodyweight, setBodyweight] = useState(profile.bodyweightKg?.toString() ?? '');
@@ -99,7 +99,7 @@ export default function MuscuProfile({ profile, options }: Props) {
     const save = () => {
         setSaving(true);
         router.post(
-            '/muscu/profil',
+            '/strength/profile',
             {
                 goal,
                 level,
@@ -119,7 +119,7 @@ export default function MuscuProfile({ profile, options }: Props) {
         <>
             <Head title="Profil muscu" />
             <div className="mb-4 flex items-center gap-2">
-                <Link href="/muscu/progression" className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100">
+                <Link href="/strength/progression" className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100">
                     <ArrowLeft size={18} />
                 </Link>
                 <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Profil muscu</h1>
@@ -195,4 +195,4 @@ export default function MuscuProfile({ profile, options }: Props) {
     );
 }
 
-MuscuProfile.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
+StrengthProfile.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;

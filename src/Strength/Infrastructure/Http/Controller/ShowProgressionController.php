@@ -7,7 +7,7 @@ namespace Cadence\Strength\Infrastructure\Http\Controller;
 use Cadence\Shared\Application\TenantContext;
 use Cadence\Shared\Clock\Clock;
 use Cadence\Strength\Domain\Port\ExerciseRepository;
-use Cadence\Strength\Domain\Port\MuscuProfileRepository;
+use Cadence\Strength\Domain\Port\StrengthProfileRepository;
 use Cadence\Strength\Domain\Port\StrengthSessionRepository;
 use Cadence\Strength\Domain\Service\OneRepMaxCalculator;
 use Cadence\Strength\Infrastructure\Read\StrengthView;
@@ -19,7 +19,7 @@ final class ShowProgressionController
     public function __construct(
         private readonly StrengthSessionRepository $sessions,
         private readonly ExerciseRepository $exercises,
-        private readonly MuscuProfileRepository $profiles,
+        private readonly StrengthProfileRepository $profiles,
         private readonly OneRepMaxCalculator $oneRepMax,
         private readonly TenantContext $tenantContext,
         private readonly Clock $clock,
@@ -34,7 +34,7 @@ final class ShowProgressionController
         $sessions = $this->sessions->forTenant($tenant, 400);
         $profile = $this->profiles->forTenant($tenant);
 
-        return Inertia::render('MuscuProgression', [
+        return Inertia::render('StrengthProgression', [
             'goal' => $profile?->goal()->value ?? 'GENERAL',
             'hasProfile' => $profile !== null,
             'weekly' => StrengthView::weekly($sessions, $today),

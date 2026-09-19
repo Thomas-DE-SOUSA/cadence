@@ -10,7 +10,7 @@ uses(RefreshDatabase::class);
 
 describe('Feature: Athlete profile', function (): void {
     it('shows the profile page with defaults when none exists yet', function (): void {
-        $this->get('/profil')->assertInertia(
+        $this->get('/profile')->assertInertia(
             fn (AssertableInertia $page) => $page
                 ->component('Profile')
                 ->where('derived.hasProfile', false)
@@ -19,7 +19,7 @@ describe('Feature: Athlete profile', function (): void {
     });
 
     it('saves the profile and reflects it on the page', function (): void {
-        $this->post('/profil', [
+        $this->post('/profile', [
             'display_name' => 'Thomas',
             'birth_date' => '2000-03-15',
             'height_cm' => 180,
@@ -35,7 +35,7 @@ describe('Feature: Athlete profile', function (): void {
             'goal_time' => '40:00',
             'long_term_goal' => 'Un trail dans un an.',
             'session_reminders' => true,
-        ])->assertRedirect('/profil');
+        ])->assertRedirect('/profile');
 
         $this->assertDatabaseCount('athlete_profiles', 1);
         $stored = AthleteModel::query()->firstOrFail();
@@ -43,7 +43,7 @@ describe('Feature: Athlete profile', function (): void {
         expect($stored->profile['goal_distance_meters'])->toBe(10000);
         expect($stored->profile['goal_target_seconds'])->toBe(2400);
 
-        $this->get('/profil')->assertInertia(
+        $this->get('/profile')->assertInertia(
             fn (AssertableInertia $page) => $page
                 ->component('Profile')
                 ->where('derived.hasProfile', true)
@@ -55,7 +55,7 @@ describe('Feature: Athlete profile', function (): void {
     });
 
     it('rejects an invalid heart rate', function (): void {
-        $this->post('/profil', [
+        $this->post('/profile', [
             'max_hr' => 90,
         ])->assertSessionHasErrors('max_hr');
 

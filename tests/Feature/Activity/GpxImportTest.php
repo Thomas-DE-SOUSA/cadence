@@ -40,7 +40,7 @@ describe('GPX import', function (): void {
     it('creates an activity from an uploaded GPX with its route and profile', function (): void {
         $file = UploadedFile::fake()->createWithContent('run.gpx', sampleGpx());
 
-        $this->post('/activites/importer-gpx', ['gpx' => $file])->assertRedirect();
+        $this->post('/activities/import-gpx', ['gpx' => $file])->assertRedirect();
 
         $activity = ActivityModel::query()->first();
         expect($activity)->not->toBeNull();
@@ -53,7 +53,7 @@ describe('GPX import', function (): void {
     it('rejects a file without a usable track', function (): void {
         $file = UploadedFile::fake()->createWithContent('bad.gpx', '<gpx></gpx>');
 
-        $this->post('/activites/importer-gpx', ['gpx' => $file])->assertSessionHasErrors('gpx');
+        $this->post('/activities/import-gpx', ['gpx' => $file])->assertSessionHasErrors('gpx');
         expect(ActivityModel::query()->count())->toBe(0);
     });
 });

@@ -19,9 +19,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property array<int, string> $limitations
  * @property string $note
  */
-final class MuscuProfileModel extends Model
+final class StrengthProfileModel extends Model
 {
-    protected $table = 'muscu_profiles';
+    protected $table = 'strength_profiles';
 
     public $incrementing = false;
 

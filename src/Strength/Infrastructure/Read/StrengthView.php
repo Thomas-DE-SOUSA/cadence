@@ -11,14 +11,14 @@ use Cadence\Strength\Domain\Enum\MuscleGroup;
 use Cadence\Strength\Domain\Enum\SplitPreference;
 use Cadence\Strength\Domain\Enum\StrengthGoal;
 use Cadence\Strength\Domain\Model\Exercise;
-use Cadence\Strength\Domain\Model\MuscuProfile;
+use Cadence\Strength\Domain\Model\StrengthProfile;
 use Cadence\Strength\Domain\Model\StrengthSession;
 use Cadence\Strength\Domain\Model\WorkoutTemplate;
 use Cadence\Strength\Domain\Service\OneRepMaxCalculator;
 use Cadence\Strength\Domain\ValueObject\PerformedExercise;
 use DateTimeImmutable;
 
-/** Shapes strength data for the Muscu pages. Pure presentation over snapshots. */
+/** Shapes strength data for the strength pages. Pure presentation over snapshots. */
 final class StrengthView
 {
     /**
@@ -39,8 +39,8 @@ final class StrengthView
         ], $exercises);
     }
 
-    /** @return array<string, mixed> the athlete's muscu profile, or sensible defaults */
-    public static function profile(?MuscuProfile $p): array
+    /** @return array<string, mixed> the athlete's strength profile, or sensible defaults */
+    public static function profile(?StrengthProfile $p): array
     {
         $s = $p?->toSnapshot();
 

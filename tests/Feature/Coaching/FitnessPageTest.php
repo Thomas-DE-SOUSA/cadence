@@ -8,13 +8,13 @@ use Inertia\Testing\AssertableInertia;
 
 uses(RefreshDatabase::class);
 
-describe('Feature: Forme & charge page', function (): void {
+describe('Feature: Fitness & load page', function (): void {
     it('renders load, form series and the 80/20 zones once there are runs', function (): void {
         $this->seed(ActivitySeeder::class);
 
-        $this->get('/forme')->assertInertia(
+        $this->get('/fitness')->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('Forme')
+                ->component('Fitness')
                 ->where('load.hasData', true)
                 ->has('load.series')
                 ->has('load.zones.easy')
@@ -23,8 +23,8 @@ describe('Feature: Forme & charge page', function (): void {
     });
 
     it('shows an empty state with no data', function (): void {
-        $this->get('/forme')->assertInertia(
-            fn (AssertableInertia $page) => $page->component('Forme')->where('load.hasData', false),
+        $this->get('/fitness')->assertInertia(
+            fn (AssertableInertia $page) => $page->component('Fitness')->where('load.hasData', false),
         );
     });
 });

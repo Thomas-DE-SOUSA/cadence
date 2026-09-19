@@ -55,7 +55,7 @@ export default function ActivityDetail({ activity }: Props) {
 
     async function remove() {
         if (await confirm({ title: 'Supprimer cette activité ?', message: 'Cette action est définitive.', confirmLabel: 'Supprimer' })) {
-            del.delete(`/activites/${activity.id}`);
+            del.delete(`/activities/${activity.id}`);
         }
     }
 
@@ -76,7 +76,7 @@ export default function ActivityDetail({ activity }: Props) {
                 </Link>
                 <div className="flex items-center gap-2">
                     <Link
-                        href={`/activites/${activity.id}/modifier`}
+                        href={`/activities/${activity.id}/edit`}
                         className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-100"
                     >
                         Modifier

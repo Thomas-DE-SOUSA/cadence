@@ -2,7 +2,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, Dumbbell, LogOut, Palette, Plus, User as UserIcon } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-import { muscuNavItems, navItems, type NavItem } from '@/lib/nav';
+import { strengthNavItems, navItems, type NavItem } from '@/lib/nav';
 import { BrandMark } from '@/components/BrandMark';
 import { ThemePicker } from '@/components/ThemePicker';
 
@@ -64,7 +64,7 @@ function AccountMenu({
                         {user?.email && <p className="truncate text-xs text-neutral-400">{user.email}</p>}
                     </div>
                     <Link
-                        href="/profil"
+                        href="/profile"
                         onClick={() => setOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
                     >
@@ -98,7 +98,7 @@ function AccountMenu({
 
 /**
  * The active nav item is the LONGEST href that matches the path, so a parent
- * route (e.g. "/muscu") doesn't stay highlighted on a child ("/muscu/seances").
+ * route (e.g. "/strength") doesn't stay highlighted on a child ("/strength/sessions").
  */
 function activeHref(path: string, items: NavItem[]): string {
     let best = '';
@@ -120,16 +120,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const [themeOpen, setThemeOpen] = useState(false);
 
     // Two worlds: the running side (Cadence, green) and the strength side
-    // (Muscu, orange). The world is derived from the URL; switching is a tap in
-    // the top bar — no extra nav clutter. The `mode-muscu` class remaps the
+    // (orange). The world is derived from the URL; switching is a tap in
+    // the top bar — no extra nav clutter. The `mode-strength` class remaps the
     // brand palette to orange for the whole chrome.
-    const mode: 'run' | 'muscu' = path.startsWith('/muscu') ? 'muscu' : 'run';
-    const nav = mode === 'muscu' ? muscuNavItems : navItems;
+    const mode: 'run' | 'strength' = path.startsWith('/strength') ? 'strength' : 'run';
+    const nav = mode === 'strength' ? strengthNavItems : navItems;
     const activeNav = activeHref(path, nav);
-    const addAction = mode === 'muscu' ? { href: '/muscu/seances/nouveau', label: 'Séance' } : { href: '/activites/nouvelle', label: 'Activité' };
+    const addAction = mode === 'strength' ? { href: '/strength/sessions/new', label: 'Séance' } : { href: '/activities/new', label: 'Activité' };
     // Editor screens (template editor, "do the session") have their own sticky
     // action bar, so the mobile tab bar is suppressed there.
-    const isSessionEditor = path.startsWith('/muscu/seances/') || path.startsWith('/muscu/agenda/');
+    const isSessionEditor = path.startsWith('/strength/sessions/') || path.startsWith('/strength/schedule/');
 
     useEffect(() => {
         if (flash) {
@@ -149,7 +149,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             : null;
 
     return (
-        <div className={`min-h-screen text-neutral-900${mode === 'muscu' ? ' mode-muscu' : ''}`}>
+        <div className={`min-h-screen text-neutral-900${mode === 'strength' ? ' mode-strength' : ''}`}>
             {/* Top navigation bar */}
             <header className="fixed inset-x-0 top-0 z-30 border-b border-neutral-200/80 bg-white/85 shadow-[0_1px_2px_rgba(16,16,20,0.04),0_8px_24px_-12px_rgba(16,16,20,0.12)] backdrop-blur-lg">
                 <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:px-8">
@@ -164,9 +164,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                             <BrandMark className="h-4 w-auto" /> Course
                         </Link>
                         <Link
-                            href="/muscu"
+                            href="/strength"
                             className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-colors ${
-                                mode === 'muscu' ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/30' : 'text-neutral-500 hover:text-neutral-800'
+                                mode === 'strength' ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/30' : 'text-neutral-500 hover:text-neutral-800'
                             }`}
                         >
                             <Dumbbell size={15} /> Muscu

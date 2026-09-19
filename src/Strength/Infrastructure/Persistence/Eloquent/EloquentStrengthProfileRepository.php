@@ -7,22 +7,22 @@ namespace Cadence\Strength\Infrastructure\Persistence\Eloquent;
 use Cadence\Shared\Domain\TenantId;
 use Cadence\Shared\Identifier\IdGenerator;
 use Cadence\Shared\Infrastructure\Persistence\PersistenceFailure;
-use Cadence\Strength\Domain\Model\MuscuProfile;
-use Cadence\Strength\Domain\Port\MuscuProfileRepository;
+use Cadence\Strength\Domain\Model\StrengthProfile;
+use Cadence\Strength\Domain\Port\StrengthProfileRepository;
 use Throwable;
 
-final class EloquentMuscuProfileRepository implements MuscuProfileRepository
+final class EloquentStrengthProfileRepository implements StrengthProfileRepository
 {
     public function __construct(private readonly IdGenerator $ids)
     {
     }
 
-    public function save(MuscuProfile $profile): void
+    public function save(StrengthProfile $profile): void
     {
         $s = $profile->toSnapshot();
 
         try {
-            $model = MuscuProfileModel::query()->firstOrNew(['tenant_id' => $s['tenant_id']]);
+            $model = StrengthProfileModel::query()->firstOrNew(['tenant_id' => $s['tenant_id']]);
             if (! $model->exists) {
                 $model->id = $this->ids->generate();
             }
@@ -38,15 +38,15 @@ final class EloquentMuscuProfileRepository implements MuscuProfileRepository
                 'note' => $s['note'],
             ])->save();
         } catch (Throwable $e) {
-            throw new PersistenceFailure('Could not persist the muscu profile.', 0, $e);
+            throw new PersistenceFailure('Could not persist the strength profile.', 0, $e);
         }
     }
 
-    public function forTenant(TenantId $tenant): ?MuscuProfile
+    public function forTenant(TenantId $tenant): ?StrengthProfile
     {
-        $model = MuscuProfileModel::query()->where('tenant_id', $tenant->value)->first();
+        $model = StrengthProfileModel::query()->where('tenant_id', $tenant->value)->first();
 
-        return $model instanceof MuscuProfileModel ? MuscuProfile::fromSnapshot([
+        return $model instanceof StrengthProfileModel ? StrengthProfile::fromSnapshot([
             'tenant_id' => $model->tenant_id,
             'goal' => $model->goal,
             'level' => $model->level,

@@ -6,25 +6,25 @@ export interface NavItem {
     icon: LucideIcon;
 }
 
-// Profil is reached via the athlete chip in the top bar, so it stays out of the
-// main nav to keep the (mobile) bar uncluttered. Muscu is reached via the world
+// Profile is reached via the athlete chip in the top bar, so it stays out of the
+// main nav to keep the (mobile) bar uncluttered. Strength is reached via the world
 // switch in the top bar, not the nav — two worlds, one uncluttered bar each.
 export const navItems: NavItem[] = [
     { label: 'Tableau de bord', href: '/', icon: LayoutDashboard },
     { label: 'Progression', href: '/progression', icon: TrendingUp },
-    { label: 'Forme', href: '/forme', icon: Activity },
-    { label: 'Programme', href: '/programme', icon: CalendarDays },
-    { label: 'Allures', href: '/allures', icon: Gauge },
-    { label: 'Conseil', href: '/conseil', icon: Lightbulb },
+    { label: 'Forme', href: '/fitness', icon: Activity },
+    { label: 'Programme', href: '/program', icon: CalendarDays },
+    { label: 'Allures', href: '/paces', icon: Gauge },
+    { label: 'Conseil', href: '/advice', icon: Lightbulb },
 ];
 
-// The Muscu world's own nav: the agenda (place séances on days), the séance
+// The Strength world's own nav: the agenda (place sessions on days), the session
 // templates library, and the strength progression.
-export const muscuNavItems: NavItem[] = [
-    { label: 'Agenda', href: '/muscu', icon: CalendarCheck },
-    { label: 'Séances', href: '/muscu/seances', icon: Dumbbell },
-    { label: 'Progression', href: '/muscu/progression', icon: TrendingUp },
-    { label: 'Poids', href: '/muscu/poids', icon: Scale },
-    { label: 'Nutrition', href: '/muscu/nutrition', icon: Utensils },
-    { label: 'Bilan', href: '/muscu/bilan', icon: Sparkles },
+export const strengthNavItems: NavItem[] = [
+    { label: 'Agenda', href: '/strength', icon: CalendarCheck },
+    { label: 'Séances', href: '/strength/sessions', icon: Dumbbell },
+    { label: 'Progression', href: '/strength/progression', icon: TrendingUp },
+    { label: 'Poids', href: '/strength/weight', icon: Scale },
+    { label: 'Nutrition', href: '/strength/nutrition', icon: Utensils },
+    { label: 'Bilan', href: '/strength/review', icon: Sparkles },
 ];

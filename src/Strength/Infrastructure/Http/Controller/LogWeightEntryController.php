@@ -41,6 +41,6 @@ final class LogWeightEntryController
             new ExecutionContext($this->tenantContext->current()),
         );
 
-        return redirect()->route('muscu.weight')->with('status', 'Poids enregistré.');
+        return redirect()->route('strength.weight')->with('status', 'Poids enregistré.');
     }
 }

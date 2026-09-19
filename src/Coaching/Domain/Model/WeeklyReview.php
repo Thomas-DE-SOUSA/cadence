@@ -44,7 +44,7 @@ final class WeeklyReview
 
     public function addCoachMessage(string $messageId, string $text, string $occurredAt): void
     {
-        // No proposals in the weekly verdict: running/muscu changes are advice.
+        // No proposals in the weekly verdict: running/strength changes are advice.
         $this->messages[] = new Message($messageId, MessageRole::COACH, $text, $occurredAt, null);
         $this->version++;
     }

@@ -35,7 +35,7 @@ final class ShowTemplateEditorController
 
         $enums = StrengthView::enums();
 
-        return Inertia::render('MuscuTemplate', [
+        return Inertia::render('StrengthTemplate', [
             'catalog' => StrengthView::catalog($this->exercises->forTenant($tenant)),
             'muscles' => $enums['muscles'],
             'equipments' => $enums['equipments'],

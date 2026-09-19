@@ -77,7 +77,7 @@ final class CoachingServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Route::middleware(['web', 'auth'])->prefix('programme/{id}/coach')->group(function (): void {
+        Route::middleware(['web', 'auth'])->prefix('program/{id}/coach')->group(function (): void {
             Route::get('/thread', ShowCoachThreadController::class)->name('programs.coach.thread');
             Route::post('/message', SendCoachMessageController::class)->name('programs.coach.message');
             Route::post('/stream', StreamCoachController::class)->name('programs.coach.stream');
@@ -85,20 +85,20 @@ final class CoachingServiceProvider extends ServiceProvider
         });
 
         // Fitness / training-load insights + daily subjective check-in.
-        Route::middleware(['web', 'auth'])->get('/forme', ShowFitnessController::class)->name('fitness');
-        Route::middleware(['web', 'auth'])->post('/forme/check-in', SubmitWellnessCheckInController::class)->name('fitness.checkin');
+        Route::middleware(['web', 'auth'])->get('/fitness', ShowFitnessController::class)->name('fitness');
+        Route::middleware(['web', 'auth'])->post('/fitness/check-in', SubmitWellnessCheckInController::class)->name('fitness.checkin');
 
-        // Weekly cross-modal review ("Bilan") — lives in the muscu world's nav.
-        Route::middleware(['web', 'auth'])->prefix('muscu/bilan')->group(function (): void {
-            Route::get('/', ShowWeeklyReviewController::class)->name('muscu.bilan');
-            Route::get('/thread', ShowWeeklyThreadController::class)->name('muscu.bilan.thread');
-            Route::post('/stream', StreamWeeklyReviewController::class)->name('muscu.bilan.stream');
+        // Weekly cross-modal review ("Bilan") — lives in the strength world's nav.
+        Route::middleware(['web', 'auth'])->prefix('strength/review')->group(function (): void {
+            Route::get('/', ShowWeeklyReviewController::class)->name('strength.review');
+            Route::get('/thread', ShowWeeklyThreadController::class)->name('strength.review.thread');
+            Route::post('/stream', StreamWeeklyReviewController::class)->name('strength.review.stream');
         });
 
         // Guest advisory tool ("Conseil") — assess any runner, no persistence.
-        Route::middleware(['web', 'auth'])->prefix('conseil')->group(function (): void {
+        Route::middleware(['web', 'auth'])->prefix('advice')->group(function (): void {
             Route::get('/', fn () => Inertia::render('Advisor'))->name('advisor');
-            Route::post('/analyser-gpx', AnalyzeGuestGpxController::class)->name('advisor.analyze');
+            Route::post('/analyze-gpx', AnalyzeGuestGpxController::class)->name('advisor.analyze');
             Route::post('/diagnostic', StreamAdvisorController::class)->name('advisor.diagnostic');
         });
     }

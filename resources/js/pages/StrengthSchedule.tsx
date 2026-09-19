@@ -41,7 +41,7 @@ interface Props {
 
 function PlacePicker({ date, templates, onClose }: { date: string; templates: TemplateOpt[]; onClose: () => void }) {
     const place = (templateId: string) => {
-        router.post('/muscu/agenda/planifier', { templateId, date }, { preserveScroll: true, onSuccess: onClose });
+        router.post('/strength/schedule/plan', { templateId, date }, { preserveScroll: true, onSuccess: onClose });
     };
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/40 sm:items-center" onClick={onClose}>
@@ -56,7 +56,7 @@ function PlacePicker({ date, templates, onClose }: { date: string; templates: Te
                     {templates.length === 0 ? (
                         <div className="px-3 py-8 text-center">
                             <p className="text-sm text-neutral-500">Aucune séance-modèle pour l'instant.</p>
-                            <Link href="/muscu/seances/nouveau" className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">
+                            <Link href="/strength/sessions/new" className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">
                                 <Plus size={15} /> Créer une séance
                             </Link>
                         </div>
@@ -80,13 +80,13 @@ function PlacePicker({ date, templates, onClose }: { date: string; templates: Te
     );
 }
 
-export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: Props) {
+export default function StrengthSchedule({ weekLabel, weekOffset, days, templates }: Props) {
     const [placeDate, setPlaceDate] = useState<string | null>(null);
     const { confirm, node: confirmNode } = useConfirm();
 
     const removeSession = async (id: string, title: string) => {
         if (await confirm({ title: 'Retirer cette séance ?', message: `« ${title || 'la séance'} » sera retirée de ton agenda.`, confirmLabel: 'Retirer' })) {
-            router.post(`/muscu/agenda/${id}/supprimer`, {}, { preserveScroll: true });
+            router.post(`/strength/schedule/${id}/delete`, {}, { preserveScroll: true });
         }
     };
 
@@ -95,18 +95,18 @@ export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: 
             <Head title="Agenda muscu" />
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Agenda</h1>
-                <Link href="/muscu/seances" className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-600 hover:bg-neutral-50">
+                <Link href="/strength/sessions" className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-600 hover:bg-neutral-50">
                     <Dumbbell size={15} /> Mes séances
                 </Link>
             </div>
 
             {/* Week nav */}
             <div className="mb-4 flex items-center justify-between border-b border-neutral-200 pb-3">
-                <Link href={`/muscu?week=${weekOffset - 1}`} preserveScroll className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100">
+                <Link href={`/strength?week=${weekOffset - 1}`} preserveScroll className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100">
                     <ChevronLeft size={18} />
                 </Link>
                 <span className="text-sm font-semibold text-neutral-700">{weekLabel}</span>
-                <Link href={`/muscu?week=${weekOffset + 1}`} preserveScroll className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100">
+                <Link href={`/strength?week=${weekOffset + 1}`} preserveScroll className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100">
                     <ChevronRight size={18} />
                 </Link>
             </div>
@@ -130,7 +130,7 @@ export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: 
                                 {d.sessions.map((s) => (
                                     <div key={s.id} className="flex items-center border-b border-neutral-100 last:border-b-0">
                                         <Link
-                                            href={`/muscu/agenda/${s.id}`}
+                                            href={`/strength/schedule/${s.id}`}
                                             className="flex min-w-0 flex-1 items-center gap-2.5 py-3 text-left transition-colors hover:bg-neutral-50"
                                         >
                                             <CircleCheck size={16} className={s.status === 'DONE' ? 'text-brand-600' : 'text-neutral-300'} />
@@ -161,4 +161,4 @@ export default function MuscuAgenda({ weekLabel, weekOffset, days, templates }: 
     );
 }
 
-MuscuAgenda.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
+StrengthSchedule.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;

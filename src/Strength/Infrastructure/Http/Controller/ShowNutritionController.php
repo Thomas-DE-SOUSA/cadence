@@ -30,6 +30,6 @@ final class ShowNutritionController
         $date = isset($data['date']) ? (string) $data['date'] : $this->clock->now()->format('Y-m-d');
         $entries = $this->entries->forDate($this->tenantContext->current(), $date);
 
-        return Inertia::render('MuscuNutrition', NutritionView::day($date, $entries));
+        return Inertia::render('StrengthNutrition', NutritionView::day($date, $entries));
     }
 }

@@ -125,7 +125,7 @@ export default function ActivityEdit({ activity }: Props) {
                 is_personal_record: b.is_personal_record,
             })),
         }));
-        form.put(`/activites/${activity.id}`);
+        form.put(`/activities/${activity.id}`);
     }
 
     const errors = Object.values(form.errors);
@@ -134,7 +134,7 @@ export default function ActivityEdit({ activity }: Props) {
         <>
             <Head title="Modifier l'activité" />
             <Link
-                href={`/activites/${activity.id}`}
+                href={`/activities/${activity.id}`}
                 className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
             >
                 <ArrowLeft size={16} /> Retour

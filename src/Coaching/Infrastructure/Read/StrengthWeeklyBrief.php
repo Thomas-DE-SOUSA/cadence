@@ -12,7 +12,7 @@ use Cadence\Strength\Domain\ValueObject\WeightEntry;
 use DateTimeImmutable;
 
 /**
- * Summarises the strength (muscu) week for the weekly coach: aggregates done
+ * Summarises the strength week for the weekly coach: aggregates done
  * sessions into the current Mon–Sun week and the previous one, computes muscle
  * balance and leg load, and folds in the body-weight averages. Pure over
  * domain objects — the provider fetches, this shapes.

@@ -41,20 +41,20 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/', ShowHistoryController::class)->name('dashboard');
 
     // Activity read + manual entry.
-    Route::get('/activites/nouvelle', fn () => Inertia::render('ActivityForm'))->name('activities.create');
-    Route::post('/activites', StoreActivityController::class)->name('activities.store');
-    Route::post('/activites/importer-texte', ImportActivityFromTextController::class)->name('activities.import-text');
-    Route::post('/activites/importer-gpx', ImportActivityFromGpxController::class)->name('activities.import-gpx');
-    Route::post('/activites/importer-photo', ImportActivityFromPhotoController::class)->name('activities.import-photo');
-    Route::get('/activites/{id}/modifier', ShowEditActivityController::class)->name('activities.edit');
-    Route::get('/activites/{id}', ShowActivityController::class)->name('activities.show');
-    Route::put('/activites/{id}', UpdateActivityController::class)->name('activities.update');
-    Route::delete('/activites/{id}', DeleteActivityController::class)->name('activities.destroy');
+    Route::get('/activities/new', fn () => Inertia::render('ActivityForm'))->name('activities.create');
+    Route::post('/activities', StoreActivityController::class)->name('activities.store');
+    Route::post('/activities/import-text', ImportActivityFromTextController::class)->name('activities.import-text');
+    Route::post('/activities/import-gpx', ImportActivityFromGpxController::class)->name('activities.import-gpx');
+    Route::post('/activities/import-photo', ImportActivityFromPhotoController::class)->name('activities.import-photo');
+    Route::get('/activities/{id}/edit', ShowEditActivityController::class)->name('activities.edit');
+    Route::get('/activities/{id}', ShowActivityController::class)->name('activities.show');
+    Route::put('/activities/{id}', UpdateActivityController::class)->name('activities.update');
+    Route::delete('/activities/{id}', DeleteActivityController::class)->name('activities.destroy');
 
     // Section shells — filled in as each bounded context lands (see ROADMAP.md).
     Route::get('/progression', ShowProgressionController::class)->name('progression');
-    Route::get('/allures', ShowPacesController::class)->name('paces');
-    Route::get('/profil', ShowProfileController::class)->name('profile');
-    Route::post('/profil', UpdateProfileController::class)->name('profile.update');
-    Route::post('/profil/mot-de-passe', UpdatePasswordController::class)->name('profile.password');
+    Route::get('/paces', ShowPacesController::class)->name('paces');
+    Route::get('/profile', ShowProfileController::class)->name('profile');
+    Route::post('/profile', UpdateProfileController::class)->name('profile.update');
+    Route::post('/profile/password', UpdatePasswordController::class)->name('profile.password');
 });

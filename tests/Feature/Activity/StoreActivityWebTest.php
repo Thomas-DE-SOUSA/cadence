@@ -8,7 +8,7 @@ uses(RefreshDatabase::class);
 
 describe('Feature: Manual activity entry (web)', function (): void {
     it('records an activity from the form and redirects to its detail page', function (): void {
-        $response = $this->post('/activites', [
+        $response = $this->post('/activities', [
             'occurred_at' => '2026-08-19T18:00:00+00:00',
             'source' => 'MANUAL',
             'distance_meters' => 10010,
@@ -23,9 +23,9 @@ describe('Feature: Manual activity entry (web)', function (): void {
     });
 
     it('redirects back with errors on an invalid submission', function (): void {
-        $this->from('/activites/nouvelle')
-            ->post('/activites', ['source' => 'INVALID'])
-            ->assertRedirect('/activites/nouvelle')
+        $this->from('/activities/new')
+            ->post('/activities', ['source' => 'INVALID'])
+            ->assertRedirect('/activities/new')
             ->assertSessionHasErrors(['distance_meters', 'moving_seconds']);
 
         $this->assertDatabaseCount('activities', 0);

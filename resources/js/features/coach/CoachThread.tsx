@@ -65,7 +65,7 @@ export function CoachThread({
     const bottomRef = useRef<HTMLDivElement>(null);
 
     const loadThread = useCallback(async () => {
-        const res = await fetch(`/programme/${programId}/coach/thread?date=${encodeURIComponent(date)}`, {
+        const res = await fetch(`/program/${programId}/coach/thread?date=${encodeURIComponent(date)}`, {
             headers: { Accept: 'application/json' },
         });
         const data = await res.json();
@@ -121,7 +121,7 @@ export function CoachThread({
         setStreaming(true);
 
         try {
-            const res = await fetch(`/programme/${programId}/coach/stream`, {
+            const res = await fetch(`/program/${programId}/coach/stream`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream', 'X-XSRF-TOKEN': xsrfToken() },
                 body: JSON.stringify({ cycle_id: cycleId, date, message: text }),
@@ -149,7 +149,7 @@ export function CoachThread({
     }
 
     async function applyProposal(messageId: string) {
-        await fetch(`/programme/${programId}/coach/apply`, {
+        await fetch(`/program/${programId}/coach/apply`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-XSRF-TOKEN': xsrfToken() },
             body: JSON.stringify({ conversation_id: conversationId, message_id: messageId }),

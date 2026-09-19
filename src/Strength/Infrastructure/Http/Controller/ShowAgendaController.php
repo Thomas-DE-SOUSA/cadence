@@ -57,7 +57,7 @@ final class ShowAgendaController
             ];
         }
 
-        return Inertia::render('MuscuAgenda', [
+        return Inertia::render('StrengthSchedule', [
             'weekLabel' => $this->weekLabel($monday, $sunday),
             'weekOffset' => $offset,
             'days' => $days,

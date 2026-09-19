@@ -28,7 +28,7 @@ final class ShowWeightController
 
         $entries = $this->entries->since($tenant, $since);
 
-        return Inertia::render('MuscuWeight', [
+        return Inertia::render('StrengthWeight', [
             'today' => $now->format('Y-m-d'),
             'weeks' => WeightView::weeklyAverages($entries),
             'recent' => WeightView::recent($entries),

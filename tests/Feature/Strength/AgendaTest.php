@@ -28,7 +28,7 @@ function ctxFor(string $tenant): ExecutionContext
     return new ExecutionContext(TenantId::fromString($tenant));
 }
 
-describe('Feature: Muscu agenda (template → plan → done)', function (): void {
+describe('Feature: Strength schedule (template → plan → done)', function (): void {
     it('creates a template, schedules it as PLANNED, then marks it DONE and tracks progression', function (): void {
         // 1. Save a reusable template.
         $templateId = app(SaveWorkoutTemplateUseCase::class)->execute(

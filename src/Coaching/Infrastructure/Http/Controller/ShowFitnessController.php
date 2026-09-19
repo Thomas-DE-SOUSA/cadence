@@ -44,7 +44,7 @@ final class ShowFitnessController
 
         $todayCheckIn = $this->checkIns->forDate($tenant, $today);
 
-        return Inertia::render('Forme', [
+        return Inertia::render('Fitness', [
             'load' => $load,
             'adaptation' => $adaptation,
             'checkin' => $todayCheckIn !== null ? $this->present($todayCheckIn) : null,

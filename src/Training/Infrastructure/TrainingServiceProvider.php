@@ -42,18 +42,18 @@ final class TrainingServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Route::middleware(['web', 'auth'])->prefix('programme')->group(function (): void {
+        Route::middleware(['web', 'auth'])->prefix('program')->group(function (): void {
             Route::get('/', ShowProgramsController::class)->name('programs.index');
-            Route::get('/nouveau', fn () => Inertia::render('ProgramForm', ['plans' => ProgramView::plans()]))->name('programs.create');
+            Route::get('/new', fn () => Inertia::render('ProgramForm', ['plans' => ProgramView::plans()]))->name('programs.create');
             Route::post('/', CreateProgramController::class)->name('programs.store');
             Route::get('/{id}', ShowProgramController::class)->name('programs.show');
-            Route::post('/{id}/assigner', AssignActivityController::class)->name('programs.assign');
-            Route::post('/{id}/retirer', UnassignActivityController::class)->name('programs.unassign');
-            Route::post('/{id}/generer-cycle', GenerateCycleController::class)->name('programs.generate-cycle');
-            Route::post('/{id}/cycles/{cycleId}/terminer', CompleteCycleController::class)->name('programs.complete-cycle');
-            Route::post('/{id}/cycles/{cycleId}/refaire', RegenerateCycleController::class)->name('programs.regenerate-cycle');
-            Route::post('/{id}/cycles/{cycleId}/jour', AssignSessionActivityController::class)->name('programs.assign-day');
-            Route::post('/{id}/cycles/{cycleId}/jour/deplacer', RescheduleSessionController::class)->name('programs.reschedule-day');
+            Route::post('/{id}/assign', AssignActivityController::class)->name('programs.assign');
+            Route::post('/{id}/remove', UnassignActivityController::class)->name('programs.unassign');
+            Route::post('/{id}/generate-cycle', GenerateCycleController::class)->name('programs.generate-cycle');
+            Route::post('/{id}/cycles/{cycleId}/complete', CompleteCycleController::class)->name('programs.complete-cycle');
+            Route::post('/{id}/cycles/{cycleId}/regenerate', RegenerateCycleController::class)->name('programs.regenerate-cycle');
+            Route::post('/{id}/cycles/{cycleId}/day', AssignSessionActivityController::class)->name('programs.assign-day');
+            Route::post('/{id}/cycles/{cycleId}/day/move', RescheduleSessionController::class)->name('programs.reschedule-day');
         });
     }
 }

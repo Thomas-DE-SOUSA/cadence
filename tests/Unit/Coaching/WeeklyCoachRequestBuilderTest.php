@@ -91,7 +91,7 @@ describe('Feature: weekly coach prompt', function (): void {
         ]);
     });
 
-    it('states there is no muscu when the week (and the previous) is empty', function (): void {
+    it('states there is no strength when the week (and the previous) is empty', function (): void {
         $empty = new StrengthWeekSummary('2026-08-31', '2026-09-06', 0, 0, 0.0, 0, 0, 0.0, null, [], null, null);
 
         $system = (new WeeklyCoachRequestBuilder(new CoachingKnowledge()))->system(reviewContext($empty));

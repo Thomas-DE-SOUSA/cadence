@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Cadence\Strength\Application\UseCase\SaveMuscuProfile;
+namespace Cadence\Strength\Application\UseCase\SaveStrengthProfile;
 
-final readonly class SaveMuscuProfileInput
+final readonly class SaveStrengthProfileInput
 {
     /**
      * @param list<string> $priorities

@@ -142,7 +142,7 @@ export default function History({ stats, streak, records, achievements, activiti
                                 <MiniStat icon={CalendarCheck} tint="bg-violet-100 text-violet-600" value={`${stats.totalActivities}`} label="Sorties" />
                             </div>
                             <Link
-                                href="/profil"
+                                href="/profile"
                                 className="mt-3 flex items-center justify-center gap-1 rounded-lg border border-neutral-200 py-2 text-sm font-semibold text-neutral-600 transition-colors hover:border-brand-200 hover:bg-brand-50/50 hover:text-brand-600"
                             >
                                 Voir le profil <ChevronRight size={15} />
@@ -209,7 +209,7 @@ export default function History({ stats, streak, records, achievements, activiti
                             {activities.map((a) => (
                                 <li key={a.id}>
                                     <Link
-                                        href={`/activites/${a.id}`}
+                                        href={`/activities/${a.id}`}
                                         className="group flex items-stretch gap-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm shadow-neutral-200/50 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg hover:shadow-neutral-300/40"
                                     >
                                         <div className="min-w-0 flex-1">
@@ -316,7 +316,7 @@ export default function History({ stats, streak, records, achievements, activiti
                                 {records.map((r) => (
                                     <li key={r.distanceMeters}>
                                         <Link
-                                            href={`/activites/${r.activityId}`}
+                                            href={`/activities/${r.activityId}`}
                                             className="group flex items-center gap-3 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-2.5 transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-sm"
                                         >
                                             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">

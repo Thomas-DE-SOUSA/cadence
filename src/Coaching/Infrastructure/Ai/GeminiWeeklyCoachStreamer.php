@@ -12,7 +12,7 @@ use Cadence\Shared\Infrastructure\Ai\GeminiClient;
 /**
  * Streams the weekly cross-modal verdict from Google Gemini (free tier), over
  * SSE, forwarding each text delta. Free-form Markdown reply, no tools — the
- * verdict is advice; running/muscu changes are described in prose.
+ * verdict is advice; running/strength changes are described in prose.
  */
 final class GeminiWeeklyCoachStreamer implements WeeklyCoachStreamer
 {

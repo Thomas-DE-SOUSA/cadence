@@ -41,19 +41,19 @@ export default function ActivityForm() {
 
     function submitPaste(event: FormEvent) {
         event.preventDefault();
-        pasteForm.post('/activites/importer-texte');
+        pasteForm.post('/activities/import-text');
     }
 
     function uploadGpx(file: File | undefined) {
         if (!file) return;
         gpxForm.setData('gpx', file);
-        gpxForm.post('/activites/importer-gpx', { forceFormData: true });
+        gpxForm.post('/activities/import-gpx', { forceFormData: true });
     }
 
     function uploadPhoto(file: File | undefined) {
         if (!file) return;
         photoForm.transform((d) => ({ photo: file, occurred_at: d.occurred_at }));
-        photoForm.post('/activites/importer-photo', { forceFormData: true });
+        photoForm.post('/activities/import-photo', { forceFormData: true });
     }
 
     function onDrop(e: DragEvent<HTMLButtonElement>) {
@@ -72,7 +72,7 @@ export default function ActivityForm() {
             elapsed_seconds: parseTimeToSeconds(data.elapsedTime || data.movingTime),
             elevation_gain_meters: parseInt(data.elevationGainMeters || '0', 10),
         }));
-        form.post('/activites');
+        form.post('/activities');
     }
 
     const errors = Object.values(form.errors);

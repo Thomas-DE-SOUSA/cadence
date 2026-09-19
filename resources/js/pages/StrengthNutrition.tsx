@@ -77,18 +77,18 @@ function MacroRow({ label, done, target, unit = 'g' }: { label: string; done: nu
     );
 }
 
-export default function MuscuNutrition({ date, daily, meals, totals, remaining }: Props) {
+export default function StrengthNutrition({ date, daily, meals, totals, remaining }: Props) {
     const [text, setText] = useState('');
     const [meal, setMeal] = useState<'matin' | 'midi' | 'soir'>(guessMeal());
     const [busy, setBusy] = useState(false);
     const isToday = date === todayIso();
 
-    const go = (d: string) => router.get('/muscu/nutrition', { date: d }, { preserveScroll: true });
+    const go = (d: string) => router.get('/strength/nutrition', { date: d }, { preserveScroll: true });
 
     const submit = () => {
         if (text.trim() === '' || busy) return;
         router.post(
-            '/muscu/nutrition',
+            '/strength/nutrition',
             { text: text.trim(), meal, date },
             {
                 preserveScroll: true,
@@ -99,7 +99,7 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
         );
     };
 
-    const remove = (id: string) => router.post(`/muscu/nutrition/${id}/supprimer`, { date }, { preserveScroll: true });
+    const remove = (id: string) => router.post(`/strength/nutrition/${id}/delete`, { date }, { preserveScroll: true });
 
     // Deferred AI estimation: a freshly-logged entry is "pending" and gets its
     // macros filled in by a background request, one at a time (so the initial
@@ -113,7 +113,7 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
     const estimate = (id: string) => {
         if (estimating.current.has(id)) return;
         estimating.current.add(id);
-        router.post(`/muscu/nutrition/${id}/estimer`, { date }, { preserveScroll: true, onFinish: () => estimating.current.delete(id) });
+        router.post(`/strength/nutrition/${id}/estimate`, { date }, { preserveScroll: true, onFinish: () => estimating.current.delete(id) });
     };
 
     useEffect(() => {
@@ -307,4 +307,4 @@ export default function MuscuNutrition({ date, daily, meals, totals, remaining }
     );
 }
 
-MuscuNutrition.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
+StrengthNutrition.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;

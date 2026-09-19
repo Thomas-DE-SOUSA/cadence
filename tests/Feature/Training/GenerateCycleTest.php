@@ -29,7 +29,7 @@ describe('Feature: Generate cycle', function (): void {
             }
         });
 
-        $this->post('/programme', [
+        $this->post('/program', [
             'name' => 'Prépa Odysséa',
             'goal' => 'Passer sous 40 min',
             'start_date' => '2026-08-25',
@@ -39,15 +39,15 @@ describe('Feature: Generate cycle', function (): void {
 
         $programId = (string) TrainingProgramModel::query()->value('id');
 
-        $this->post("/programme/{$programId}/generer-cycle", [
+        $this->post("/program/{$programId}/generate-cycle", [
             'start_date' => '2026-08-25',
             'weeks' => 2,
             'ressenti' => 'En forme, pas de douleur.',
-        ])->assertRedirect("/programme/{$programId}");
+        ])->assertRedirect("/program/{$programId}");
 
         $this->assertDatabaseCount('cycles', 1);
 
-        $this->get("/programme/{$programId}")->assertInertia(
+        $this->get("/program/{$programId}")->assertInertia(
             fn (AssertableInertia $page) => $page
                 ->component('ProgramDetail')
                 ->has('cycles', 1)
@@ -57,7 +57,7 @@ describe('Feature: Generate cycle', function (): void {
     });
 
     it('validates the generation input', function (): void {
-        $this->post('/programme', [
+        $this->post('/program', [
             'name' => 'Bloc',
             'start_date' => '2026-08-25',
             'priority' => 'B',
@@ -67,7 +67,7 @@ describe('Feature: Generate cycle', function (): void {
         $programId = (string) TrainingProgramModel::query()->value('id');
 
         // JSON so validation surfaces as a 422 body, independent of session flash.
-        $this->postJson("/programme/{$programId}/generer-cycle", [
+        $this->postJson("/program/{$programId}/generate-cycle", [
             'start_date' => 'not-a-date',
             'weeks' => 99,
         ])->assertStatus(422)->assertJsonValidationErrors(['start_date', 'weeks']);

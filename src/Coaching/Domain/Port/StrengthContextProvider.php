@@ -8,7 +8,7 @@ use Cadence\Coaching\Domain\ValueObject\StrengthWeekSummary;
 use Cadence\Shared\Domain\TenantId;
 
 /**
- * Supplies the strength (muscu) side of the weekly coach. The seam that keeps
+ * Supplies the strength side of the weekly coach. The seam that keeps
  * Coaching from reaching into the Strength context directly — an adapter
  * translates strength sessions/weight into a {@see StrengthWeekSummary}.
  */

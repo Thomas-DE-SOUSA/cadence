@@ -20,6 +20,6 @@ final class RemoveScheduledWorkoutController
     {
         $this->sessions->delete($id, $this->tenantContext->current());
 
-        return redirect()->route('muscu')->with('status', 'Séance retirée de l\'agenda.');
+        return redirect()->route('strength')->with('status', 'Séance retirée de l\'agenda.');
     }
 }

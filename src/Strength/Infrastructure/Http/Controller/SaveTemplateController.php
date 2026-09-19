@@ -53,6 +53,6 @@ final class SaveTemplateController
             new ExecutionContext($this->tenantContext->current()),
         );
 
-        return redirect()->route('muscu.templates')->with('status', 'Séance enregistrée 💪');
+        return redirect()->route('strength.templates')->with('status', 'Séance enregistrée 💪');
     }
 }

@@ -34,7 +34,7 @@ export default function Programs({ programs }: Props) {
             <div className="mb-6 flex items-center justify-between">
                 <h1 className="text-xl font-bold tracking-tight">Programmes</h1>
                 <Link
-                    href="/programme/nouveau"
+                    href="/program/new"
                     className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-600"
                 >
                     <Plus size={16} /> Nouveau
@@ -50,7 +50,7 @@ export default function Programs({ programs }: Props) {
                     {programs.map((p) => (
                         <li key={p.id}>
                             <Link
-                                href={`/programme/${p.id}`}
+                                href={`/program/${p.id}`}
                                 className="group flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-5 py-4 shadow-sm shadow-neutral-200/50 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md hover:shadow-neutral-200/60"
                             >
                                 <div>

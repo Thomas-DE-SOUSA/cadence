@@ -130,7 +130,7 @@ function Stat({ value, label, hint }: { value: string; label: string; hint: stri
     );
 }
 
-export default function MuscuBilan({ weekStart, weekEnd, goal, strength, thread: initialThread }: Props) {
+export default function StrengthReview({ weekStart, weekEnd, goal, strength, thread: initialThread }: Props) {
     const [thread, setThread] = useState<ThreadMessage[]>(initialThread);
     const [input, setInput] = useState('');
     const [live, setLive] = useState('');
@@ -148,7 +148,7 @@ export default function MuscuBilan({ weekStart, weekEnd, goal, strength, thread:
         setInput('');
 
         try {
-            const res = await fetch('/muscu/bilan/stream', {
+            const res = await fetch('/strength/review/stream', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream', 'X-XSRF-TOKEN': xsrfToken() },
                 body: JSON.stringify({ week_start: weekStart, message }),
@@ -182,7 +182,7 @@ export default function MuscuBilan({ weekStart, weekEnd, goal, strength, thread:
                         liveRef.current += payload.t ?? '';
                         setLive(liveRef.current);
                     } else if (event === 'done') {
-                        const res2 = await fetch(`/muscu/bilan/thread?week_start=${weekStart}`, { headers: { Accept: 'application/json' } });
+                        const res2 = await fetch(`/strength/review/thread?week_start=${weekStart}`, { headers: { Accept: 'application/json' } });
                         if (res2.ok) {
                             const json = await res2.json();
                             setThread(json.thread ?? []);
@@ -288,4 +288,4 @@ export default function MuscuBilan({ weekStart, weekEnd, goal, strength, thread:
     );
 }
 
-MuscuBilan.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
+StrengthReview.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;

@@ -106,14 +106,14 @@ export default function Profile({ profile, derived }: Props) {
 
     function submit(e: FormEvent) {
         e.preventDefault();
-        form.post('/profil', { preserveScroll: true });
+        form.post('/profile', { preserveScroll: true });
     }
 
     const passwordForm = useForm({ current_password: '', password: '', password_confirmation: '' });
 
     function submitPassword(e: FormEvent) {
         e.preventDefault();
-        passwordForm.post('/profil/mot-de-passe', {
+        passwordForm.post('/profile/password', {
             preserveScroll: true,
             onSuccess: () => passwordForm.reset(),
         });

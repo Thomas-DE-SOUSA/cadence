@@ -6,8 +6,8 @@ namespace Cadence\Strength\Infrastructure\Http\Controller;
 
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Shared\Application\TenantContext;
-use Cadence\Strength\Application\UseCase\SaveMuscuProfile\SaveMuscuProfileInput;
-use Cadence\Strength\Application\UseCase\SaveMuscuProfile\SaveMuscuProfileUseCase;
+use Cadence\Strength\Application\UseCase\SaveStrengthProfile\SaveStrengthProfileInput;
+use Cadence\Strength\Application\UseCase\SaveStrengthProfile\SaveStrengthProfileUseCase;
 use Cadence\Strength\Domain\Enum\ExperienceLevel;
 use Cadence\Strength\Domain\Enum\GymAccess;
 use Cadence\Strength\Domain\Enum\MuscleGroup;
@@ -17,10 +17,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-final class SaveMuscuProfileController
+final class SaveStrengthProfileController
 {
     public function __construct(
-        private readonly SaveMuscuProfileUseCase $useCase,
+        private readonly SaveStrengthProfileUseCase $useCase,
         private readonly TenantContext $tenantContext,
     ) {
     }
@@ -49,7 +49,7 @@ final class SaveMuscuProfileController
         $limitations = array_values($data['limitations'] ?? []);
 
         $this->useCase->execute(
-            new SaveMuscuProfileInput(
+            new SaveStrengthProfileInput(
                 (string) $data['goal'],
                 (string) $data['level'],
                 isset($data['bodyweightKg']) ? (float) $data['bodyweightKg'] : null,
@@ -63,6 +63,6 @@ final class SaveMuscuProfileController
             new ExecutionContext($this->tenantContext->current()),
         );
 
-        return redirect()->route('muscu.progression')->with('status', 'Profil muscu enregistré 💪');
+        return redirect()->route('strength.progression')->with('status', 'Profil muscu enregistré 💪');
     }
 }

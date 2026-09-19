@@ -25,14 +25,14 @@ it('creates an activity from a photo (vision parser faked)', function (): void {
     ));
     $photo = new UploadedFile($path, 'watch.png', 'image/png', null, true);
 
-    $this->post('/activites/importer-photo', ['photo' => $photo])->assertRedirect();
+    $this->post('/activities/import-photo', ['photo' => $photo])->assertRedirect();
 
     $this->assertDatabaseHas('activities', ['tenant_id' => 'tenant-thomas', 'distance_meters' => 8000, 'moving_seconds' => 2400]);
 });
 
 it('rejects a non-image upload', function (): void {
-    $this->from('/activites/nouvelle')
-        ->post('/activites/importer-photo', ['photo' => UploadedFile::fake()->create('run.txt', 10, 'text/plain')])
-        ->assertRedirect('/activites/nouvelle')
+    $this->from('/activities/new')
+        ->post('/activities/import-photo', ['photo' => UploadedFile::fake()->create('run.txt', 10, 'text/plain')])
+        ->assertRedirect('/activities/new')
         ->assertSessionHasErrors('photo');
 });

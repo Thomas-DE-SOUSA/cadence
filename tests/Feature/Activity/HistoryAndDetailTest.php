@@ -33,7 +33,7 @@ describe('Feature: Activity detail', function (): void {
         $this->seed(ActivitySeeder::class);
         $id = ActivityModel::query()->value('id');
 
-        $this->get("/activites/{$id}")->assertInertia(
+        $this->get("/activities/{$id}")->assertInertia(
             fn (AssertableInertia $page) => $page
                 ->component('ActivityDetail')
                 ->where('activity.distanceMeters', 10010)
@@ -42,6 +42,6 @@ describe('Feature: Activity detail', function (): void {
     });
 
     it('returns 404 for an unknown or cross-tenant activity', function (): void {
-        $this->get('/activites/does-not-exist')->assertStatus(404);
+        $this->get('/activities/does-not-exist')->assertStatus(404);
     });
 });

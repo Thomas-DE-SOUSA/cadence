@@ -9,7 +9,7 @@ use Cadence\Coaching\Domain\Service\TrainingLoadCalculator;
 use Cadence\Coaching\Domain\ValueObject\FitnessSnapshot;
 use DateTimeImmutable;
 
-/** Builds the "Forme & charge" page payload from the athlete's runs. */
+/** Builds the Fitness page payload from the athlete's runs. */
 final class TrainingLoadView
 {
     /** @return array<string, mixed> */

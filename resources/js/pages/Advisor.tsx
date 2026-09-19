@@ -136,7 +136,7 @@ export default function Advisor() {
         const fd = new FormData();
         Array.from(files).forEach((f) => fd.append('gpx[]', f));
         try {
-            const res = await fetch('/conseil/analyser-gpx', {
+            const res = await fetch('/advice/analyze-gpx', {
                 method: 'POST',
                 headers: { Accept: 'application/json', 'X-XSRF-TOKEN': xsrfToken() },
                 body: fd,
@@ -161,7 +161,7 @@ export default function Advisor() {
             .map(([d, v]) => ({ distanceMeters: parseInt(d, 10), seconds: parseTime(v) }))
             .filter((c) => c.seconds > 0);
         try {
-            const res = await fetch('/conseil/diagnostic', {
+            const res = await fetch('/advice/diagnostic', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream', 'X-XSRF-TOKEN': xsrfToken() },
                 body: JSON.stringify({ profile: form, efforts, chronos: chronosArr }),

@@ -396,7 +396,7 @@ export default function Progression({ goal, records, series, focusDistance, proj
                             {records.map((r) => (
                                 <li key={r.distanceMeters}>
                                     <Link
-                                        href={`/activites/${r.activityId}`}
+                                        href={`/activities/${r.activityId}`}
                                         className="group -mx-2 flex items-center gap-3.5 rounded-lg px-2 py-3 transition-colors hover:bg-neutral-50"
                                     >
                                         <span className="flex h-11 w-14 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-sm font-bold tabular-nums text-brand-700">

@@ -39,9 +39,9 @@ function currentMonday(): string
 
 describe('Feature: weekly bilan', function (): void {
     it('renders the review page with the (empty) week and no thread', function (): void {
-        $this->get('/muscu/bilan')->assertInertia(
+        $this->get('/strength/review')->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('MuscuBilan')
+                ->component('StrengthReview')
                 ->where('strength.hasData', false)
                 ->where('thread', [])
                 ->has('weekStart')
@@ -52,7 +52,7 @@ describe('Feature: weekly bilan', function (): void {
     it('streams the verdict over SSE and persists the thread', function (): void {
         $this->app->instance(WeeklyCoachStreamer::class, new FakeWeeklyCoachStreamer());
 
-        $response = $this->post('/muscu/bilan/stream', ['message' => 'Fais le bilan de ma semaine.']);
+        $response = $this->post('/strength/review/stream', ['message' => 'Fais le bilan de ma semaine.']);
         $response->assertStatus(200);
 
         $body = $response->streamedContent();
@@ -65,9 +65,9 @@ describe('Feature: weekly bilan', function (): void {
 
     it('returns the persisted thread as JSON', function (): void {
         $this->app->instance(WeeklyCoachStreamer::class, new FakeWeeklyCoachStreamer());
-        $this->post('/muscu/bilan/stream', ['message' => 'Fais le bilan.'])->streamedContent();
+        $this->post('/strength/review/stream', ['message' => 'Fais le bilan.'])->streamedContent();
 
-        $this->get('/muscu/bilan/thread')
+        $this->get('/strength/review/thread')
             ->assertOk()
             ->assertJsonCount(2, 'thread')
             ->assertJsonPath('thread.0.role', 'athlete')
@@ -76,11 +76,11 @@ describe('Feature: weekly bilan', function (): void {
     });
 
     it('rejects an empty message', function (): void {
-        $this->post('/muscu/bilan/stream', ['message' => ''])->assertSessionHasErrors('message');
+        $this->post('/strength/review/stream', ['message' => ''])->assertSessionHasErrors('message');
     });
 
     it('rejects a malformed week_start', function (): void {
-        $this->post('/muscu/bilan/stream', ['message' => 'x', 'week_start' => 'tuesday'])
+        $this->post('/strength/review/stream', ['message' => 'x', 'week_start' => 'tuesday'])
             ->assertSessionHasErrors('week_start');
     });
 
@@ -96,18 +96,18 @@ describe('Feature: weekly bilan', function (): void {
             'version' => 2,
         ]);
 
-        $this->get('/muscu/bilan/thread')->assertOk()->assertExactJson(['thread' => []]);
+        $this->get('/strength/review/thread')->assertOk()->assertExactJson(['thread' => []]);
     });
 
     it('emits event: error and persists no coach reply when the streamer fails', function (): void {
         $this->app->instance(WeeklyCoachStreamer::class, new ThrowingWeeklyCoachStreamer());
 
-        $body = $this->post('/muscu/bilan/stream', ['message' => 'Fais le bilan.'])->streamedContent();
+        $body = $this->post('/strength/review/stream', ['message' => 'Fais le bilan.'])->streamedContent();
 
         expect($body)->toContain('event: error');
         expect($body)->not->toContain('event: done');
 
-        $this->get('/muscu/bilan/thread')
+        $this->get('/strength/review/thread')
             ->assertOk()
             ->assertJsonCount(1, 'thread')
             ->assertJsonPath('thread.0.role', 'athlete');

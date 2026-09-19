@@ -28,7 +28,7 @@ function warmupSet(float $weightKg, int $reps): SetEntry
 }
 
 /** @param list<PerformedExercise> $exercises */
-function muscuSession(string $date, array $exercises, WorkoutStatus $status = WorkoutStatus::DONE): StrengthSession
+function strengthSession(string $date, array $exercises, WorkoutStatus $status = WorkoutStatus::DONE): StrengthSession
 {
     return new StrengthSession('s-'.$date.'-'.$status->value, 'tenant-thomas', $date, 'W', '', null, $exercises, $status);
 }
@@ -38,12 +38,12 @@ describe('Feature: strength weekly brief', function (): void {
         $muscleOf = ['bench' => MuscleGroup::CHEST, 'squat' => MuscleGroup::QUADS];
 
         $sessions = [
-            muscuSession('2026-09-01', [
+            strengthSession('2026-09-01', [
                 performed('bench', [workingSet(60, 10), workingSet(60, 10), workingSet(60, 10)]),
                 performed('squat', [workingSet(100, 5), workingSet(100, 5)]),
             ]),
-            muscuSession('2026-08-25', [performed('bench', [workingSet(60, 10), workingSet(60, 10), workingSet(60, 10)])]),
-            muscuSession('2026-09-02', [performed('bench', [workingSet(60, 10)])], WorkoutStatus::PLANNED),
+            strengthSession('2026-08-25', [performed('bench', [workingSet(60, 10), workingSet(60, 10), workingSet(60, 10)])]),
+            strengthSession('2026-09-02', [performed('bench', [workingSet(60, 10)])], WorkoutStatus::PLANNED),
         ];
 
         $weight = [
@@ -83,7 +83,7 @@ describe('Feature: strength weekly brief', function (): void {
     it('breaks muscle-set ties by muscle key, not by session order', function (): void {
         $muscleOf = ['bench' => MuscleGroup::CHEST, 'row' => MuscleGroup::BACK];
         // BACK and CHEST both at 2 sets → BACK first (B < C), regardless of order seen.
-        $sessions = [muscuSession('2026-09-01', [
+        $sessions = [strengthSession('2026-09-01', [
             performed('bench', [workingSet(60, 10), workingSet(60, 10)]),
             performed('row', [workingSet(50, 10), workingSet(50, 10)]),
         ])];
@@ -96,8 +96,8 @@ describe('Feature: strength weekly brief', function (): void {
     it('includes sessions dated exactly on Monday and on Sunday', function (): void {
         $muscleOf = ['bench' => MuscleGroup::CHEST];
         $sessions = [
-            muscuSession('2026-08-31', [performed('bench', [workingSet(60, 10)])]), // Monday (weekStart)
-            muscuSession('2026-09-06', [performed('bench', [workingSet(60, 10)])]), // Sunday (weekEnd)
+            strengthSession('2026-08-31', [performed('bench', [workingSet(60, 10)])]), // Monday (weekStart)
+            strengthSession('2026-09-06', [performed('bench', [workingSet(60, 10)])]), // Sunday (weekEnd)
         ];
 
         // today = Sunday, so the Sunday session is not in the future.
@@ -110,8 +110,8 @@ describe('Feature: strength weekly brief', function (): void {
     it('ignores future-dated done sessions everywhere (count, tonnage, days-since)', function (): void {
         $muscleOf = ['bench' => MuscleGroup::CHEST];
         $sessions = [
-            muscuSession('2026-09-01', [performed('bench', [workingSet(60, 10), workingSet(60, 10), workingSet(60, 10)])]),
-            muscuSession('2026-09-05', [performed('bench', [workingSet(80, 10), workingSet(80, 10)])]), // future, still in week window
+            strengthSession('2026-09-01', [performed('bench', [workingSet(60, 10), workingSet(60, 10), workingSet(60, 10)])]),
+            strengthSession('2026-09-05', [performed('bench', [workingSet(80, 10), workingSet(80, 10)])]), // future, still in week window
         ];
 
         $summary = StrengthWeeklyBrief::summarise($sessions, $muscleOf, [], '2026-09-02');
@@ -123,7 +123,7 @@ describe('Feature: strength weekly brief', function (): void {
 
     it('leaves daysSinceLast null when the only done session is in the future', function (): void {
         $summary = StrengthWeeklyBrief::summarise(
-            [muscuSession('2026-09-05', [performed('bench', [workingSet(60, 10)])])],
+            [strengthSession('2026-09-05', [performed('bench', [workingSet(60, 10)])])],
             ['bench' => MuscleGroup::CHEST],
             [],
             '2026-09-02',
@@ -136,7 +136,7 @@ describe('Feature: strength weekly brief', function (): void {
 
     it('counts only done sessions in a week full of planned ones', function (): void {
         $summary = StrengthWeeklyBrief::summarise(
-            [muscuSession('2026-09-01', [performed('bench', [workingSet(60, 10)])], WorkoutStatus::PLANNED)],
+            [strengthSession('2026-09-01', [performed('bench', [workingSet(60, 10)])], WorkoutStatus::PLANNED)],
             ['bench' => MuscleGroup::CHEST],
             [],
             '2026-09-02',
@@ -148,7 +148,7 @@ describe('Feature: strength weekly brief', function (): void {
 
     it('excludes warm-up sets from working sets and tonnage', function (): void {
         $summary = StrengthWeeklyBrief::summarise(
-            [muscuSession('2026-09-01', [performed('bench', [warmupSet(40, 10), workingSet(60, 10), workingSet(60, 10)])])],
+            [strengthSession('2026-09-01', [performed('bench', [warmupSet(40, 10), workingSet(60, 10), workingSet(60, 10)])])],
             ['bench' => MuscleGroup::CHEST],
             [],
             '2026-09-02',
@@ -174,7 +174,7 @@ describe('Feature: strength weekly brief', function (): void {
         // 'mystery' has no muscle mapping → its sets still count toward the total,
         // but contribute to no muscle in the balance.
         $summary = StrengthWeeklyBrief::summarise(
-            [muscuSession('2026-09-01', [
+            [strengthSession('2026-09-01', [
                 performed('bench', [workingSet(60, 10), workingSet(60, 10)]),
                 performed('mystery', [workingSet(30, 12)]),
             ])],

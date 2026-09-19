@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { AlertTriangle, ArrowLeft, Check, CircleCheck, Flag, Play, RotateCcw, Square, Timer, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/layouts/AppLayout';
-import { ExerciseEditor, itemsFromServer, type CatalogItem, type Item, type Option, type SetRow } from '@/muscu/ExerciseEditor';
+import { ExerciseEditor, itemsFromServer, type CatalogItem, type Item, type Option, type SetRow } from '@/strength/ExerciseEditor';
 
 interface SessionData {
     id: string;
@@ -247,7 +247,7 @@ function ConfirmDialog({ opts, onClose }: { opts: ConfirmOptions | null; onClose
     );
 }
 
-export default function MuscuSession({ catalog, muscles, equipments, session, lastByExercise }: Props) {
+export default function StrengthSession({ catalog, muscles, equipments, session, lastByExercise }: Props) {
     const draftKey = `${DRAFT_PREFIX}${session?.id ?? 'new'}`;
     // Restore a locally-saved draft so returning to a session — even after a
     // reload or an accidental back — never loses the in-progress work. Only a
@@ -266,7 +266,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
     const [saving, setSaving] = useState(false);
     // A planned session with any unchecked set is already in progress (its sets
     // were reset to "to-do" when it was started) — resume it instead of showing
-    // the "Démarrer" gate, so returning to it never loses the ticked sets.
+    // the start gate, so returning to it never loses the ticked sets.
     const resuming = !!session && session.status === 'PLANNED' && session.exercises.some((e) => e.sets.some((s) => !s.done));
     const [started, setStarted] = useState(draft?.started ?? resuming);
     // Total-session chrono: just the start timestamp. Duration is computed as
@@ -284,7 +284,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Stamp the start time the moment the session becomes started (Démarrer, or
+    // Stamp the start time the moment the session becomes started (via Start, or
     // a resumed session that has no stamp yet).
     useEffect(() => {
         if (started && startedAt === null) setStartedAt(Date.now());
@@ -294,7 +294,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
     const sessionDuration = (): number | null => (startedAt !== null ? Math.max(1, Math.round((Date.now() - startedAt) / 1000)) : null);
 
     // Persist a draft on every edit of a *started* session — validating a set
-    // mutates `items`, so each validated série is auto-saved. A planned session
+    // mutates `items`, so each validated set is auto-saved. A planned session
     // that hasn't been started is never drafted (so it can't self-restore).
     const startedAtRef = useRef(startedAt);
     startedAtRef.current = startedAt;
@@ -319,7 +319,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
     const post = (status: 'PLANNED' | 'DONE', duration: number | null) => {
         setSaving(true);
         router.post(
-            '/muscu/agenda',
+            '/strength/schedule',
             { id: session?.id ?? null, date, title, note: '', status, templateId: session?.templateId ?? null, durationSeconds: duration, exercises: items },
             {
                 onSuccess: () => clearDraft(),
@@ -337,7 +337,7 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
             message: 'Elle sera retirée de ton agenda.',
             confirmLabel: 'Retirer',
             tone: 'danger',
-            onConfirm: () => router.post(`/muscu/agenda/${id}/supprimer`, {}, { preserveScroll: true, onSuccess: () => clearDraft() }),
+            onConfirm: () => router.post(`/strength/schedule/${id}/delete`, {}, { preserveScroll: true, onSuccess: () => clearDraft() }),
         });
     };
 
@@ -361,14 +361,14 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
             tone: 'danger',
             onConfirm: () => {
                 discardRun();
-                router.visit('/muscu');
+                router.visit('/strength');
             },
         });
 
     // In-app back button.
     const goBack = () => {
         if (started && items.length > 0) requestQuit();
-        else router.visit('/muscu');
+        else router.visit('/strength');
     };
 
     // The in-app button can't catch the phone's Android/browser back gesture,
@@ -505,4 +505,4 @@ export default function MuscuSession({ catalog, muscles, equipments, session, la
     );
 }
 
-MuscuSession.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
+StrengthSession.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;

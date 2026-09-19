@@ -101,7 +101,7 @@ function RecommendationCard({ a }: { a: Adaptation }) {
         } catch {
             /* storage may be unavailable */
         }
-        router.visit('/programme');
+        router.visit('/program');
     };
 
     return (
@@ -312,7 +312,7 @@ function CheckInCard({ checkin }: { checkin?: CheckIn | null }) {
     const submit = () => {
         setSaving(true);
         router.post(
-            '/forme/check-in',
+            '/fitness/check-in',
             { sleep, energy, legs, motivation, painLevel, painLocation, note },
             {
                 preserveScroll: true,
@@ -462,7 +462,7 @@ function pct(part: number, total: number): number {
     return total > 0 ? Math.round((part / total) * 100) : 0;
 }
 
-export default function Forme({ load, adaptation, checkin }: Props) {
+export default function Fitness({ load, adaptation, checkin }: Props) {
     if (!load.hasData || !load.series || !load.zones) {
         return (
             <>
@@ -592,4 +592,4 @@ export default function Forme({ load, adaptation, checkin }: Props) {
     );
 }
 
-Forme.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
+Fitness.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;

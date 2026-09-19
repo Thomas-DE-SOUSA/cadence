@@ -43,7 +43,7 @@ final class ShowSessionEditorController
 
         $enums = StrengthView::enums();
 
-        return Inertia::render('MuscuSession', [
+        return Inertia::render('StrengthSession', [
             'catalog' => StrengthView::catalog($this->exercises->forTenant($tenant)),
             'muscles' => $enums['muscles'],
             'equipments' => $enums['equipments'],

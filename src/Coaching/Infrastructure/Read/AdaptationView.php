@@ -13,7 +13,7 @@ use DateTimeImmutable;
 final class AdaptationView
 {
     /**
-     * @param array<string, mixed> $load the Forme payload (acwr, form, zones)
+     * @param array<string, mixed> $load the Fitness payload (acwr, form, zones)
      *
      * @return array<string, mixed>|null
      */

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Cadence\Strength\Application\UseCase\SaveMuscuProfile;
+namespace Cadence\Strength\Application\UseCase\SaveStrengthProfile;
 
 use Cadence\Shared\Application\ExecutionContext;
 use Cadence\Strength\Domain\Enum\ExperienceLevel;
@@ -10,16 +10,16 @@ use Cadence\Strength\Domain\Enum\GymAccess;
 use Cadence\Strength\Domain\Enum\MuscleGroup;
 use Cadence\Strength\Domain\Enum\SplitPreference;
 use Cadence\Strength\Domain\Enum\StrengthGoal;
-use Cadence\Strength\Domain\Model\MuscuProfile;
-use Cadence\Strength\Domain\Port\MuscuProfileRepository;
+use Cadence\Strength\Domain\Model\StrengthProfile;
+use Cadence\Strength\Domain\Port\StrengthProfileRepository;
 
-final readonly class SaveMuscuProfileUseCase
+final readonly class SaveStrengthProfileUseCase
 {
-    public function __construct(private MuscuProfileRepository $profiles)
+    public function __construct(private StrengthProfileRepository $profiles)
     {
     }
 
-    public function execute(SaveMuscuProfileInput $input, ExecutionContext $context): void
+    public function execute(SaveStrengthProfileInput $input, ExecutionContext $context): void
     {
         $toMuscles = static function (array $values): array {
             $out = [];
@@ -33,7 +33,7 @@ final readonly class SaveMuscuProfileUseCase
             return $out;
         };
 
-        $this->profiles->save(new MuscuProfile(
+        $this->profiles->save(new StrengthProfile(
             $context->tenant->value,
             StrengthGoal::from($input->goal),
             ExperienceLevel::from($input->level),

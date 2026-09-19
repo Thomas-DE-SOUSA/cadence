@@ -24,7 +24,7 @@ final class ShowTemplatesController
     {
         $tenant = $this->tenantContext->current();
 
-        return Inertia::render('MuscuTemplates', [
+        return Inertia::render('StrengthTemplates', [
             'templates' => StrengthView::templates($this->templates->forTenant($tenant), $this->sessions->usageByTemplate($tenant)),
         ]);
     }

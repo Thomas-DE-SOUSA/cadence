@@ -128,7 +128,7 @@ function WeightChart({ weeks }: { weeks: Week[] }) {
     );
 }
 
-export default function MuscuWeight({ today, weeks, recent }: Props) {
+export default function StrengthWeight({ today, weeks, recent }: Props) {
     const [date, setDate] = useState(today);
     const [moment, setMoment] = useState<'MORNING' | 'EVENING'>('MORNING');
     const [weight, setWeight] = useState('');
@@ -142,7 +142,7 @@ export default function MuscuWeight({ today, weeks, recent }: Props) {
         }
         setSaving(true);
         router.post(
-            '/muscu/poids',
+            '/strength/weight',
             { date, moment, weightKg: kg },
             {
                 preserveScroll: true,
@@ -248,4 +248,4 @@ export default function MuscuWeight({ today, weeks, recent }: Props) {
     );
 }
 
-MuscuWeight.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
+StrengthWeight.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;

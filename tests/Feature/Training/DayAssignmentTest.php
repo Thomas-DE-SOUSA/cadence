@@ -27,7 +27,7 @@ function inertiaProps(string $url): array
 /** @return array{0:string,1:string} program id and cycle id */
 function programWithCycle(): array
 {
-    test()->post('/programme', [
+    test()->post('/program', [
         'name' => 'Prépa Odysséa',
         'plan_key' => 'sub40-10k',
         'start_date' => '2026-08-24T00:00:00.000Z',
@@ -61,7 +61,7 @@ describe('Feature: Day assignment', function (): void {
         $this->seed(ActivitySeeder::class);
         $activityId = (string) \Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel::query()->value('id');
 
-        $this->post("/programme/{$programId}/cycles/{$cycleId}/jour", [
+        $this->post("/program/{$programId}/cycles/{$cycleId}/day", [
             'date' => '2026-08-25',
             'activity_id' => $activityId,
         ])->assertRedirect();
@@ -73,21 +73,21 @@ describe('Feature: Day assignment', function (): void {
         expect($program->assigned_activity_ids)->toContain($activityId);
 
         // A placed run leaves the "to place" pool...
-        $available = inertiaProps("/programme/{$programId}")['available'];
+        $available = inertiaProps("/program/{$programId}")['available'];
         expect(array_column($available, 'id'))->not->toContain($activityId);
 
         // Unlink clears the day and returns the run to the pool.
-        $this->post("/programme/{$programId}/cycles/{$cycleId}/jour", ['date' => '2026-08-25', 'activity_id' => null])
+        $this->post("/program/{$programId}/cycles/{$cycleId}/day", ['date' => '2026-08-25', 'activity_id' => null])
             ->assertRedirect();
         expect(linkedActivityOn($cycleId, '2026-08-25'))->toBeNull();
 
-        $available = inertiaProps("/programme/{$programId}")['available'];
+        $available = inertiaProps("/program/{$programId}")['available'];
         expect(array_column($available, 'id'))->toContain($activityId);
     });
 
     it('auto-fills a training slot from any run in the week (flexible schedule)', function (): void {
         // The plan's day 0 is a rest day; the seeded run is on 2026-08-19.
-        $this->post('/programme', [
+        $this->post('/program', [
             'name' => 'Prépa Odysséa',
             'plan_key' => 'sub40-10k',
             'start_date' => '2026-08-19T00:00:00.000Z',
@@ -99,7 +99,7 @@ describe('Feature: Day assignment', function (): void {
         $this->seed(ActivitySeeder::class);
         $activityId = (string) \Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel::query()->value('id');
 
-        $props = inertiaProps("/programme/{$programId}");
+        $props = inertiaProps("/program/{$programId}");
         $week0 = $props['cycles'][0]['weeks'][0];
 
         // The run counts toward the week regardless of the exact weekday, filling
@@ -117,7 +117,7 @@ describe('Feature: Day assignment', function (): void {
         [$programId, $cycleId] = programWithCycle(); // sub40-10k, starts 2026-08-24
 
         // Day 1 (EASY) sits on 2026-08-25; move it to a free day next week.
-        $this->post("/programme/{$programId}/cycles/{$cycleId}/jour/deplacer", [
+        $this->post("/program/{$programId}/cycles/{$cycleId}/day/move", [
             'from' => '2026-08-25',
             'to' => '2026-08-31',
         ])->assertRedirect();
@@ -148,11 +148,11 @@ describe('Feature: Day assignment', function (): void {
         $this->seed(ActivitySeeder::class);
         $activityId = (string) \Cadence\Activity\Infrastructure\Persistence\Eloquent\ActivityModel::query()->value('id');
 
-        $this->post("/programme/{$programId}/cycles/{$cycleId}/jour", ['date' => '2026-08-25', 'activity_id' => $activityId])
+        $this->post("/program/{$programId}/cycles/{$cycleId}/day", ['date' => '2026-08-25', 'activity_id' => $activityId])
             ->assertRedirect();
 
-        $this->post("/programme/{$programId}/cycles/{$cycleId}/refaire", ['ressenti' => 'En forme.'])
-            ->assertRedirect("/programme/{$programId}");
+        $this->post("/program/{$programId}/cycles/{$cycleId}/regenerate", ['ressenti' => 'En forme.'])
+            ->assertRedirect("/program/{$programId}");
 
         expect(CycleModel::query()->count())->toBe(1);
         expect(linkedActivityOn($cycleId, '2026-08-25'))->toBe($activityId);

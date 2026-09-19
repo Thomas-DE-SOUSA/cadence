@@ -15,7 +15,7 @@ uses(RefreshDatabase::class);
 
 describe('Feature: Plan roadmap', function (): void {
     it('materialises the first cycle from a chosen plan', function (): void {
-        $this->post('/programme', [
+        $this->post('/program', [
             'name' => 'Prépa Odysséa',
             'plan_key' => 'sub40-10k',
             'start_date' => '2026-08-24T00:00:00.000Z',
@@ -28,7 +28,7 @@ describe('Feature: Plan roadmap', function (): void {
         // Exactly one active cycle (the plan's first phase), 3 weeks of Fondation.
         expect(CycleModel::query()->count())->toBe(1);
 
-        $this->get("/programme/{$programId}")->assertInertia(
+        $this->get("/program/{$programId}")->assertInertia(
             fn (AssertableInertia $page) => $page
                 ->component('ProgramDetail')
                 ->has('cycles', 1)
@@ -52,7 +52,7 @@ describe('Feature: Plan roadmap', function (): void {
             }
         });
 
-        $this->post('/programme', [
+        $this->post('/program', [
             'name' => 'Prépa Odysséa',
             'plan_key' => 'sub40-10k',
             'start_date' => '2026-08-24T00:00:00.000Z',
@@ -63,20 +63,20 @@ describe('Feature: Plan roadmap', function (): void {
         $programId = (string) TrainingProgramModel::query()->value('id');
 
         // Generating before completing the active cycle is refused.
-        $this->post("/programme/{$programId}/generer-cycle", ['start_date' => '', 'weeks' => 3, 'ressenti' => ''])
+        $this->post("/program/{$programId}/generate-cycle", ['start_date' => '', 'weeks' => 3, 'ressenti' => ''])
             ->assertRedirect();
         expect(CycleModel::query()->count())->toBe(1);
 
         $cycleId = (string) CycleModel::query()->value('id');
-        $this->post("/programme/{$programId}/cycles/{$cycleId}/terminer")->assertRedirect();
+        $this->post("/program/{$programId}/cycles/{$cycleId}/complete")->assertRedirect();
 
         // Now the next phase materialises (fallback to the expert blueprint).
-        $this->post("/programme/{$programId}/generer-cycle", ['start_date' => '', 'weeks' => 3, 'ressenti' => 'En forme.'])
-            ->assertRedirect("/programme/{$programId}");
+        $this->post("/program/{$programId}/generate-cycle", ['start_date' => '', 'weeks' => 3, 'ressenti' => 'En forme.'])
+            ->assertRedirect("/program/{$programId}");
 
         expect(CycleModel::query()->count())->toBe(2);
 
-        $this->get("/programme/{$programId}")->assertInertia(
+        $this->get("/program/{$programId}")->assertInertia(
             fn (AssertableInertia $page) => $page
                 ->where('cycles.1.name', 'Développement')
                 ->where('cycles.1.phaseIndex', 1)

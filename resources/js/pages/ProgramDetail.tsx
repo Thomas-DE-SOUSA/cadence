@@ -241,7 +241,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
         }
     }, [openDay]);
 
-    // Arriving from the Forme recommendation: pre-fill the generator consigne.
+    // Arriving from the Fitness recommendation: pre-fill the generator consigne.
     useEffect(() => {
         let consigne: string | null = null;
         try {
@@ -271,7 +271,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
 
     function assignDay(cycleId: string, date: string, activityId: string | null) {
         router.post(
-            `/programme/${program.id}/cycles/${cycleId}/jour`,
+            `/program/${program.id}/cycles/${cycleId}/day`,
             { date, activity_id: activityId },
             { preserveScroll: true, onSuccess: () => setSelectedRun(null) },
         );
@@ -286,25 +286,25 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
     function rescheduleSession(cycleId: string, fromDate: string, toDate: string) {
         if (!toDate || toDate === fromDate) return;
         router.post(
-            `/programme/${program.id}/cycles/${cycleId}/jour/deplacer`,
+            `/program/${program.id}/cycles/${cycleId}/day/move`,
             { from: fromDate, to: toDate },
             { preserveScroll: true, onSuccess: () => setOpenDay(null) },
         );
     }
 
     function completeCycle(cycleId: string) {
-        router.post(`/programme/${program.id}/cycles/${cycleId}/terminer`, {}, { preserveScroll: true });
+        router.post(`/program/${program.id}/cycles/${cycleId}/complete`, {}, { preserveScroll: true });
     }
 
     function submitGenerate(e: FormEvent) {
         e.preventDefault();
-        ai.post(`/programme/${program.id}/generer-cycle`, { preserveScroll: true, onSuccess: () => setAiOpen(false) });
+        ai.post(`/program/${program.id}/generate-cycle`, { preserveScroll: true, onSuccess: () => setAiOpen(false) });
     }
 
     function submitRegenerate(e: FormEvent) {
         e.preventDefault();
         if (activeCycleId)
-            ai.post(`/programme/${program.id}/cycles/${activeCycleId}/refaire`, { preserveScroll: true, onSuccess: () => setAiOpen(false) });
+            ai.post(`/program/${program.id}/cycles/${activeCycleId}/regenerate`, { preserveScroll: true, onSuccess: () => setAiOpen(false) });
     }
 
     const achieved = program.objectives.filter((o) => o.achieved).length;
@@ -319,7 +319,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
         <>
             <Head title={program.name} />
             <Link
-                href="/programme"
+                href="/program"
                 className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
             >
                 <ArrowLeft size={16} /> Programmes
@@ -621,7 +621,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                                                         {s.actual ? (
                                                                             <div className="mt-2 flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1.5">
                                                                                 <Link
-                                                                                    href={`/activites/${s.actual.id}`}
+                                                                                    href={`/activities/${s.actual.id}`}
                                                                                     onClick={(e) => e.stopPropagation()}
                                                                                     className="flex items-center gap-1.5 text-xs tabular-nums text-emerald-700 hover:text-emerald-800"
                                                                                 >

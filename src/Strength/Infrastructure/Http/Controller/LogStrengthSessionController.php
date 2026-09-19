@@ -66,6 +66,6 @@ final class LogStrengthSessionController
             new ExecutionContext($this->tenantContext->current()),
         );
 
-        return redirect()->route('muscu')->with('status', 'Séance enregistrée 💪');
+        return redirect()->route('strength')->with('status', 'Séance enregistrée 💪');
     }
 }

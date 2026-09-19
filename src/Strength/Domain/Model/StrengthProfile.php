@@ -11,11 +11,11 @@ use Cadence\Strength\Domain\Enum\SplitPreference;
 use Cadence\Strength\Domain\Enum\StrengthGoal;
 
 /**
- * The athlete's strength profile — the muscu counterpart of the running athlete
+ * The athlete's strength profile — the strength-training counterpart of the running athlete
  * profile. A single source that personalises the progression views, the cycles
  * and (later) the coach's exercise advice.
  */
-final class MuscuProfile
+final class StrengthProfile
 {
     /**
      * @param list<MuscleGroup> $priorities muscle groups to bring up

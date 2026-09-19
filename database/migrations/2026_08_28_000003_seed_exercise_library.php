@@ -36,7 +36,7 @@ return new class extends Migration
     private function library(): array
     {
         return [
-            // Pectoraux
+            // Chest
             ['Développé couché (barre)', 'CHEST', 'BARBELL'],
             ['Développé couché haltères', 'CHEST', 'DUMBBELL'],
             ['Développé incliné (barre)', 'CHEST', 'BARBELL'],
@@ -48,7 +48,7 @@ return new class extends Migration
             ['Pec deck', 'CHEST', 'MACHINE'],
             ['Pompes', 'CHEST', 'BODYWEIGHT'],
             ['Dips pectoraux', 'CHEST', 'BODYWEIGHT'],
-            // Dos
+            // Back
             ['Tractions', 'BACK', 'BODYWEIGHT'],
             ['Tirage vertical (lat pulldown)', 'BACK', 'CABLE'],
             ['Rowing barre', 'BACK', 'BARBELL'],
@@ -59,7 +59,7 @@ return new class extends Migration
             ['Pull-over', 'BACK', 'DUMBBELL'],
             ['Shrugs (trapèzes)', 'BACK', 'DUMBBELL'],
             ['T-bar row', 'BACK', 'BARBELL'],
-            // Épaules
+            // Shoulders
             ['Développé militaire (barre)', 'SHOULDERS', 'BARBELL'],
             ['Développé épaules haltères', 'SHOULDERS', 'DUMBBELL'],
             ['Développé épaules machine', 'SHOULDERS', 'MACHINE'],
@@ -82,7 +82,7 @@ return new class extends Migration
             ['Dips triceps', 'TRICEPS', 'BODYWEIGHT'],
             ['Extension poulie corde', 'TRICEPS', 'CABLE'],
             ['Kickback', 'TRICEPS', 'DUMBBELL'],
-            // Quadriceps
+            // Quads
             ['Squat (barre)', 'QUADS', 'BARBELL'],
             ['Front squat', 'QUADS', 'BARBELL'],
             ['Presse à cuisses', 'QUADS', 'MACHINE'],
@@ -91,29 +91,29 @@ return new class extends Migration
             ['Hack squat', 'QUADS', 'MACHINE'],
             ['Squat gobelet', 'QUADS', 'KETTLEBELL'],
             ['Squat bulgare', 'QUADS', 'DUMBBELL'],
-            // Ischios
+            // Hamstrings
             ['Leg curl allongé', 'HAMSTRINGS', 'MACHINE'],
             ['Leg curl assis', 'HAMSTRINGS', 'MACHINE'],
             ['Soulevé de terre roumain', 'HAMSTRINGS', 'BARBELL'],
             ['Good morning', 'HAMSTRINGS', 'BARBELL'],
-            // Fessiers
+            // Glutes
             ['Hip thrust', 'GLUTES', 'BARBELL'],
             ['Kickback fessier poulie', 'GLUTES', 'CABLE'],
             ['Abduction machine', 'GLUTES', 'MACHINE'],
-            // Mollets
+            // Calves
             ['Mollets debout', 'CALVES', 'MACHINE'],
             ['Mollets assis', 'CALVES', 'MACHINE'],
             ['Mollets à la presse', 'CALVES', 'MACHINE'],
-            // Gainage / abdos
+            // Core / abs
             ['Gainage (planche)', 'CORE', 'BODYWEIGHT'],
             ['Relevé de jambes', 'CORE', 'BODYWEIGHT'],
             ['Crunch poulie', 'CORE', 'CABLE'],
             ['Roue abdominale', 'CORE', 'OTHER'],
             ['Russian twist', 'CORE', 'BODYWEIGHT'],
             ['Gainage latéral', 'CORE', 'BODYWEIGHT'],
-            // Avant-bras
+            // Forearms
             ['Curl poignets', 'FOREARMS', 'BARBELL'],
-            // Corps entier / haltéro
+            // Full body / barbell
             ['Épaulé-jeté', 'FULL_BODY', 'BARBELL'],
             ['Arraché', 'FULL_BODY', 'BARBELL'],
             ['Kettlebell swing', 'FULL_BODY', 'KETTLEBELL'],

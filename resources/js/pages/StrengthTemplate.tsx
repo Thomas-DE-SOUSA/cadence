@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { ArrowLeft, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/layouts/AppLayout';
-import { ExerciseEditor, itemsFromServer, type CatalogItem, type Item, type Option, type SetRow } from '@/muscu/ExerciseEditor';
+import { ExerciseEditor, itemsFromServer, type CatalogItem, type Item, type Option, type SetRow } from '@/strength/ExerciseEditor';
 
 interface TemplateData {
     id: string;
@@ -18,7 +18,7 @@ interface Props {
     template: TemplateData | null;
 }
 
-export default function MuscuTemplate({ catalog, muscles, equipments, template }: Props) {
+export default function StrengthTemplate({ catalog, muscles, equipments, template }: Props) {
     const [name, setName] = useState(template?.name ?? '');
     const [items, setItems] = useState<Item[]>(template ? itemsFromServer(template.exercises) : []);
     const [saving, setSaving] = useState(false);
@@ -33,7 +33,7 @@ export default function MuscuTemplate({ catalog, muscles, equipments, template }
         }
         setSaving(true);
         router.post(
-            '/muscu/seances',
+            '/strength/sessions',
             { id: template?.id ?? null, name, exercises: items },
             {
                 onError: (errors) => toast.error(Object.values(errors)[0] ?? "Impossible d'enregistrer la séance."),
@@ -47,7 +47,7 @@ export default function MuscuTemplate({ catalog, muscles, equipments, template }
             <Head title={name || 'Nouvelle séance'} />
 
             <div className="mb-4 flex items-center gap-2">
-                <Link href="/muscu/seances" className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100">
+                <Link href="/strength/sessions" className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100">
                     <ArrowLeft size={18} />
                 </Link>
                 <input
@@ -92,4 +92,4 @@ export default function MuscuTemplate({ catalog, muscles, equipments, template }
     );
 }
 
-MuscuTemplate.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;
+StrengthTemplate.layout = (page: ReactNode) => <AppLayout>{page}</AppLayout>;

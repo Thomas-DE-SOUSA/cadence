@@ -33,12 +33,12 @@ final class LogNutritionController
         $date = isset($data['date']) ? (string) $data['date'] : null;
 
         // Save instantly as "pending"; the client then triggers the AI estimation
-        // (muscu.nutrition.estimate), so this request never waits on Gemini.
+        // (strength.nutrition.estimate), so this request never waits on Gemini.
         $this->useCase->execute(
             new LogFoodInput((string) $data['text'], (string) $data['meal'], $date),
             new ExecutionContext($this->tenantContext->current()),
         );
 
-        return redirect()->route('muscu.nutrition', $date !== null ? ['date' => $date] : []);
+        return redirect()->route('strength.nutrition', $date !== null ? ['date' => $date] : []);
     }
 }

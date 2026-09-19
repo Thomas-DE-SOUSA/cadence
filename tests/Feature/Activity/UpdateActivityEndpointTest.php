@@ -13,7 +13,7 @@ describe('Feature: Update activity endpoint', function (): void {
         $this->seed(ActivitySeeder::class);
         $id = (string) ActivityModel::query()->value('id');
 
-        $response = $this->put("/activites/{$id}", [
+        $response = $this->put("/activities/{$id}", [
             'occurred_at' => '2026-08-20T10:00:00+00:00',
             'distance_meters' => 10010,
             'moving_seconds' => 2500,
@@ -23,7 +23,7 @@ describe('Feature: Update activity endpoint', function (): void {
             'best_efforts' => [],
         ]);
 
-        $response->assertRedirect("/activites/{$id}");
+        $response->assertRedirect("/activities/{$id}");
         $this->assertDatabaseHas('activities', [
             'id' => $id,
             'version' => 2,
@@ -36,7 +36,7 @@ describe('Feature: Update activity endpoint', function (): void {
         $this->seed(ActivitySeeder::class);
         $id = (string) ActivityModel::query()->value('id');
 
-        $this->delete("/activites/{$id}")->assertRedirect('/');
+        $this->delete("/activities/{$id}")->assertRedirect('/');
 
         $this->assertDatabaseMissing('activities', ['id' => $id, 'deleted_at' => null]);
     });

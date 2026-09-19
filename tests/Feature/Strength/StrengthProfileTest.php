@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-use Cadence\Strength\Infrastructure\Persistence\Eloquent\MuscuProfileModel;
+use Cadence\Strength\Infrastructure\Persistence\Eloquent\StrengthProfileModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
 
 uses(RefreshDatabase::class);
 
-describe('Feature: Muscu profile', function (): void {
+describe('Feature: Strength profile', function (): void {
     it('renders the profile form with option lists', function (): void {
-        $this->get('/muscu/profil')->assertInertia(
+        $this->get('/strength/profile')->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('MuscuProfile')
+                ->component('StrengthProfile')
                 ->has('options.goals')
                 ->has('options.muscles')
                 ->where('profile.exists', false),
@@ -20,7 +20,7 @@ describe('Feature: Muscu profile', function (): void {
     });
 
     it('saves the profile and drives the progression goal', function (): void {
-        $this->post('/muscu/profil', [
+        $this->post('/strength/profile', [
             'goal' => 'STRENGTH',
             'level' => 'ADVANCED',
             'bodyweightKg' => 78.5,
@@ -30,16 +30,16 @@ describe('Feature: Muscu profile', function (): void {
             'priorities' => ['QUADS', 'BACK'],
             'limitations' => ['SHOULDERS'],
             'note' => 'Ménager l’épaule droite',
-        ])->assertRedirect('/muscu/progression');
+        ])->assertRedirect('/strength/progression');
 
-        $row = MuscuProfileModel::query()->where('tenant_id', 'tenant-thomas')->first();
+        $row = StrengthProfileModel::query()->where('tenant_id', 'tenant-thomas')->first();
         expect($row->goal)->toBe('STRENGTH');
         expect($row->bodyweight_kg)->toEqual(78.5);
         expect($row->priorities)->toBe(['QUADS', 'BACK']);
 
-        $this->get('/muscu/progression')->assertInertia(
+        $this->get('/strength/progression')->assertInertia(
             fn (AssertableInertia $page) => $page
-                ->component('MuscuProgression')
+                ->component('StrengthProgression')
                 ->where('goal', 'STRENGTH')
                 ->where('hasProfile', true)
                 ->has('weekly', 8)
@@ -49,7 +49,7 @@ describe('Feature: Muscu profile', function (): void {
     });
 
     it('rejects an out-of-range bodyweight', function (): void {
-        $this->post('/muscu/profil', [
+        $this->post('/strength/profile', [
             'goal' => 'GENERAL',
             'level' => 'INTERMEDIATE',
             'bodyweightKg' => 5,

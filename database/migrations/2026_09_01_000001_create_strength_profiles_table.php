@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('muscu_profiles', function (Blueprint $table): void {
+        Schema::create('strength_profiles', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('tenant_id', 64)->unique();
             $table->string('goal', 24)->default('GENERAL');
@@ -28,6 +28,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('muscu_profiles');
+        Schema::dropIfExists('strength_profiles');
     }
 };
