@@ -58,3 +58,28 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/profile', UpdateProfileController::class)->name('profile.update');
     Route::post('/profile/password', UpdatePasswordController::class)->name('profile.password');
 });
+
+// ---------------------------------------------------------------------------
+// Legacy URL redirects. Every route was French before the English migration.
+// Installed PWAs reopen their last-visited path and old bookmarks still point
+// at the French URLs, so forward them to the English equivalents instead of
+// 404ing. GET navigations only. Safe to delete once clients have re-cached.
+// ---------------------------------------------------------------------------
+$legacySegment = [
+    'seances' => 'sessions', 'agenda' => 'schedule', 'poids' => 'weight',
+    'profil' => 'profile', 'bilan' => 'review', 'nouveau' => 'new',
+    'nouvelle' => 'new', 'modifier' => 'edit', 'exercice' => 'exercise',
+    'historique' => 'history',
+];
+$rewriteLegacy = static fn (string $rest): string => implode('/', array_map(
+    static fn (string $s) => $legacySegment[$s] ?? $s,
+    explode('/', $rest),
+));
+
+Route::get('/muscu/{rest?}', static fn (string $rest = '') => redirect('/strength'.($rest !== '' ? '/'.$rewriteLegacy($rest) : '')))->where('rest', '.*');
+Route::get('/programme/{rest?}', static fn (string $rest = '') => redirect('/program'.($rest !== '' ? '/'.$rest : '')))->where('rest', '.*');
+Route::get('/activites/{rest?}', static fn (string $rest = '') => redirect('/activities'.($rest !== '' ? '/'.$rewriteLegacy($rest) : '')))->where('rest', '.*');
+Route::get('/forme', static fn () => redirect('/fitness'));
+Route::get('/conseil', static fn () => redirect('/advice'));
+Route::get('/allures', static fn () => redirect('/paces'));
+Route::get('/profil', static fn () => redirect('/profile'));
