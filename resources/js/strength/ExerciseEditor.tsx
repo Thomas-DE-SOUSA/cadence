@@ -2,6 +2,10 @@ import { router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, ChevronUp, Copy, History, Link2, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
 
+// Fold accents/diacritics so exercise search is accent-insensitive: typing
+// "elevations" matches "Élévations", "développé" matches "developpe", etc.
+const fold = (s: string): string => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 export interface CatalogItem {
     id: string;
     name: string;
@@ -144,7 +148,7 @@ function ExercisePicker({
     const [newEquip, setNewEquip] = useState(equipments[0]?.value ?? '');
 
     const filtered = useMemo(
-        () => catalog.filter((e) => (!muscle || e.muscle === muscle) && (q.trim() === '' || e.name.toLowerCase().includes(q.toLowerCase().trim()))),
+        () => catalog.filter((e) => (!muscle || e.muscle === muscle) && (q.trim() === '' || fold(e.name).includes(fold(q.trim())))),
         [catalog, q, muscle],
     );
 
