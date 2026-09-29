@@ -25,6 +25,7 @@ interface SessionSummary {
     exerciseCount: number;
     totalSets: number;
     volumeKg: number;
+    previousVolumeKg: number | null;
 }
 
 interface Props {
@@ -122,6 +123,27 @@ export default function StrengthSessionReview({ session, progressions, firstTime
                 <Stat value={`${session.totalSets}`} label={`série${session.totalSets > 1 ? 's' : ''}`} />
                 <Stat value={fmtKg(session.volumeKg)} label="kg soulevés" />
             </div>
+
+            {session.previousVolumeKg !== null && session.previousVolumeKg > 0 && (
+                <p className="mt-3 flex items-center justify-center gap-2 text-sm text-neutral-500">
+                    <span className="text-neutral-400">Charge totale</span>
+                    <span className="tabular-nums">
+                        <span className="text-neutral-400">{fmtKg(session.previousVolumeKg)} kg</span>
+                        {' → '}
+                        <span className="font-bold text-neutral-900">{fmtKg(session.volumeKg)} kg</span>
+                    </span>
+                    {(() => {
+                        const delta = session.volumeKg - session.previousVolumeKg;
+                        if (delta === 0) return <span className="text-xs text-neutral-400">= dernière fois</span>;
+                        return (
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${delta > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-neutral-100 text-neutral-500'}`}>
+                                {delta > 0 ? '+' : '−'}
+                                {fmtKg(Math.abs(delta))} kg
+                            </span>
+                        );
+                    })()}
+                </p>
+            )}
 
             {hasProgress ? (
                 <section className="mt-6">

@@ -45,6 +45,8 @@ describe('Feature: post-session review', function (): void {
                 ->component('StrengthSessionReview')
                 ->where('session.id', 'sessB')
                 ->where('session.exerciseCount', 3)
+                ->where('session.volumeKg', 1525)          // 625 + 400 + 500
+                ->where('session.previousVolumeKg', 920)    // sessA: 600 + 320
                 ->has('progressions', 2)
                 ->where('progressions.0.exerciseId', 'bench')
                 ->where('progressions.0.kind', 'weight')
@@ -98,6 +100,7 @@ describe('Feature: post-session review', function (): void {
             fn (AssertableInertia $page) => $page
                 ->component('StrengthSessionReview')
                 ->has('progressions', 0)
+                ->where('session.previousVolumeKg', null)   // first ever session, nothing to compare
                 ->where('firstTimeCount', 1),
         );
     });

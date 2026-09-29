@@ -472,6 +472,9 @@ final class StrengthView
             }
         }
 
+        // Total load lifted last session, to show "before → now" on this one.
+        $previousVolumeKg = $priorDone !== [] ? (int) round($priorDone[0]->totalVolumeKg()) : null;
+
         $snap = $session->toSnapshot();
 
         return [
@@ -483,6 +486,7 @@ final class StrengthView
                 'exerciseCount' => count($snap['exercises']),
                 'totalSets' => $session->totalSets(),
                 'volumeKg' => (int) round($session->totalVolumeKg()),
+                'previousVolumeKg' => $previousVolumeKg,
             ],
             'progressions' => $progressions,
             'firstTimeCount' => $firstTime,
