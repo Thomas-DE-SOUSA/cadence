@@ -30,6 +30,7 @@ use Cadence\Strength\Infrastructure\Http\Controller\ShowAgendaController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowExerciseHistoryController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowProgressionController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowSessionEditorController;
+use Cadence\Strength\Infrastructure\Http\Controller\ShowSessionReviewController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowTemplateEditorController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowTemplatesController;
 use Cadence\Strength\Infrastructure\Http\Controller\ShowWeightController;
@@ -95,6 +96,7 @@ final class StrengthServiceProvider extends ServiceProvider
             Route::post('/schedule/plan', ScheduleWorkoutController::class)->name('strength.schedule');
             Route::post('/schedule', LogStrengthSessionController::class)->name('strength.session.save');
             Route::get('/schedule/{id}', ShowSessionEditorController::class)->name('strength.session');
+            Route::get('/schedule/{id}/review', ShowSessionReviewController::class)->name('strength.session.review');
             Route::post('/schedule/{id}/delete', RemoveScheduledWorkoutController::class)->name('strength.session.delete');
 
             // Custom exercises (shared by every editor).

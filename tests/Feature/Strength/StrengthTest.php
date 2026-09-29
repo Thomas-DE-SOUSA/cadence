@@ -51,7 +51,7 @@ describe('Feature: Strength', function (): void {
                     ['weight_kg' => 110, 'reps' => 3, 'rpe' => 9],
                 ]],
             ],
-        ])->assertRedirect('/strength');
+        ])->assertRedirectContains('/review'); // a completed session lands on its recap
 
         expect(StrengthSessionModel::query()->where('tenant_id', 'tenant-thomas')->where('status', 'DONE')->count())->toBe(1);
 

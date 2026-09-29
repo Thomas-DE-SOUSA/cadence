@@ -52,7 +52,9 @@ final class LogStrengthSessionController
         /** @var list<array<string, mixed>> $exercises */
         $exercises = array_values($data['exercises'] ?? []);
 
-        $this->useCase->execute(
+        $status = (string) ($data['status'] ?? 'DONE');
+
+        $id = $this->useCase->execute(
             new LogStrengthSessionInput(
                 isset($data['id']) ? (string) $data['id'] : null,
                 (string) ($data['date'] ?? ''),
@@ -60,11 +62,17 @@ final class LogStrengthSessionController
                 (string) ($data['note'] ?? ''),
                 isset($data['durationSeconds']) ? (int) $data['durationSeconds'] : null,
                 $exercises,
-                (string) ($data['status'] ?? 'DONE'),
+                $status,
                 isset($data['templateId']) ? (string) $data['templateId'] : null,
             ),
             new ExecutionContext($this->tenantContext->current()),
         );
+
+        // A completed session lands on its recap (what beat last time); a plan
+        // just saved goes back to the agenda.
+        if ($status === 'DONE') {
+            return redirect()->route('strength.session.review', ['id' => $id]);
+        }
 
         return redirect()->route('strength')->with('status', 'Séance enregistrée 💪');
     }

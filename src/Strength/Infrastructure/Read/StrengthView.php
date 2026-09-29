@@ -15,6 +15,8 @@ use Cadence\Strength\Domain\Model\StrengthProfile;
 use Cadence\Strength\Domain\Model\StrengthSession;
 use Cadence\Strength\Domain\Model\WorkoutTemplate;
 use Cadence\Strength\Domain\Service\OneRepMaxCalculator;
+use Cadence\Strength\Domain\Service\SessionProgressionComparator;
+use Cadence\Strength\Domain\ValueObject\ExerciseProgression;
 use Cadence\Strength\Domain\ValueObject\PerformedExercise;
 use DateTimeImmutable;
 
@@ -424,6 +426,68 @@ final class StrengthView
         usort($out, static fn (array $a, array $b): int => ($b['recent'] <=> $a['recent']) ?: strcmp($b['date'], $a['date']));
 
         return $out;
+    }
+
+    /**
+     * Post-session review: which exercises beat their last time (heavier top set
+     * or more reps at the same load), plus a compact session summary and how many
+     * exercises stayed stable or were done for the first time. The reference for
+     * each exercise is its most recent prior performance across {@see $priorDone}
+     * (most recent first, the current session excluded).
+     *
+     * @param list<StrengthSession> $priorDone earlier done sessions, most recent first
+     *
+     * @return array<string, mixed>
+     */
+    public static function sessionReview(StrengthSession $session, array $priorDone, SessionProgressionComparator $comparator): array
+    {
+        // Reference = the last time each exercise was performed before this session.
+        $previousByExercise = [];
+        foreach ($priorDone as $prior) {
+            foreach ($prior->exercises() as $exercise) {
+                $previousByExercise[$exercise->exerciseId] ??= $exercise;
+            }
+        }
+
+        $progressions = array_map(
+            static fn (ExerciseProgression $p): array => $p->toArray(),
+            $comparator->compareSession($session, $previousByExercise),
+        );
+
+        // Break the rest down: seen-before-but-flat vs. brand-new exercises.
+        $improvedIds = [];
+        foreach ($progressions as $p) {
+            $improvedIds[(string) $p['exerciseId']] = true;
+        }
+        $firstTime = 0;
+        $stable = 0;
+        foreach ($session->exercises() as $exercise) {
+            if (isset($improvedIds[$exercise->exerciseId])) {
+                continue;
+            }
+            if (isset($previousByExercise[$exercise->exerciseId])) {
+                $stable++;
+            } else {
+                $firstTime++;
+            }
+        }
+
+        $snap = $session->toSnapshot();
+
+        return [
+            'session' => [
+                'id' => $session->id(),
+                'title' => $snap['title'],
+                'date' => $snap['date'],
+                'durationSeconds' => $snap['duration_seconds'],
+                'exerciseCount' => count($snap['exercises']),
+                'totalSets' => $session->totalSets(),
+                'volumeKg' => (int) round($session->totalVolumeKg()),
+            ],
+            'progressions' => $progressions,
+            'firstTimeCount' => $firstTime,
+            'stableCount' => $stable,
+        ];
     }
 
     /**

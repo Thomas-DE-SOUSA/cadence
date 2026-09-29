@@ -45,6 +45,12 @@ final class StrengthSession
         return $this->status;
     }
 
+    /** @return list<PerformedExercise> */
+    public function exercises(): array
+    {
+        return $this->exercises;
+    }
+
     public function totalSets(): int
     {
         $count = 0;
