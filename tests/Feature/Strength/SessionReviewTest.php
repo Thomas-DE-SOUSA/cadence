@@ -57,6 +57,38 @@ describe('Feature: post-session review', function (): void {
         );
     });
 
+    it('drops unticked sets on completion and still detects the ticked progression', function (): void {
+        // Reference: abs circuit at 8 kg last time.
+        logSession('absA', '2026-09-01', [
+            ['exercise_id' => 'abs', 'name' => 'Circuit abdominal', 'sets' => [['weight_kg' => 8, 'reps' => 15]]],
+        ]);
+
+        // Today: 3 planned sets, only the first ticked (at 9 kg); the rest left unticked.
+        app(LogStrengthSessionUseCase::class)->execute(
+            new LogStrengthSessionInput('absB', '2026-09-08', 'Abdos', '', 1200, [
+                ['exercise_id' => 'abs', 'name' => 'Circuit abdominal', 'sets' => [
+                    ['weight_kg' => 9, 'reps' => 15, 'done' => true],
+                    ['weight_kg' => 8, 'reps' => 15, 'done' => false],
+                    ['weight_kg' => 8, 'reps' => 15, 'done' => false],
+                ]],
+            ], 'DONE', null),
+            reviewCtx(),
+        );
+
+        // The unticked sets are dropped from the log (1/3 → 1 set stored).
+        expect(StrengthSessionModel::query()->find('absB')->exercises[0]['sets'])->toHaveCount(1);
+
+        // ...and the +1 kg on the ticked set is recognised in the recap.
+        $this->get('/strength/schedule/absB/review')->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('StrengthSessionReview')
+                ->has('progressions', 1)
+                ->where('progressions.0.exerciseId', 'abs')
+                ->where('progressions.0.kind', 'weight')
+                ->where('progressions.0.weightDeltaKg', fn ($v): bool => (float) $v === 1.0),
+        );
+    });
+
     it('shows no progression the very first time an exercise is done', function (): void {
         logSession('solo', '2026-09-10', [
             ['exercise_id' => 'bench', 'name' => 'Développé couché', 'sets' => [['weight_kg' => 60, 'reps' => 10]]],

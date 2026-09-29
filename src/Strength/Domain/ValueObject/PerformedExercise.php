@@ -39,6 +39,24 @@ final readonly class PerformedExercise
         return $total;
     }
 
+    /**
+     * The exercise as actually performed: only the sets ticked done are kept.
+     * An unticked set is treated as not done and dropped, so a completed
+     * session's log reflects exactly what was executed (the template keeps its
+     * full set structure for future planning).
+     */
+    public function performedOnly(): self
+    {
+        $done = array_values(array_filter($this->sets, static fn (SetEntry $s): bool => $s->done));
+
+        return new self($this->exerciseId, $this->name, $done, $this->note, $this->perSide, $this->supersetGroup);
+    }
+
+    public function hasSets(): bool
+    {
+        return $this->sets !== [];
+    }
+
     /** @return array<string, mixed> */
     public function toArray(): array
     {

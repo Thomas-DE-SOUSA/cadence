@@ -32,6 +32,18 @@ final readonly class LogStrengthSessionUseCase
             $exercises[] = PerformedExercise::fromArray($raw);
         }
 
+        $status = WorkoutStatus::from($input->status);
+
+        // A completed session logs only what was actually done: unticked sets are
+        // dropped, and an exercise with no remaining sets falls away. Planned
+        // sessions keep every set as-is.
+        if ($status === WorkoutStatus::DONE) {
+            $exercises = array_values(array_filter(
+                array_map(static fn (PerformedExercise $e): PerformedExercise => $e->performedOnly(), $exercises),
+                static fn (PerformedExercise $e): bool => $e->hasSets(),
+            ));
+        }
+
         $existing = $input->id !== null ? $this->sessions->ofId($input->id, $context->tenant) : null;
         $version = $existing !== null ? ($existing->toSnapshot()['version'] + 1) : 1;
 
@@ -43,7 +55,7 @@ final readonly class LogStrengthSessionUseCase
             trim($input->note),
             $input->durationSeconds,
             $exercises,
-            WorkoutStatus::from($input->status),
+            $status,
             $input->templateId,
             $version,
         );

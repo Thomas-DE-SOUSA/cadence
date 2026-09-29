@@ -165,17 +165,21 @@ describe('Feature: Strength schedule (template → plan → done)', function ():
         expect((float) $exercises[0]['sets'][0]['weight_kg'])->toBe(80.0);
     });
 
-    it('carries plan-shaped sets only — keeps warm-up structure, drops RPE', function (): void {
+    it('overlays achieved loads onto the template structure — keeps template warm-ups, drops RPE', function (): void {
         $templateId = app(SaveWorkoutTemplateUseCase::class)->execute(
             new SaveWorkoutTemplateInput(null, 'Push A', [
-                ['exercise_id' => 'bench', 'name' => 'Développé couché', 'sets' => [['weight_kg' => 80, 'reps' => 8]]],
+                ['exercise_id' => 'bench', 'name' => 'Développé couché', 'sets' => [
+                    ['weight_kg' => 40, 'reps' => 10, 'is_warmup' => true],
+                    ['weight_kg' => 80, 'reps' => 8],
+                ]],
             ]),
             ctx(),
         );
+        // Performed heavier on the working set, with an ad-hoc warm-up + RPE.
         app(LogStrengthSessionUseCase::class)->execute(
             new LogStrengthSessionInput(null, '2026-09-01', 'Push A', '', null, [
                 ['exercise_id' => 'bench', 'name' => 'Développé couché', 'sets' => [
-                    ['weight_kg' => 40, 'reps' => 10, 'is_warmup' => true],
+                    ['weight_kg' => 45, 'reps' => 10, 'is_warmup' => true],
                     ['weight_kg' => 82.5, 'reps' => 8, 'rpe' => 9],
                 ]],
             ], 'DONE', $templateId),
@@ -186,8 +190,46 @@ describe('Feature: Strength schedule (template → plan → done)', function ():
         $sets = StrengthSessionModel::query()->find($planned)->exercises[0]['sets'];
 
         expect($sets)->toHaveCount(2);
-        expect($sets[0]['is_warmup'])->toBeTrue();          // warm-up structure kept
-        expect((float) $sets[1]['weight_kg'])->toBe(82.5);
-        expect($sets[1]['rpe'] ?? null)->toBeNull();        // per-session RPE not carried into a plan
+        expect($sets[0]['is_warmup'])->toBeTrue();
+        expect((float) $sets[0]['weight_kg'])->toBe(40.0); // warm-up load from the TEMPLATE, not the ad-hoc 45
+        expect((float) $sets[1]['weight_kg'])->toBe(82.5); // working load from the performance
+        expect($sets[1]['rpe'] ?? null)->toBeNull();       // per-session RPE not carried into a plan
+    });
+
+    it('keeps the template set count on re-schedule even after a partial session', function (): void {
+        $templateId = app(SaveWorkoutTemplateUseCase::class)->execute(
+            new SaveWorkoutTemplateInput(null, 'Abdos', [
+                ['exercise_id' => 'abs', 'name' => 'Circuit abdominal', 'sets' => [
+                    ['weight_kg' => 8, 'reps' => 15],
+                    ['weight_kg' => 8, 'reps' => 15],
+                    ['weight_kg' => 8, 'reps' => 15],
+                ]],
+            ]),
+            ctx(),
+        );
+
+        // Only the first set is ticked done (heavier, 9 kg); the other two are left unticked.
+        app(LogStrengthSessionUseCase::class)->execute(
+            new LogStrengthSessionInput(null, '2026-09-01', 'Abdos', '', null, [
+                ['exercise_id' => 'abs', 'name' => 'Circuit abdominal', 'sets' => [
+                    ['weight_kg' => 9, 'reps' => 15, 'done' => true],
+                    ['weight_kg' => 8, 'reps' => 15, 'done' => false],
+                    ['weight_kg' => 8, 'reps' => 15, 'done' => false],
+                ]],
+            ], 'DONE', $templateId),
+            ctx(),
+        );
+
+        // The logged session kept only the set actually done (1/3 → 1 set stored).
+        $done = StrengthSessionModel::query()->where('tenant_id', 'tenant-thomas')->where('status', 'DONE')->first();
+        expect($done->exercises[0]['sets'])->toHaveCount(1);
+        expect((float) $done->exercises[0]['sets'][0]['weight_kg'])->toBe(9.0);
+
+        // Re-scheduling still offers the template's 3 sets, seeded at the achieved 9 kg.
+        $planned = app(ScheduleWorkoutUseCase::class)->execute(new ScheduleWorkoutInput($templateId, '2026-09-08'), ctx());
+        $sets = StrengthSessionModel::query()->find($planned)->exercises[0]['sets'];
+
+        expect($sets)->toHaveCount(3);
+        expect(array_map(static fn (array $s): float => (float) $s['weight_kg'], $sets))->toBe([9.0, 9.0, 9.0]);
     });
 });

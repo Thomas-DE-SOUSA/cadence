@@ -329,6 +329,33 @@ export default function StrengthSession({ catalog, muscles, equipments, session,
         );
     };
 
+    // Finishing a session: warn if working sets were filled but never ticked
+    // done — those get dropped from the logged session (the template keeps them),
+    // so the recap counts only what was actually performed.
+    const completeSession = () => {
+        let total = 0;
+        let checked = 0;
+        for (const it of items) {
+            for (const s of it.sets) {
+                const logged = s.weight_kg !== null || s.reps !== null || s.duration_seconds !== null;
+                if (s.is_warmup || !logged) continue;
+                total += 1;
+                if (s.done) checked += 1;
+            }
+        }
+        if (total - checked > 0) {
+            setConfirmOpts({
+                title: 'Terminer avec des séries non faites ?',
+                message: `Tu as coché ${checked}/${total} séries. Les séries non cochées seront retirées de cette séance — la séance modèle, elle, garde toutes ses séries.`,
+                confirmLabel: 'Terminer quand même',
+                tone: 'brand',
+                onConfirm: () => post('DONE', sessionDuration()),
+            });
+            return;
+        }
+        post('DONE', sessionDuration());
+    };
+
     const removeFromAgenda = () => {
         if (!session) return;
         const id = session.id;
@@ -482,7 +509,7 @@ export default function StrengthSession({ catalog, muscles, equipments, session,
                     </span>
                     {started ? (
                         <button
-                            onClick={() => post('DONE', sessionDuration())}
+                            onClick={completeSession}
                             disabled={saving || items.length === 0}
                             className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-40"
                         >

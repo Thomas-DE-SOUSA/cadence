@@ -14,12 +14,13 @@ use Cadence\Strength\Domain\Port\StrengthSessionRepository;
 use Cadence\Strength\Domain\Port\WorkoutTemplateRepository;
 
 /**
- * Places a template on an agenda day: creates a PLANNED session pre-filled,
- * per exercise, with the weights performed on the athlete's latest training
- * date for that exercise (progressive-overload memory) — falling back to the
- * template's target sets for exercises never performed. Only the plan-shaped
- * fields carry over (load / reps / duration / warm-up structure); per-session
- * performance data (RPE, done state) is not copied into a plan.
+ * Places a template on an agenda day: creates a PLANNED session whose structure
+ * comes from the template (its full set count and warm-ups), with each working
+ * set pre-filled from the loads the athlete last performed for that exercise
+ * (progressive-overload memory) — falling back to the template target for
+ * exercises never performed. Keeping the template's structure means a session
+ * re-scheduled after a partial day still offers every planned set (e.g. 0/3),
+ * even though the completed log only kept the sets that were actually done.
  */
 final readonly class ScheduleWorkoutUseCase
 {
@@ -38,16 +39,16 @@ final readonly class ScheduleWorkoutUseCase
         }
 
         $snap = $template->toSnapshot();
-        $lastPerformed = $this->lastPerformedSets($context->tenant);
+        $lastPerformed = $this->lastPerformedWorkingSets($context->tenant);
         $id = $this->ids->generate();
 
         $exercises = [];
         foreach ($snap['exercises'] as $exercise) {
-            if (is_array($exercise) && isset($exercise['exercise_id'])) {
+            if (is_array($exercise) && isset($exercise['exercise_id']) && isset($exercise['sets']) && is_array($exercise['sets'])) {
                 $exerciseId = (string) $exercise['exercise_id'];
                 if (isset($lastPerformed[$exerciseId])) {
-                    // Carry forward the last performed sets so progression sticks.
-                    $exercise['sets'] = $lastPerformed[$exerciseId];
+                    // Keep the template's set structure; overlay the achieved loads.
+                    $exercise['sets'] = $this->applyOverload($exercise['sets'], $lastPerformed[$exerciseId]);
                 }
             }
             $exercises[] = $exercise;
@@ -72,14 +73,15 @@ final readonly class ScheduleWorkoutUseCase
     }
 
     /**
-     * The sets performed on the latest training date each exercise was done
-     * (DONE sessions only; the repo orders by session_date desc). Sibling of
+     * The working-set loads performed on the latest training date each exercise
+     * was done (DONE sessions only; the repo orders by session_date desc).
+     * Warm-ups are excluded — the template owns the warm-up structure. Sibling of
      * {@see \Cadence\Strength\Infrastructure\Read\StrengthView::lastByExercise},
      * which serves the live editor's "last time" reference.
      *
-     * @return array<string, list<array<string, mixed>>> exercise_id → its last performed sets, plan-shaped
+     * @return array<string, list<array{weight_kg:mixed,reps:mixed,duration_seconds:mixed}>> exercise_id → its last performed working loads, in order
      */
-    private function lastPerformedSets(TenantId $tenant): array
+    private function lastPerformedWorkingSets(TenantId $tenant): array
     {
         $last = [];
         // A generous bound so an exercise's memory isn't silently lost past a
@@ -96,9 +98,19 @@ final readonly class ScheduleWorkoutUseCase
                 if (isset($last[$exerciseId]) || ! isset($exercise['sets']) || ! is_array($exercise['sets'])) {
                     continue;
                 }
-                $planSets = $this->toPlanSets($exercise['sets']);
-                if ($planSets !== []) {
-                    $last[$exerciseId] = $planSets;
+                $working = [];
+                foreach ($exercise['sets'] as $set) {
+                    if (! is_array($set) || ($set['is_warmup'] ?? false) || ($set['done'] ?? true) === false) {
+                        continue;
+                    }
+                    $working[] = [
+                        'weight_kg' => $set['weight_kg'] ?? null,
+                        'reps' => $set['reps'] ?? null,
+                        'duration_seconds' => $set['duration_seconds'] ?? null,
+                    ];
+                }
+                if ($working !== []) {
+                    $last[$exerciseId] = $working;
                 }
             }
         }
@@ -107,35 +119,45 @@ final readonly class ScheduleWorkoutUseCase
     }
 
     /**
-     * Projects performed sets to plan-shaped targets: keeps load / reps /
-     * duration / warm-up structure, drops per-session performance (RPE, done —
-     * their VO defaults apply). Returns [] when there was no working set last
-     * time, so the template target is kept instead.
+     * Overlays the last performed working loads onto the template's set
+     * structure. Warm-ups keep their template values; working sets take the
+     * performed loads in order, reusing the last performed load when the template
+     * plans more working sets than were done. Per-session data (RPE, done) is not
+     * carried into a plan.
      *
-     * @param array<int|string, mixed> $sets
+     * @param array<int|string, mixed> $templateSets
+     * @param list<array{weight_kg:mixed,reps:mixed,duration_seconds:mixed}> $performed non-empty
      *
      * @return list<array<string, mixed>>
      */
-    private function toPlanSets(array $sets): array
+    private function applyOverload(array $templateSets, array $performed): array
     {
         $out = [];
-        $hasWorkingSet = false;
-        foreach ($sets as $set) {
+        $i = 0;
+        foreach ($templateSets as $set) {
             if (! is_array($set)) {
                 continue;
             }
-            $isWarmup = (bool) ($set['is_warmup'] ?? false);
-            if (! $isWarmup && ($set['done'] ?? true) !== false) {
-                $hasWorkingSet = true;
+            if ($set['is_warmup'] ?? false) {
+                $out[] = [
+                    'weight_kg' => $set['weight_kg'] ?? null,
+                    'reps' => $set['reps'] ?? null,
+                    'duration_seconds' => $set['duration_seconds'] ?? null,
+                    'is_warmup' => true,
+                ];
+
+                continue;
             }
+            $src = $performed[$i] ?? $performed[count($performed) - 1];
+            $i++;
             $out[] = [
-                'weight_kg' => $set['weight_kg'] ?? null,
-                'reps' => $set['reps'] ?? null,
-                'duration_seconds' => $set['duration_seconds'] ?? null,
-                'is_warmup' => $isWarmup,
+                'weight_kg' => $src['weight_kg'] ?? ($set['weight_kg'] ?? null),
+                'reps' => $src['reps'] ?? ($set['reps'] ?? null),
+                'duration_seconds' => $src['duration_seconds'] ?? ($set['duration_seconds'] ?? null),
+                'is_warmup' => false,
             ];
         }
 
-        return $hasWorkingSet ? $out : [];
+        return $out;
     }
 }
