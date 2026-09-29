@@ -18,6 +18,7 @@ use Cadence\Strength\Domain\Service\OneRepMaxCalculator;
 use Cadence\Strength\Domain\Service\SessionProgressionComparator;
 use Cadence\Strength\Domain\ValueObject\ExerciseProgression;
 use Cadence\Strength\Domain\ValueObject\PerformedExercise;
+use Cadence\Strength\Domain\ValueObject\SetEntry;
 use DateTimeImmutable;
 
 /** Shapes strength data for the strength pages. Pure presentation over snapshots. */
@@ -472,8 +473,30 @@ final class StrengthView
             }
         }
 
-        // Total load lifted last session, to show "before → now" on this one.
-        $previousVolumeKg = $priorDone !== [] ? (int) round($priorDone[0]->totalVolumeKg()) : null;
+        // Same-scale "before → now" load: per exercise, compare the top working
+        // sets on an EQUAL number of sets (k = min of both sessions), so doing
+        // 2/3 heavier sets isn't read as a regression against a previous 3/3.
+        // Bodyweight / timed sets carry 0 kg (their progress shows on the cards).
+        $currentLoad = 0.0;
+        $previousLoad = 0.0;
+        $comparedExercises = 0;
+        foreach ($session->exercises() as $exercise) {
+            $previousExercise = $previousByExercise[$exercise->exerciseId] ?? null;
+            if ($previousExercise === null) {
+                continue;
+            }
+            $currentSets = self::setsByVolumeDesc($exercise);
+            $previousSets = self::setsByVolumeDesc($previousExercise);
+            $k = min(count($currentSets), count($previousSets));
+            if ($k === 0) {
+                continue;
+            }
+            $comparedExercises++;
+            for ($i = 0; $i < $k; $i++) {
+                $currentLoad += $currentSets[$i]->volumeKg();
+                $previousLoad += $previousSets[$i]->volumeKg();
+            }
+        }
 
         $snap = $session->toSnapshot();
 
@@ -486,12 +509,27 @@ final class StrengthView
                 'exerciseCount' => count($snap['exercises']),
                 'totalSets' => $session->totalSets(),
                 'volumeKg' => (int) round($session->totalVolumeKg()),
-                'previousVolumeKg' => $previousVolumeKg,
+                'comparedVolumeKg' => $comparedExercises > 0 ? (int) round($currentLoad) : null,
+                'comparedPreviousVolumeKg' => $comparedExercises > 0 ? (int) round($previousLoad) : null,
             ],
             'progressions' => $progressions,
             'firstTimeCount' => $firstTime,
             'stableCount' => $stable,
         ];
+    }
+
+    /**
+     * An exercise's working sets, heaviest tonnage first — so a top-k slice is
+     * the k best sets when comparing sessions on an equal number of sets.
+     *
+     * @return list<SetEntry>
+     */
+    private static function setsByVolumeDesc(PerformedExercise $exercise): array
+    {
+        $sets = $exercise->workingSets();
+        usort($sets, static fn (SetEntry $a, SetEntry $b): int => $b->volumeKg() <=> $a->volumeKg());
+
+        return $sets;
     }
 
     /**

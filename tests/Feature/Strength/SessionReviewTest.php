@@ -45,8 +45,9 @@ describe('Feature: post-session review', function (): void {
                 ->component('StrengthSessionReview')
                 ->where('session.id', 'sessB')
                 ->where('session.exerciseCount', 3)
-                ->where('session.volumeKg', 1525)          // 625 + 400 + 500
-                ->where('session.previousVolumeKg', 920)    // sessA: 600 + 320
+                ->where('session.volumeKg', 1525)               // full: 625 + 400 + 500
+                ->where('session.comparedVolumeKg', 1025)       // bench 625 + ohp 400 (squat has no history)
+                ->where('session.comparedPreviousVolumeKg', 920) // bench 600 + ohp 320
                 ->has('progressions', 2)
                 ->where('progressions.0.exerciseId', 'bench')
                 ->where('progressions.0.kind', 'weight')
@@ -91,6 +92,33 @@ describe('Feature: post-session review', function (): void {
         );
     });
 
+    it('compares load on an equal number of sets — 2 heavier sets are not a regression', function (): void {
+        // Last time: 3 sets at 10 kg × 10 (a naive total would be 300 kg over 3 sets).
+        logSession('extA', '2026-09-01', [
+            ['exercise_id' => 'ext', 'name' => 'Extension', 'sets' => [
+                ['weight_kg' => 10, 'reps' => 10],
+                ['weight_kg' => 10, 'reps' => 10],
+                ['weight_kg' => 10, 'reps' => 10],
+            ]],
+        ]);
+        // This time only 2 sets, but heavier (12 kg × 10). Full total = 240 < 300,
+        // yet on equal sets (2 vs the best 2) it is 240 > 200 → progress.
+        logSession('extB', '2026-09-08', [
+            ['exercise_id' => 'ext', 'name' => 'Extension', 'sets' => [
+                ['weight_kg' => 12, 'reps' => 10],
+                ['weight_kg' => 12, 'reps' => 10],
+            ]],
+        ]);
+
+        $this->get('/strength/schedule/extB/review')->assertInertia(
+            fn (AssertableInertia $page) => $page
+                ->component('StrengthSessionReview')
+                ->where('session.volumeKg', 240)                 // full session total
+                ->where('session.comparedPreviousVolumeKg', 200) // last time's best 2 sets
+                ->where('session.comparedVolumeKg', 240),        // today's 2 sets — higher, not a regression
+        );
+    });
+
     it('shows no progression the very first time an exercise is done', function (): void {
         logSession('solo', '2026-09-10', [
             ['exercise_id' => 'bench', 'name' => 'Développé couché', 'sets' => [['weight_kg' => 60, 'reps' => 10]]],
@@ -100,7 +128,7 @@ describe('Feature: post-session review', function (): void {
             fn (AssertableInertia $page) => $page
                 ->component('StrengthSessionReview')
                 ->has('progressions', 0)
-                ->where('session.previousVolumeKg', null)   // first ever session, nothing to compare
+                ->where('session.comparedVolumeKg', null)   // first ever session, nothing to compare
                 ->where('firstTimeCount', 1),
         );
     });
