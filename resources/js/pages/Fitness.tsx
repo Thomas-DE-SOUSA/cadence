@@ -20,9 +20,11 @@ import {
     Zap,
 } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
 import { HelpTip } from '@/components/HelpTip';
 import { PagePlaceholder } from '@/components/PagePlaceholder';
+import { Section } from '@/components/ui/Section';
+import { Stat, StatRow } from '@/components/ui/Stat';
+import { Callout } from '@/components/ui/Callout';
 
 const FORM_HELP =
     'La « forme » (TSB) = fitness − fatigue. Positive tu es frais/affûté, très négative tu es fatigué (charge en cours). C’est l’indicateur de fraîcheur.';
@@ -105,7 +107,7 @@ function RecommendationCard({ a }: { a: Adaptation }) {
     };
 
     return (
-        <div className={`animate-fade-up mb-4 rounded-2xl border bg-white p-5 shadow-sm shadow-neutral-200/60 ${v.ring}`}>
+        <div className="animate-fade-up mb-5 border-b border-neutral-100 pb-5">
             <div className="flex items-start gap-3">
                 <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white ${v.chip}`}>
                     <Icon size={20} />
@@ -141,31 +143,6 @@ function RecommendationCard({ a }: { a: Adaptation }) {
                     </button>
                 </div>
             </div>
-        </div>
-    );
-}
-
-function StatCell({
-    icon: Icon,
-    tint,
-    value,
-    label,
-    help,
-}: {
-    icon: ComponentType<{ size?: number; className?: string }>;
-    tint: string;
-    value: string;
-    label: string;
-    help?: string;
-}) {
-    return (
-        <div className="flex flex-col items-center gap-1 px-2 py-4 text-center">
-            <p className="text-xl font-extrabold leading-none tabular-nums text-neutral-900 sm:text-2xl">{value}</p>
-            <p className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-neutral-400">
-                <Icon size={11} className={tint} />
-                {label}
-                {help && <HelpTip label={label} text={help} size={12} />}
-            </p>
         </div>
     );
 }
@@ -328,7 +305,7 @@ function CheckInCard({ checkin }: { checkin?: CheckIn | null }) {
         const s = READINESS_STYLE[r.level];
         const Icon = s.icon;
         return (
-            <div className={`animate-fade-up mb-4 rounded-2xl border bg-white p-5 shadow-sm shadow-neutral-200/60 ${s.ring}`}>
+            <div className="animate-fade-up mb-5 border-b border-neutral-100 pb-5">
                 <div className="flex items-start gap-3">
                     <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white ${s.chip}`}>
                         <Icon size={20} />
@@ -366,11 +343,8 @@ function CheckInCard({ checkin }: { checkin?: CheckIn | null }) {
     }
 
     return (
-        <div className="animate-fade-up mb-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm shadow-neutral-200/60">
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
-                <HeartPulse size={12} /> Comment tu te sens aujourd'hui ?
-            </p>
-            <p className="mt-0.5 mb-3 text-sm text-neutral-500">Tes sensations affinent ta forme et guident le coach (1 = très bas, 5 = au top).</p>
+        <Section className="animate-fade-up mb-5" icon={HeartPulse} title="Comment tu te sens aujourd'hui ?">
+            <p className="-mt-1 mb-3 text-sm text-neutral-500">Tes sensations affinent ta forme et guident le coach (1 = très bas, 5 = au top).</p>
 
             <div className="space-y-2.5">
                 {SENSATIONS.map((s) => {
@@ -439,7 +413,7 @@ function CheckInCard({ checkin }: { checkin?: CheckIn | null }) {
                     </button>
                 )}
             </div>
-        </div>
+        </Section>
     );
 }
 
@@ -502,19 +476,31 @@ export default function Fitness({ load, adaptation, checkin }: Props) {
             {adaptation && <RecommendationCard a={adaptation} />}
 
             {load.reliable === false && (
-                <p className="animate-fade-up mb-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                <Callout tone="amber" className="animate-fade-up mb-4 text-xs">
                     ⏳ Charge &amp; forme <strong>en calibration</strong> : encore peu d'historique. Le ratio de charge et la forme
                     se stabilisent après ~3 semaines de sorties — d'ici là, on se fie surtout à ton assiduité et à ton 80/20.
-                </p>
+                </Callout>
             )}
 
             {/* Stat strip */}
-            <div className="animate-fade-up mb-4 grid grid-cols-4 divide-x divide-neutral-100 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm shadow-neutral-200/60">
-                <StatCell icon={TrendingUp} tint={fs.tint} value={form > 0 ? `+${form}` : `${form}`} label="Forme" help={FORM_HELP} />
-                <StatCell icon={Activity} tint="text-sky-500" value={`${fitness}`} label="Fitness" help={FITNESS_HELP} />
-                <StatCell icon={BatteryCharging} tint="text-amber-500" value={`${fatigue}`} label="Fatigue" help={FATIGUE_HELP} />
-                <StatCell icon={ShieldAlert} tint={as.tint} value={acwr > 0 ? acwr.toFixed(2) : '—'} label="Ratio charge" help={ACWR_HELP} />
-            </div>
+            <StatRow className="animate-fade-up mb-4 grid-cols-4 divide-x divide-neutral-100">
+                <Stat
+                    value={form > 0 ? `+${form}` : `${form}`}
+                    label={<><TrendingUp size={11} className={fs.tint} /> Forme <HelpTip label="Forme" text={FORM_HELP} size={12} /></>}
+                />
+                <Stat
+                    value={`${fitness}`}
+                    label={<><Activity size={11} className="text-sky-500" /> Fitness <HelpTip label="Fitness" text={FITNESS_HELP} size={12} /></>}
+                />
+                <Stat
+                    value={`${fatigue}`}
+                    label={<><BatteryCharging size={11} className="text-amber-500" /> Fatigue <HelpTip label="Fatigue" text={FATIGUE_HELP} size={12} /></>}
+                />
+                <Stat
+                    value={acwr > 0 ? acwr.toFixed(2) : '—'}
+                    label={<><ShieldAlert size={11} className={as.tint} /> Ratio charge <HelpTip label="Ratio charge" text={ACWR_HELP} size={12} /></>}
+                />
+            </StatRow>
 
             {/* Status line */}
             <div className="animate-fade-up mb-4 flex flex-wrap gap-2" style={{ animationDelay: '60ms' }}>
@@ -527,30 +513,33 @@ export default function Fitness({ load, adaptation, checkin }: Props) {
             </div>
 
             {/* Form curve */}
-            <div className="animate-fade-up mb-4" style={{ animationDelay: '90ms' }}>
-                <Card
-                    title={
-                        <span className="inline-flex items-center gap-1.5">
-                            Courbe de forme
-                            <HelpTip label="Courbe de forme" text={FORM_HELP} />
-                        </span>
-                    }
-                >
-                    <FormChart series={series} />
-                </Card>
-            </div>
+            <Section
+                className="animate-fade-up mb-4"
+                style={{ animationDelay: '90ms' }}
+                icon={TrendingUp}
+                title={
+                    <span className="inline-flex items-center gap-1.5">
+                        Courbe de forme
+                        <HelpTip label="Courbe de forme" text={FORM_HELP} />
+                    </span>
+                }
+            >
+                <FormChart series={series} />
+            </Section>
 
             {/* 80/20 distribution */}
-            <div className="animate-fade-up" style={{ animationDelay: '120ms' }}>
-                <Card
-                    title={
-                        <span className="inline-flex items-center gap-1.5">
-                            Équilibre 80/20
-                            <HelpTip label="Équilibre 80/20" text={RATIO_HELP} />
-                        </span>
-                    }
-                >
-                    {zones.total === 0 ? (
+            <Section
+                className="animate-fade-up"
+                style={{ animationDelay: '120ms' }}
+                icon={Scale}
+                title={
+                    <span className="inline-flex items-center gap-1.5">
+                        Équilibre 80/20
+                        <HelpTip label="Équilibre 80/20" text={RATIO_HELP} />
+                    </span>
+                }
+            >
+                {zones.total === 0 ? (
                         <p className="text-sm text-neutral-400">Pas assez de données récentes pour l'analyse d'intensité.</p>
                     ) : (
                         <>
@@ -573,7 +562,7 @@ export default function Fitness({ load, adaptation, checkin }: Props) {
                                     <p className="text-[11px] text-neutral-400">Dur</p>
                                 </div>
                             </div>
-                            <p className="mt-3 rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-600">
+                            <Callout tone={balanced ? 'brand' : 'amber'} className="mt-3">
                                 {balanced ? (
                                     <>
                                         <span className="font-semibold text-brand-600">Bel équilibre polarisé 🎯</span> — tu tiens ~80 % en facile.
@@ -583,11 +572,10 @@ export default function Fitness({ load, adaptation, checkin }: Props) {
                                         <span className="font-semibold text-amber-600">Trop d'intensité.</span> Tu es à {easyPct}% facile ; vise ~80 %. Ralentis tes footings faciles.
                                     </>
                                 )}
-                            </p>
+                            </Callout>
                         </>
                     )}
-                </Card>
-            </div>
+            </Section>
         </>
     );
 }

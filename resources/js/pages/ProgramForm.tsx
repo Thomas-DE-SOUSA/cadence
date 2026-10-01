@@ -1,8 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
-import { ArrowLeft, CheckCircle2, Plus, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, LayoutGrid, Plus, Settings2, Target, X } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
+import { Section } from '@/components/ui/Section';
 
 interface ObjectiveRow {
     type: string;
@@ -141,7 +141,7 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
 
             <form onSubmit={submit} className="space-y-6">
                 {plans.length > 0 && (
-                    <Card title="Choisis un plan tout fait">
+                    <Section title="Choisis un plan tout fait" icon={LayoutGrid}>
                         <p className="-mt-1 mb-4 text-sm text-neutral-500">
                             Le premier cycle arrive déjà détaillé (séances, allures, km). Tu débloqueras les cycles suivants au fur et
                             à mesure.
@@ -189,10 +189,10 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
                                 Repartir d'un programme vide
                             </button>
                         )}
-                    </Card>
+                    </Section>
                 )}
 
-                <Card title="Le programme">
+                <Section title="Le programme" icon={Settings2}>
                     <div className="space-y-4">
                         <Field label="Nom">
                             <input
@@ -263,12 +263,12 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
                             </Field>
                         </div>
                     </div>
-                </Card>
+                </Section>
 
-                <Card title="Objectifs">
-                    <div className="space-y-3">
+                <Section title="Objectifs" icon={Target}>
+                    <div className="divide-y divide-neutral-100">
                         {form.data.objectives.map((o, i) => (
-                            <div key={i} className="rounded-lg border border-neutral-200 p-3">
+                            <div key={i} className="py-3 first:pt-0">
                                 <div className="mb-2 flex items-center gap-2">
                                     <select
                                         value={o.type}
@@ -333,12 +333,12 @@ export default function ProgramForm({ plans = [] }: { plans?: Plan[] }) {
                         <button
                             type="button"
                             onClick={addObjective}
-                            className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
+                            className="mt-3 inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
                         >
                             <Plus size={15} /> Ajouter un objectif
                         </button>
                     </div>
-                </Card>
+                </Section>
 
                 <button
                     type="submit"

@@ -2,7 +2,7 @@ import { Head, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
 import { Calendar, CheckCircle2, Gauge, Heart, HeartPulse, Lock, Target, User } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
+import { Section } from '@/components/ui/Section';
 import { HelpTip } from '@/components/HelpTip';
 import { PasswordInput } from '@/components/PasswordInput';
 
@@ -127,11 +127,11 @@ export default function Profile({ profile, derived }: Props) {
             <Head title="Profil" />
             <h1 className="mb-6 text-2xl font-bold tracking-tight text-neutral-900">Profil</h1>
 
-            {/* Athlete card */}
-            <div className="animate-fade-up mb-5 overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-brand-50/50 p-5 shadow-sm shadow-neutral-200/60">
+            {/* Athlete hero */}
+            <div className="animate-fade-up mb-5 border-b border-neutral-100 pb-5">
                 <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
                     <div className="flex items-center gap-4">
-                        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-2xl font-black text-white shadow-lg shadow-brand-500/30">
+                        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-2xl font-black text-white shadow-md shadow-brand-500/25">
                             {displayName.charAt(0).toUpperCase()}
                         </span>
                         <div>
@@ -169,7 +169,7 @@ export default function Profile({ profile, derived }: Props) {
             </div>
 
             {errors.length > 0 && (
-                <ul className="animate-fade-up mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                <ul className="animate-fade-up mb-5 rounded-lg bg-red-50 px-4 py-3 text-sm leading-relaxed text-red-600">
                     {errors.map((message) => (
                         <li key={message}>{message}</li>
                     ))}
@@ -178,14 +178,7 @@ export default function Profile({ profile, derived }: Props) {
 
             <form onSubmit={submit} className="space-y-5">
                 {/* Identity & physiology */}
-                <div className="animate-fade-up" style={{ animationDelay: '40ms' }}>
-                    <Card
-                        title={
-                            <span className="inline-flex items-center gap-1.5">
-                                <User size={15} className="text-neutral-400" /> Identité &amp; physiologie
-                            </span>
-                        }
-                    >
+                <Section className="animate-fade-up" style={{ animationDelay: '40ms' }} icon={User} title="Identité & physiologie">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <Field label="Nom affiché">
                                 <input type="text" value={form.data.display_name} onChange={(e) => set('display_name', e.target.value)} className={inputClass} placeholder="Thomas" />
@@ -208,7 +201,7 @@ export default function Profile({ profile, derived }: Props) {
                         </div>
 
                         {/* HR zones */}
-                        <div className="mt-4 rounded-xl border border-neutral-100 bg-neutral-50/60 p-3">
+                        <div className="mt-4 rounded-lg bg-neutral-50 p-3">
                             <p className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
                                 <HeartPulse size={14} className="text-rose-500" /> Zones cardio
                                 <HelpTip label="Zones cardio" text="Cinq intensités calculées depuis ta FC max (et ta FC repos si fournie). De Z1 (facile) à Z5 (maximal)." />
@@ -216,7 +209,7 @@ export default function Profile({ profile, derived }: Props) {
                             {derived.hrZones ? (
                                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-5">
                                     {derived.hrZones.map((z) => (
-                                        <div key={z.key} className="rounded-lg bg-white p-2 text-center shadow-sm shadow-neutral-200/50">
+                                        <div key={z.key} className="rounded-lg bg-neutral-50 p-2 text-center">
                                             <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">{z.label.split(' · ')[0]}</p>
                                             <p className="text-sm font-bold tabular-nums text-neutral-900">
                                                 {z.minBpm}–{z.maxBpm}
@@ -231,19 +224,20 @@ export default function Profile({ profile, derived }: Props) {
                                 </p>
                             )}
                         </div>
-                    </Card>
-                </div>
+                </Section>
 
                 {/* Goal */}
-                <div className="animate-fade-up" style={{ animationDelay: '80ms' }}>
-                    <Card
-                        title={
-                            <span className="inline-flex items-center gap-1.5">
-                                <Target size={15} className="text-neutral-400" /> Objectifs
-                                <HelpTip label="Objectifs" text="Ta course cible et son temps visé. Ce que tu saisis ici alimente le suivi d'objectif sur la page Progression." />
-                            </span>
-                        }
-                    >
+                <Section
+                    className="animate-fade-up"
+                    style={{ animationDelay: '80ms' }}
+                    icon={Target}
+                    title={
+                        <span className="inline-flex items-center gap-1.5">
+                            Objectifs
+                            <HelpTip label="Objectifs" text="Ta course cible et son temps visé. Ce que tu saisis ici alimente le suivi d'objectif sur la page Progression." />
+                        </span>
+                    }
+                >
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <Field label="Course cible">
                                 <input type="text" value={form.data.race_name} onChange={(e) => set('race_name', e.target.value)} className={inputClass} placeholder="Odysséa Paris 10 km" />
@@ -263,19 +257,20 @@ export default function Profile({ profile, derived }: Props) {
                                 <textarea value={form.data.long_term_goal} onChange={(e) => set('long_term_goal', e.target.value)} rows={2} className={inputClass} placeholder="Un trail longue distance dans un an…" />
                             </Field>
                         </div>
-                    </Card>
-                </div>
+                </Section>
 
                 {/* Availability */}
-                <div className="animate-fade-up" style={{ animationDelay: '120ms' }}>
-                    <Card
-                        title={
-                            <span className="inline-flex items-center gap-1.5">
-                                <Calendar size={15} className="text-neutral-400" /> Disponibilité
-                                <HelpTip label="Disponibilité" text="Combien tu peux t'entraîner. Ces repères nourrissent le coach IA et la génération de plan." />
-                            </span>
-                        }
-                    >
+                <Section
+                    className="animate-fade-up"
+                    style={{ animationDelay: '120ms' }}
+                    icon={Calendar}
+                    title={
+                        <span className="inline-flex items-center gap-1.5">
+                            Disponibilité
+                            <HelpTip label="Disponibilité" text="Combien tu peux t'entraîner. Ces repères nourrissent le coach IA et la génération de plan." />
+                        </span>
+                    }
+                >
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <Field label="Séances / semaine">
                                 <input type="number" value={form.data.sessions_per_week} onChange={(e) => set('sessions_per_week', e.target.value)} className={inputClass} placeholder="4" />
@@ -305,18 +300,10 @@ export default function Profile({ profile, derived }: Props) {
                                 })}
                             </div>
                         </div>
-                    </Card>
-                </div>
+                </Section>
 
                 {/* Settings */}
-                <div className="animate-fade-up" style={{ animationDelay: '160ms' }}>
-                    <Card
-                        title={
-                            <span className="inline-flex items-center gap-1.5">
-                                <Gauge size={15} className="text-neutral-400" /> Réglages
-                            </span>
-                        }
-                    >
+                <Section className="animate-fade-up" style={{ animationDelay: '160ms' }} icon={Gauge} title="Réglages">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <Field label="Unités">
                                 <select value={form.data.units} onChange={(e) => set('units', e.target.value)} className={inputClass}>
@@ -339,8 +326,7 @@ export default function Profile({ profile, derived }: Props) {
                             />
                             <span className="text-sm text-neutral-700">Rappels de séance</span>
                         </label>
-                    </Card>
-                </div>
+                </Section>
 
                 {/* Save */}
                 <div className="flex items-center justify-end gap-3 pt-1">
@@ -361,13 +347,7 @@ export default function Profile({ profile, derived }: Props) {
 
             {/* Security — change password */}
             <form onSubmit={submitPassword} className="animate-fade-up mt-5" style={{ animationDelay: '200ms' }}>
-                <Card
-                    title={
-                        <span className="inline-flex items-center gap-1.5">
-                            <Lock size={15} className="text-neutral-400" /> Sécurité
-                        </span>
-                    }
-                >
+                <Section icon={Lock} title="Sécurité">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <Field label="Mot de passe actuel">
                             <PasswordInput
@@ -414,7 +394,7 @@ export default function Profile({ profile, derived }: Props) {
                             {passwordForm.processing ? 'Modification…' : 'Changer le mot de passe'}
                         </button>
                     </div>
-                </Card>
+                </Section>
             </form>
         </>
     );

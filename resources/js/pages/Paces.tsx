@@ -2,7 +2,7 @@ import { Head } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { Coffee, Flame, Gauge, HeartPulse, Mountain, Timer, Zap } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
+import { Section } from '@/components/ui/Section';
 import { HelpTip } from '@/components/HelpTip';
 import { PagePlaceholder } from '@/components/PagePlaceholder';
 import { useCountUp } from '@/lib/useCountUp';
@@ -138,10 +138,10 @@ export default function Paces({ vdot, basis, zones, racePaces }: Props) {
             <h1 className="mb-6 text-2xl font-bold tracking-tight text-neutral-900">Allures</h1>
 
             {/* VDOT hero */}
-            <div className="animate-fade-up mb-5 overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-brand-50/50 p-5 shadow-sm shadow-neutral-200/60">
+            <div className="animate-fade-up mb-5 border-b border-neutral-100 pb-5">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-lg shadow-brand-500/30">
+                        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-md shadow-brand-500/25">
                             <Gauge size={28} />
                         </span>
                         <div>
@@ -163,14 +163,14 @@ export default function Paces({ vdot, basis, zones, racePaces }: Props) {
             </div>
 
             {/* Zones */}
-            <div className="animate-fade-up mb-5 grid grid-cols-1 gap-3 md:grid-cols-2" style={{ animationDelay: '60ms' }}>
-                {zones.map((zone) => {
-                    const meta = ZONE_META[zone.key];
-                    if (!meta) return null;
-                    const Icon = meta.icon;
-                    return (
-                        <Card key={zone.key}>
-                            <div className="flex items-start gap-3">
+            <Section className="animate-fade-up mb-5" icon={Gauge} title="Zones d'allure" style={{ animationDelay: '60ms' }}>
+                <div className="grid grid-cols-1 gap-x-6 md:grid-cols-2">
+                    {zones.map((zone) => {
+                        const meta = ZONE_META[zone.key];
+                        if (!meta) return null;
+                        const Icon = meta.icon;
+                        return (
+                            <div key={zone.key} className="flex items-start gap-3 border-b border-neutral-100 py-4">
                                 <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${meta.tint}`}>
                                     <Icon size={19} />
                                 </span>
@@ -191,22 +191,24 @@ export default function Paces({ vdot, basis, zones, racePaces }: Props) {
                                     <p className="mt-2 text-xs leading-relaxed text-neutral-500">{meta.description}</p>
                                 </div>
                             </div>
-                        </Card>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            </Section>
 
             {/* Equivalent race paces */}
-            <div className="animate-fade-up" style={{ animationDelay: '90ms' }}>
-                <Card
-                    title={
-                        <span className="inline-flex items-center gap-1.5">
-                            Allures de course équivalentes
-                            <HelpTip label="Allures équivalentes" text={RIEGEL_HELP} />
-                        </span>
-                    }
-                >
-                    <table className="w-full text-sm">
+            <Section
+                className="animate-fade-up"
+                icon={Timer}
+                style={{ animationDelay: '90ms' }}
+                title={
+                    <span className="inline-flex items-center gap-1.5">
+                        Allures de course équivalentes
+                        <HelpTip label="Allures équivalentes" text={RIEGEL_HELP} />
+                    </span>
+                }
+            >
+                <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-[11px] uppercase tracking-wide text-neutral-400">
                                 <th className="pb-2 font-semibold">Distance</th>
@@ -233,13 +235,12 @@ export default function Paces({ vdot, basis, zones, racePaces }: Props) {
                                 </tr>
                             ))}
                         </tbody>
-                    </table>
-                    <p className="mt-3 text-xs text-neutral-400">
-                        Projections Riegel à partir de ton meilleur effort — indicatives, la course réelle dépend de la préparation
-                        spécifique.
-                    </p>
-                </Card>
-            </div>
+                </table>
+                <p className="mt-3 text-xs text-neutral-400">
+                    Projections Riegel à partir de ton meilleur effort — indicatives, la course réelle dépend de la préparation
+                    spécifique.
+                </p>
+            </Section>
         </>
     );
 }

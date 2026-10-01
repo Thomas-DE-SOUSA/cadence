@@ -17,8 +17,8 @@ import {
     Trophy,
 } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
 import { HelpTip } from '@/components/HelpTip';
+import { Section } from '@/components/ui/Section';
 import { RouteMap } from '@/features/activity/components/RouteMap';
 import { useCountUp } from '@/lib/useCountUp';
 import { formatDate, formatDuration, formatKilometers, formatPace } from '@/features/activity/domain/format';
@@ -102,7 +102,7 @@ function StreakDigits({ weeks }: { weeks: number }) {
 
 function MiniStat({ icon: Icon, tint, value, label }: { icon: ComponentType<{ size?: number }>; tint: string; value: string; label: string }) {
     return (
-        <div className="rounded-xl border border-neutral-100 bg-neutral-50/70 p-3">
+        <div className="rounded-xl bg-neutral-50 p-3">
             <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${tint}`}>
                 <Icon size={16} />
             </span>
@@ -123,35 +123,35 @@ export default function History({ stats, streak, records, achievements, activiti
 
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
                 {/* Left — athlete panel */}
-                <aside className="animate-fade-up space-y-4 lg:col-span-3 lg:sticky lg:top-24 lg:self-start">
-                    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm shadow-neutral-200/60">
-                        <div className="flex items-center gap-3 bg-gradient-to-br from-brand-500 to-brand-600 p-4 text-white">
-                            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-2xl font-black backdrop-blur">
+                <aside className="animate-fade-up space-y-5 lg:col-span-3 lg:sticky lg:top-24 lg:self-start">
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 text-2xl font-black text-white shadow-md shadow-brand-500/25">
                                 {athlete?.initial ?? '?'}
                             </span>
                             <div className="min-w-0">
-                                <p className="truncate text-lg font-extrabold leading-tight">{name}</p>
-                                <p className="text-xs text-white/80">{athlete?.age !== null && athlete?.age !== undefined ? `${athlete.age} ans · coureur` : 'Coureur'}</p>
+                                <p className="truncate text-lg font-extrabold leading-tight text-neutral-900">{name}</p>
+                                <p className="text-xs text-neutral-400">
+                                    {athlete?.age !== null && athlete?.age !== undefined ? `${athlete.age} ans · coureur` : 'Coureur'}
+                                </p>
                             </div>
                         </div>
-                        <div className="p-4">
-                            <div className="grid grid-cols-2 gap-2.5">
-                                <MiniStat icon={Gauge} tint="bg-brand-100 text-brand-600" value={vdot !== null ? `${vdot}` : '—'} label="VDOT" />
-                                <MiniStat icon={MoveUpRight} tint="bg-emerald-100 text-emerald-600" value={`${formatKilometers(stats.thisWeekMeters)}`} label="Cette sem. (km)" />
-                                <MiniStat icon={Mountain} tint="bg-sky-100 text-sky-600" value={`${formatKilometers(stats.totalDistanceMeters)}`} label="Total (km)" />
-                                <MiniStat icon={CalendarCheck} tint="bg-violet-100 text-violet-600" value={`${stats.totalActivities}`} label="Sorties" />
-                            </div>
-                            <Link
-                                href="/profile"
-                                className="mt-3 flex items-center justify-center gap-1 rounded-lg border border-neutral-200 py-2 text-sm font-semibold text-neutral-600 transition-colors hover:border-brand-200 hover:bg-brand-50/50 hover:text-brand-600"
-                            >
-                                Voir le profil <ChevronRight size={15} />
-                            </Link>
+                        <div className="mt-4 grid grid-cols-2 gap-2.5">
+                            <MiniStat icon={Gauge} tint="bg-brand-100 text-brand-600" value={vdot !== null ? `${vdot}` : '—'} label="VDOT" />
+                            <MiniStat icon={MoveUpRight} tint="bg-emerald-100 text-emerald-600" value={`${formatKilometers(stats.thisWeekMeters)}`} label="Cette sem. (km)" />
+                            <MiniStat icon={Mountain} tint="bg-sky-100 text-sky-600" value={`${formatKilometers(stats.totalDistanceMeters)}`} label="Total (km)" />
+                            <MiniStat icon={CalendarCheck} tint="bg-violet-100 text-violet-600" value={`${stats.totalActivities}`} label="Sorties" />
                         </div>
+                        <Link
+                            href="/profile"
+                            className="mt-3 flex items-center justify-center gap-1 rounded-lg border border-neutral-200 py-2 text-sm font-semibold text-neutral-600 transition-colors hover:border-brand-200 hover:bg-brand-50/50 hover:text-brand-600"
+                        >
+                            Voir le profil <ChevronRight size={15} />
+                        </Link>
                     </div>
 
                     {/* Streak */}
-                    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-brand-50/70 p-4 shadow-sm shadow-neutral-200/60">
+                    <div className="rounded-2xl bg-brand-50/40 p-4">
                         <div className="flex items-center gap-3">
                             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-md shadow-brand-500/30">
                                 <Flame size={22} />
@@ -201,16 +201,16 @@ export default function History({ stats, streak, records, achievements, activiti
                         <span className="text-xs font-medium text-neutral-400">{activities.length} activités</span>
                     </div>
                     {activities.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-neutral-300 p-10 text-center text-neutral-400">
+                        <div className="rounded-2xl border border-dashed border-neutral-200 p-10 text-center text-sm text-neutral-400">
                             Aucune activité. Ajoute ta première sortie.
                         </div>
                     ) : (
-                        <ul className="space-y-3">
+                        <ul className="divide-y divide-neutral-100">
                             {activities.map((a) => (
                                 <li key={a.id}>
                                     <Link
                                         href={`/activities/${a.id}`}
-                                        className="group flex items-stretch gap-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm shadow-neutral-200/50 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg hover:shadow-neutral-300/40"
+                                        className="group -mx-2 flex items-stretch gap-4 rounded-lg px-2 py-4 transition-colors hover:bg-neutral-50"
                                     >
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center justify-between">
@@ -248,7 +248,7 @@ export default function History({ stats, streak, records, achievements, activiti
                                             )}
                                         </div>
                                         {a.track && (
-                                            <div className="hidden w-28 shrink-0 items-center rounded-xl border border-neutral-200 bg-gradient-to-br from-neutral-50 to-white p-1.5 sm:flex">
+                                            <div className="hidden w-28 shrink-0 items-center rounded-lg bg-neutral-50 p-1.5 sm:flex">
                                                 <RouteMap track={a.track} className="h-full w-full" />
                                             </div>
                                         )}
@@ -264,24 +264,26 @@ export default function History({ stats, streak, records, achievements, activiti
                 </section>
 
                 {/* Right — widgets */}
-                <aside className="animate-fade-up space-y-4 lg:col-span-3 lg:sticky lg:top-24 lg:self-start" style={{ animationDelay: '120ms' }}>
+                <aside className="animate-fade-up space-y-6 lg:col-span-3 lg:sticky lg:top-24 lg:self-start" style={{ animationDelay: '120ms' }}>
                     {goal && (
-                        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm shadow-neutral-200/60">
-                            <div className="flex items-center justify-between gap-2 bg-gradient-to-br from-neutral-900 to-neutral-700 p-4 text-white">
-                                <div className="flex items-center gap-2">
-                                    <Target size={18} className="text-brand-400" />
-                                    <p className="text-sm font-bold">{goal.label}</p>
+                        <div className="border-b border-neutral-100 pb-5">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex min-w-0 items-center gap-2.5">
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-neutral-800 to-neutral-600 text-white">
+                                        <Target size={18} className="text-brand-400" />
+                                    </span>
+                                    <p className="truncate text-sm font-bold text-neutral-900">{goal.label}</p>
                                 </div>
                                 {goal.daysLeft !== null && goal.daysLeft >= 0 && (
-                                    <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-bold tabular-nums">J-{goal.daysLeft}</span>
+                                    <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-bold tabular-nums text-neutral-600">J-{goal.daysLeft}</span>
                                 )}
                             </div>
-                            <div className="p-4">
+                            <div className="mt-3">
                                 <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-neutral-500">
                                     <span className="tabular-nums">{goal.currentSeconds !== null ? formatDuration(goal.currentSeconds) : '—'}</span>
-                                    <span className="text-emerald-600 tabular-nums">Objectif {formatDuration(goal.targetSeconds)}</span>
+                                    <span className="tabular-nums text-emerald-600">Objectif {formatDuration(goal.targetSeconds)}</span>
                                 </div>
-                                <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200">
+                                <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-100">
                                     <div
                                         className={`animate-bar h-full rounded-full ${goal.achieved ? 'bg-emerald-500' : 'bg-gradient-to-r from-brand-400 to-brand-600'}`}
                                         style={{ width: `${goal.progressPct}%` }}
@@ -298,7 +300,8 @@ export default function History({ stats, streak, records, achievements, activiti
                         </div>
                     )}
 
-                    <Card
+                    <Section
+                        icon={Trophy}
                         title={
                             <span className="inline-flex items-center gap-1.5">
                                 Records
@@ -312,30 +315,31 @@ export default function History({ stats, streak, records, achievements, activiti
                         {records.length === 0 ? (
                             <p className="text-sm text-neutral-400">Pas encore de record — chaque sortie compte !</p>
                         ) : (
-                            <ul className="space-y-2">
+                            <ul className="divide-y divide-neutral-100">
                                 {records.map((r) => (
                                     <li key={r.distanceMeters}>
                                         <Link
                                             href={`/activities/${r.activityId}`}
-                                            className="group flex items-center gap-3 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-2.5 transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-sm"
+                                            className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-neutral-50"
                                         >
-                                            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
                                                 <Trophy size={15} />
                                             </span>
-                                            <div className="flex-1">
+                                            <div className="min-w-0 flex-1">
                                                 <p className="text-sm font-bold text-neutral-900">{r.label}</p>
                                                 <p className="text-[11px] text-neutral-500">{formatPace(r.paceSecondsPerKm)}</p>
                                             </div>
                                             <span className="text-sm font-bold tabular-nums text-amber-700">{formatDuration(r.durationSeconds)}</span>
-                                            <ChevronRight size={16} className="shrink-0 text-amber-300 transition-colors group-hover:text-amber-600" />
+                                            <ChevronRight size={16} className="shrink-0 text-neutral-300 transition-colors group-hover:text-amber-600" />
                                         </Link>
                                     </li>
                                 ))}
                             </ul>
                         )}
-                    </Card>
+                    </Section>
 
-                    <Card
+                    <Section
+                        icon={Medal}
                         title={
                             <span className="inline-flex items-center gap-1.5">
                                 {`Succès — ${unlocked}/${achievements.length}`}
@@ -350,8 +354,8 @@ export default function History({ stats, streak, records, achievements, activiti
                                     <div
                                         key={a.id}
                                         title={`${a.title} — ${a.description}`}
-                                        className={`flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition-all ${
-                                            a.unlocked ? 'border-brand-200 bg-gradient-to-br from-brand-50 to-white' : 'border-neutral-200 bg-neutral-50 opacity-70'
+                                        className={`flex flex-col items-center gap-1 rounded-xl p-2 text-center transition-all ${
+                                            a.unlocked ? 'bg-brand-50' : 'bg-neutral-50 opacity-70'
                                         }`}
                                     >
                                         <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${a.unlocked ? 'bg-brand-500 text-white' : 'bg-neutral-200 text-neutral-400'}`}>
@@ -362,7 +366,7 @@ export default function History({ stats, streak, records, achievements, activiti
                                 );
                             })}
                         </div>
-                    </Card>
+                    </Section>
                 </aside>
             </div>
         </>

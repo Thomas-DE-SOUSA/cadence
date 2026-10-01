@@ -27,7 +27,8 @@ import {
     Zap,
 } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
+import { Section } from '@/components/ui/Section';
+import { Stat as KitStat, StatRow } from '@/components/ui/Stat';
 import { Modal } from '@/components/Modal';
 import { SessionDetail } from '@/features/coach/SessionDetail';
 import { CoachThread } from '@/features/coach/CoachThread';
@@ -187,30 +188,6 @@ function weekdayLabel(iso: string): string {
     return new Date(y, (m || 1) - 1, d || 1).toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit' });
 }
 
-function Stat({
-    value,
-    label,
-    icon: Icon,
-    tint,
-}: {
-    value: ReactNode;
-    label: string;
-    icon: ComponentType<{ size?: number; className?: string }>;
-    tint: string;
-}) {
-    return (
-        <div className="flex items-center gap-2.5">
-            <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${tint}`}>
-                <Icon size={17} />
-            </span>
-            <div>
-                <p className="text-xl font-bold leading-none tabular-nums text-neutral-900">{value}</p>
-                <p className="mt-1 text-[11px] uppercase tracking-wide text-neutral-400">{label}</p>
-            </div>
-        </div>
-    );
-}
-
 function CountUp({ value, decimals = 0 }: { value: number; decimals?: number }) {
     return <>{useCountUp(value).toFixed(decimals)}</>;
 }
@@ -326,15 +303,20 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
             </Link>
 
             {/* Header */}
-            <div className="animate-fade-up mb-4 overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-brand-50/40 p-5 shadow-sm shadow-neutral-200/60">
+            <div className="animate-fade-up mb-5 border-b border-neutral-100 pb-5">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{program.name}</h1>
-                        <p className="mt-1 text-sm text-neutral-500">
-                            {program.goal}
-                            {program.targetRaceName ? ` · ${program.targetRaceName}` : ''}
-                            {program.targetRaceDate ? ` — ${formatDate(program.targetRaceDate)}` : ''}
-                        </p>
+                    <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-md shadow-brand-500/25">
+                            <Target size={22} />
+                        </span>
+                        <div className="min-w-0">
+                            <h1 className="truncate text-2xl font-bold tracking-tight text-neutral-900">{program.name}</h1>
+                            <p className="mt-1 text-sm text-neutral-500">
+                                {program.goal}
+                                {program.targetRaceName ? ` · ${program.targetRaceName}` : ''}
+                                {program.targetRaceDate ? ` — ${formatDate(program.targetRaceDate)}` : ''}
+                            </p>
+                        </div>
                     </div>
                     {aiAction && (
                         <button
@@ -350,13 +332,13 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                         </button>
                     )}
                 </div>
-                <div className="mt-4 flex flex-wrap gap-x-8 gap-y-4 border-t border-neutral-200/70 pt-4">
-                    <Stat value={program.activities.length} label="Courses" icon={Activity} tint="bg-sky-100 text-sky-600" />
-                    <Stat value={formatKilometers(totalMeters)} label="Kilomètres" icon={Route} tint="bg-emerald-100 text-emerald-600" />
-                    <Stat value={cycles.length} label="Cycles" icon={Layers} tint="bg-brand-100 text-brand-600" />
-                    <Stat value={`${achieved}/${program.objectives.length}`} label="Objectifs" icon={Target} tint="bg-violet-100 text-violet-600" />
-                    {athlete && <Stat value={<CountUp value={athlete.vdot} />} label="VDOT" icon={Gauge} tint="bg-brand-100 text-brand-600" />}
-                </div>
+                <StatRow className={`mt-4 ${athlete ? 'grid-cols-5' : 'grid-cols-4'} divide-x divide-neutral-100`}>
+                    <KitStat value={program.activities.length} label={<><Activity size={11} className="text-sky-500" /> Courses</>} />
+                    <KitStat value={formatKilometers(totalMeters)} label={<><Route size={11} className="text-emerald-500" /> Km</>} />
+                    <KitStat value={cycles.length} label={<><Layers size={11} className="text-brand-500" /> Cycles</>} />
+                    <KitStat value={`${achieved}/${program.objectives.length}`} label={<><Target size={11} className="text-violet-500" /> Objectifs</>} />
+                    {athlete && <KitStat value={<CountUp value={athlete.vdot} />} label={<><Gauge size={11} className="text-brand-500" /> VDOT</>} />}
+                </StatRow>
             </div>
 
             {/* Section nav — underline tabs, flush under the header */}
@@ -379,7 +361,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
             {section === 'profil' && (
                 <div className="animate-fade-up space-y-5">
                     {athlete && (
-                        <Card title="Profil coureur (estimé)">
+                        <Section title="Profil coureur (estimé)" icon={Gauge}>
                             <div className="flex items-end justify-between">
                                 <div>
                                     <p className="text-4xl font-bold tabular-nums leading-none text-brand-500">
@@ -421,7 +403,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                 {formatKilometers(athlete.recentVolumeMeters)} km · plus longue{' '}
                                 {formatKilometers(athlete.longestRunMeters)} km
                             </p>
-                        </Card>
+                        </Section>
                     )}
                     {!athlete && (
                         <p className="text-sm text-neutral-400">Profil indisponible — enregistre quelques sorties pour l'estimer.</p>
@@ -431,7 +413,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
 
             {section === 'objectifs' && (
                 <div className="animate-fade-up space-y-5">
-                    <Card title={`Objectifs — ${achieved}/${program.objectives.length}`}>
+                    <Section title={`Objectifs — ${achieved}/${program.objectives.length}`} icon={Target}>
                         {program.objectives.length === 0 ? (
                             <p className="text-sm text-neutral-400">Aucun objectif défini.</p>
                         ) : (
@@ -460,7 +442,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                 ))}
                             </ul>
                         )}
-                    </Card>
+                    </Section>
                 </div>
             )}
 
@@ -473,8 +455,8 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                 return (
                                     <div
                                         key={phase.index}
-                                        className={`rounded-xl border bg-white p-3 shadow-sm shadow-neutral-200/50 ${
-                                            phase.status === 'active' ? 'border-brand-300' : 'border-neutral-200'
+                                        className={`rounded-xl p-3 ${
+                                            phase.status === 'active' ? 'bg-brand-50' : 'bg-neutral-50'
                                         }`}
                                     >
                                         <div className="mb-1.5 flex items-center justify-between">
@@ -503,18 +485,25 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                     )}
 
                     {cycles.length === 0 ? (
-                        <Card title="Plan d'entraînement">
+                        <Section title="Plan d'entraînement" icon={Layers}>
                             <p className="text-sm text-neutral-500">
                                 Aucun cycle pour l'instant. Générez un premier cycle avec l'IA, ou créez un programme depuis un plan
                                 tout fait.
                             </p>
-                        </Card>
+                        </Section>
                     ) : (
                         cycles.map((cycle) => {
                             const isCollapsed = collapsed.has(cycle.id);
                             const isDone = cycle.status === 'completed';
                             return (
-                                <Card key={cycle.id} className={isDone ? 'border-emerald-300 bg-emerald-50' : undefined}>
+                                <div
+                                    key={cycle.id}
+                                    className={
+                                        isDone
+                                            ? 'rounded-2xl bg-emerald-50/60 p-4'
+                                            : 'border-b border-neutral-100 pb-5 last:border-b-0 last:pb-0'
+                                    }
+                                >
                                     <button
                                         onClick={() => toggleCycle(cycle.id)}
                                         className="flex w-full cursor-pointer items-start justify-between gap-3 text-left"
@@ -668,7 +657,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                             )}
                                         </div>
                                     )}
-                                </Card>
+                                </div>
                             );
                         })
                     )}
@@ -710,7 +699,7 @@ export default function ProgramDetail({ program, available, cycles, roadmap, can
                                     mobileTab === 'details' ? 'block' : 'hidden'
                                 }`}
                             >
-                                <div className="mb-4 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+                                <div className="mb-4 rounded-xl bg-neutral-50 p-3">
                                     <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
                                         Jour prévu {openSession.suggestedDate ? '' : '(libre)'}
                                     </label>

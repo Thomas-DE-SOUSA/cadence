@@ -1,9 +1,9 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import type { DragEvent, FormEvent, ReactNode } from 'react';
-import { ArrowLeft, Camera, MapPin, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Camera, Clipboard, MapPin, PencilLine, UploadCloud } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
+import { Section } from '@/components/ui/Section';
 
 function parseTimeToSeconds(value: string): number {
     const parts = value.split(':').map((p) => parseInt(p, 10) || 0);
@@ -89,7 +89,7 @@ export default function ActivityForm() {
             <h1 className="mb-6 text-2xl font-bold tracking-tight text-neutral-900">Nouvelle activité</h1>
 
             <div className="mb-6">
-                <Card title="Déposer un itinéraire (GPX)">
+                <Section icon={UploadCloud} title="Déposer un itinéraire (GPX)">
                     {gpxForm.errors.gpx && <p className="mb-2 text-sm text-red-600">{gpxForm.errors.gpx}</p>}
                     <button
                         type="button"
@@ -122,11 +122,11 @@ export default function ActivityForm() {
                         className="hidden"
                         onChange={(e) => uploadGpx(e.target.files?.[0])}
                     />
-                </Card>
+                </Section>
             </div>
 
             <div className="mb-6">
-                <Card title="Coller depuis Strava (IA)">
+                <Section icon={Clipboard} title="Coller depuis Strava (IA)">
                     {pasteForm.errors.text && (
                         <p className="mb-2 text-sm text-red-600">{pasteForm.errors.text}</p>
                     )}
@@ -160,11 +160,11 @@ export default function ActivityForm() {
                     <p className="mt-2 text-xs text-neutral-500">
                         L'IA lit le texte et remplit automatiquement distance, temps, splits et meilleurs efforts.
                     </p>
-                </Card>
+                </Section>
             </div>
 
             <div className="mb-6">
-                <Card title="Depuis une photo (IA)">
+                <Section icon={Camera} title="Depuis une photo (IA)">
                     {photoForm.errors.photo && <p className="mb-2 text-sm text-red-600">{photoForm.errors.photo}</p>}
                     <input
                         ref={photoRef}
@@ -194,10 +194,10 @@ export default function ActivityForm() {
                     <p className="mt-2 text-xs text-neutral-500">
                         Photographie l'écran de ta montre, du tapis ou d'une appli — l'IA lit distance, temps et dénivelé.
                     </p>
-                </Card>
+                </Section>
             </div>
 
-            <Card title="Ou saisie manuelle">
+            <Section icon={PencilLine} title="Ou saisie manuelle">
                 {errors.length > 0 && (
                     <ul className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600">
                         {errors.map((message) => (
@@ -280,7 +280,7 @@ export default function ActivityForm() {
                         Enregistrer
                     </button>
                 </form>
-            </Card>
+            </Section>
         </>
     );
 }

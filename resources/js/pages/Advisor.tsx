@@ -3,7 +3,8 @@ import { useRef, useState } from 'react';
 import type { DragEvent, ReactNode } from 'react';
 import { Gauge, Lightbulb, Loader2, Sparkles, Trophy, UploadCloud } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
+import { Section } from '@/components/ui/Section';
+import { Callout } from '@/components/ui/Callout';
 import { formatDuration, formatPace } from '@/features/activity/domain/format';
 
 interface Effort {
@@ -213,7 +214,7 @@ export default function Advisor() {
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <div className="space-y-5">
                     {/* GPX */}
-                    <Card title="1 · Déposer des GPX (facultatif)">
+                    <Section icon={UploadCloud} title="1 · Déposer des GPX (facultatif)">
                         <button
                             type="button"
                             onClick={() => fileRef.current?.click()}
@@ -246,14 +247,14 @@ export default function Advisor() {
                         />
 
                         {detected && detected.efforts.length > 0 && (
-                            <div className="mt-4 rounded-xl border border-neutral-100 bg-neutral-50/60 p-3">
+                            <Callout tone="brand" icon={Gauge} className="mt-4 block">
                                 <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                                    <Gauge size={14} className="text-brand-500" /> Données détectées
+                                    Données détectées
                                     {detected.vdot !== null && <span className="rounded-full bg-brand-100 px-2 py-0.5 text-brand-700">VDOT {detected.vdot}</span>}
                                 </div>
                                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                                     {detected.projections.map((p) => (
-                                        <div key={p.distanceMeters} className="rounded-lg bg-white p-2 text-center shadow-sm shadow-neutral-200/50">
+                                        <div key={p.distanceMeters} className="rounded-lg bg-white/70 p-2 text-center">
                                             <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">{p.label}</p>
                                             <p className="text-sm font-bold tabular-nums text-neutral-900">{formatDuration(p.seconds)}</p>
                                             <p className="text-[10px] tabular-nums text-neutral-400">
@@ -262,12 +263,12 @@ export default function Advisor() {
                                         </div>
                                     ))}
                                 </div>
-                            </div>
+                            </Callout>
                         )}
-                    </Card>
+                    </Section>
 
                     {/* Chronos manuels */}
-                    <Card title="2 · Chronos connus (si pas de GPX)">
+                    <Section icon={Gauge} title="2 · Chronos connus (si pas de GPX)">
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                             {CHRONO_DISTANCES.map((d) => (
                                 <Field key={d.meters} label={d.label}>
@@ -282,11 +283,11 @@ export default function Advisor() {
                                 </Field>
                             ))}
                         </div>
-                    </Card>
+                    </Section>
                 </div>
 
                 {/* Questionnaire */}
-                <Card title="3 · Profil de la personne">
+                <Section icon={Sparkles} title="3 · Profil de la personne">
                     <div className="grid grid-cols-2 gap-3">
                         <Field label="Prénom / alias">
                             <input value={form.displayName} onChange={(e) => set('displayName', e.target.value)} className={inputClass} placeholder="Alex" />
@@ -336,7 +337,7 @@ export default function Advisor() {
                             <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={2} className={inputClass} placeholder="Contexte, ressenti, historique…" />
                         </Field>
                     </div>
-                </Card>
+                </Section>
             </div>
 
             {/* Generate */}
@@ -354,18 +355,10 @@ export default function Advisor() {
 
             {/* Result */}
             {(result || generating) && (
-                <div className="animate-fade-up mt-5">
-                    <Card
-                        title={
-                            <span className="inline-flex items-center gap-1.5">
-                                <Trophy size={15} className="text-brand-500" /> Diagnostic & plan de progression
-                            </span>
-                        }
-                    >
-                        {result ? <Markdown text={result} /> : null}
-                        {generating && <Loader2 size={18} className="mt-2 animate-spin text-brand-500" />}
-                    </Card>
-                </div>
+                <Section className="animate-fade-up mt-5" icon={Trophy} title="Diagnostic & plan de progression">
+                    {result ? <Markdown text={result} /> : null}
+                    {generating && <Loader2 size={18} className="mt-2 animate-spin text-brand-500" />}
+                </Section>
             )}
         </>
     );

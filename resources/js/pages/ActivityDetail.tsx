@@ -1,10 +1,10 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { ArrowLeft, Clock, Gauge, Mountain, Route as RouteIcon, Timer, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clock, Gauge, LineChart, ListOrdered, Map as MapIcon, Mountain, Route as RouteIcon, Timer, Trash2, Zap } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { HelpTip } from '@/components/HelpTip';
+import { Section } from '@/components/ui/Section';
 import type { Activity } from '@/types';
 import { BestEfforts } from '@/features/activity/components/BestEfforts';
 import { RouteLeaflet } from '@/features/activity/components/RouteLeaflet';
@@ -92,7 +92,7 @@ export default function ActivityDetail({ activity }: Props) {
             </div>
 
             {/* Hero */}
-            <div className="animate-fade-up mb-5 rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-brand-50/40 p-5 shadow-sm shadow-neutral-200/60">
+            <div className="animate-fade-up mb-5 border-b border-neutral-100 pb-5">
                 <p className="text-sm text-neutral-500">
                     {formatDate(activity.occurredAt)} · {activity.source === 'STRAVA' ? 'Strava' : activity.source === 'GPX' ? 'GPX' : 'Manuel'}
                 </p>
@@ -141,37 +141,41 @@ export default function ActivityDetail({ activity }: Props) {
 
             {/* Map */}
             {activity.track && (
-                <div className="animate-fade-up mb-5 overflow-hidden rounded-2xl border border-neutral-200 shadow-sm shadow-neutral-200/60" style={{ animationDelay: '60ms' }}>
-                    {activity.track.length > 1 ? (
-                        <RouteLeaflet track={activity.track} className="h-[22rem] w-full" />
-                    ) : (
-                        <RouteMap track={activity.track} className="h-72 w-full bg-neutral-50" />
-                    )}
-                </div>
+                <Section className="animate-fade-up mb-5" icon={MapIcon} title="Parcours" style={{ animationDelay: '60ms' }}>
+                    <div className="overflow-hidden rounded-2xl">
+                        {activity.track.length > 1 ? (
+                            <RouteLeaflet track={activity.track} className="h-[22rem] w-full" />
+                        ) : (
+                            <RouteMap track={activity.track} className="h-72 w-full bg-neutral-50" />
+                        )}
+                    </div>
+                </Section>
             )}
 
             {/* Profile */}
             {activity.stream && activity.stream.length > 1 && (
-                <div className="animate-fade-up mb-5" style={{ animationDelay: '90ms' }}>
-                    <Card
-                        title={
-                            <span className="inline-flex items-center gap-1.5">
-                                Allure &amp; dénivelé
-                                <HelpTip
-                                    label="Allure & dénivelé"
-                                    text="Ton allure (courbe orange) et l’altitude du terrain (zone grise) tout au long du parcours. Survole le graphique pour lire les valeurs à un point précis."
-                                />
-                            </span>
-                        }
-                    >
-                        <ProfileChart stream={activity.stream} />
-                    </Card>
-                </div>
+                <Section
+                    className="animate-fade-up mb-5"
+                    icon={LineChart}
+                    style={{ animationDelay: '90ms' }}
+                    title={
+                        <span className="inline-flex items-center gap-1.5">
+                            Allure &amp; dénivelé
+                            <HelpTip
+                                label="Allure & dénivelé"
+                                text="Ton allure (courbe orange) et l’altitude du terrain (zone grise) tout au long du parcours. Survole le graphique pour lire les valeurs à un point précis."
+                            />
+                        </span>
+                    }
+                >
+                    <ProfileChart stream={activity.stream} />
+                </Section>
             )}
 
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
                 <div className="lg:col-span-2">
-                    <Card
+                    <Section
+                        icon={ListOrdered}
                         title={
                             <span className="inline-flex items-center gap-1.5">
                                 Temps intermédiaires
@@ -221,10 +225,11 @@ export default function ActivityDetail({ activity }: Props) {
                                 </tbody>
                             </table>
                         </div>
-                    </Card>
+                    </Section>
                 </div>
                 <div>
-                    <Card
+                    <Section
+                        icon={Zap}
                         title={
                             <span className="inline-flex items-center gap-1.5">
                                 Meilleurs efforts
@@ -236,7 +241,7 @@ export default function ActivityDetail({ activity }: Props) {
                         }
                     >
                         <BestEfforts efforts={activity.bestEfforts} />
-                    </Card>
+                    </Section>
                 </div>
             </div>
             {confirmNode}

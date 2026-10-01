@@ -46,12 +46,12 @@ export default function Programs({ programs }: Props) {
                     Aucun programme. Crée ton plan Odysséa (ou un autre objectif).
                 </div>
             ) : (
-                <ul className="space-y-2">
+                <ul className="divide-y divide-neutral-100">
                     {programs.map((p) => (
                         <li key={p.id}>
                             <Link
                                 href={`/program/${p.id}`}
-                                className="group flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-5 py-4 shadow-sm shadow-neutral-200/50 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md hover:shadow-neutral-200/60"
+                                className="group -mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-4 transition-colors hover:bg-neutral-50"
                             >
                                 <div>
                                     <div className="flex items-center gap-2 font-medium text-neutral-900">

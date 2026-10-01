@@ -1,8 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
-import { ArrowLeft, Plus, X } from 'lucide-react';
+import { ArrowLeft, ListOrdered, Plus, Route as RouteIcon, X, Zap } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
+import { Section } from '@/components/ui/Section';
 import type { Activity } from '@/types';
 
 interface Props {
@@ -150,7 +150,7 @@ export default function ActivityEdit({ activity }: Props) {
             )}
 
             <form onSubmit={submit} className="space-y-6">
-                <Card title="Sortie">
+                <Section icon={RouteIcon} title="Sortie">
                     <div className="space-y-4">
                         <Field label="Date">
                             <input
@@ -204,9 +204,9 @@ export default function ActivityEdit({ activity }: Props) {
                             </Field>
                         </div>
                     </div>
-                </Card>
+                </Section>
 
-                <Card title="Splits kilométriques">
+                <Section icon={ListOrdered} title="Splits kilométriques">
                     <div className="space-y-2">
                         {form.data.splits.map((split, i) => (
                             <div key={i} className="grid grid-cols-[3rem_1fr_1fr_1fr_2rem] items-center gap-2">
@@ -259,9 +259,9 @@ export default function ActivityEdit({ activity }: Props) {
                             <Plus size={15} /> Ajouter un split
                         </button>
                     </div>
-                </Card>
+                </Section>
 
-                <Card title="Meilleurs efforts">
+                <Section icon={Zap} title="Meilleurs efforts">
                     <div className="space-y-2">
                         {form.data.best_efforts.map((effort, i) => (
                             <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto_2rem] items-center gap-2">
@@ -315,7 +315,7 @@ export default function ActivityEdit({ activity }: Props) {
                             <Plus size={15} /> Ajouter un effort
                         </button>
                     </div>
-                </Card>
+                </Section>
 
                 <button
                     type="submit"
