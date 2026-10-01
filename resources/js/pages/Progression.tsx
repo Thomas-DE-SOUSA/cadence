@@ -1,11 +1,13 @@
 import { Head, Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import type { ComponentType, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Activity, ChevronRight, Flag, Gauge, Sparkles, Target, TrendingUp, Trophy } from 'lucide-react';
 import { AppLayout } from '@/layouts/AppLayout';
-import { Card } from '@/components/Card';
 import { HelpTip } from '@/components/HelpTip';
 import { PagePlaceholder } from '@/components/PagePlaceholder';
+import { Section } from '@/components/ui/Section';
+import { Stat, StatRow } from '@/components/ui/Stat';
+import { Callout } from '@/components/ui/Callout';
 import { useCountUp } from '@/lib/useCountUp';
 import { formatDuration, formatKilometers, formatPace } from '@/features/activity/domain/format';
 
@@ -198,31 +200,6 @@ function ProgressionChart({ series }: { series: Series }) {
     );
 }
 
-function StatCell({
-    icon: Icon,
-    tint,
-    value,
-    label,
-    help,
-}: {
-    icon: ComponentType<{ size?: number; className?: string }>;
-    tint: string;
-    value: string;
-    label: string;
-    help?: string;
-}) {
-    return (
-        <div className="flex flex-col items-center gap-1 px-2 py-4 text-center">
-            <p className="text-xl font-extrabold leading-none tabular-nums text-neutral-900 sm:text-2xl">{value}</p>
-            <p className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-neutral-400">
-                <Icon size={11} className={tint} />
-                {label}
-                {help && <HelpTip label={label} text={help} size={12} />}
-            </p>
-        </div>
-    );
-}
-
 export default function Progression({ goal, records, series, focusDistance, projection, vdot, stats }: Props) {
     const [selected, setSelected] = useState(focusDistance);
     const chart = series.find((s) => s.distanceMeters === selected) ?? series[0];
@@ -250,7 +227,7 @@ export default function Progression({ goal, records, series, focusDistance, proj
 
             {/* Goal tracker */}
             {goal && (
-                <div className="animate-fade-up mb-4 rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-brand-50/40 p-5 shadow-sm shadow-neutral-200/60">
+                <div className="animate-fade-up mb-5 border-b border-neutral-100 pb-5">
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex min-w-0 items-center gap-3">
                             <span
@@ -282,7 +259,7 @@ export default function Progression({ goal, records, series, focusDistance, proj
                             </div>
                         </div>
                         {goal.daysLeft !== null && (
-                            <div className="shrink-0 rounded-xl bg-white px-3 py-1.5 text-center shadow-sm ring-1 ring-neutral-200">
+                            <div className="shrink-0 text-right">
                                 <p className="text-lg font-black leading-none tabular-nums text-brand-600">J-{Math.max(0, goal.daysLeft)}</p>
                                 <p className="mt-0.5 text-[10px] text-neutral-400">{goal.weeksLeft} sem.</p>
                             </div>
@@ -291,7 +268,7 @@ export default function Progression({ goal, records, series, focusDistance, proj
 
                     {goal.currentSeconds !== null && (
                         <div className="mt-4">
-                            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200">
+                            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-100">
                                 <div
                                     className={`animate-bar h-full rounded-full ${goal.achieved ? 'bg-emerald-500' : 'bg-gradient-to-r from-brand-400 to-brand-600'}`}
                                     style={{ width: `${goal.progressPct}%` }}
@@ -306,119 +283,113 @@ export default function Progression({ goal, records, series, focusDistance, proj
                 </div>
             )}
 
-            {/* Stats — one-line strip in a single card */}
-            <div
-                className="animate-fade-up mb-4 grid grid-cols-4 divide-x divide-neutral-100 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm shadow-neutral-200/60"
-                style={{ animationDelay: '60ms' }}
-            >
-                <StatCell icon={Gauge} tint="text-brand-500" value={vdot !== null ? `${vdot}` : '—'} label="VDOT" help={VDOT_HELP} />
-                <StatCell icon={Trophy} tint="text-amber-500" value={`${records.length}`} label="Records" />
-                <StatCell icon={Activity} tint="text-sky-500" value={`${stats.runs}`} label="Sorties" />
-                <StatCell icon={Flag} tint="text-emerald-500" value={`${formatKilometers(stats.totalDistanceMeters)}`} label="Km" />
-            </div>
+            {/* Stats strip */}
+            <StatRow className="animate-fade-up mb-5 grid-cols-4 divide-x divide-neutral-100">
+                <Stat
+                    value={vdot !== null ? `${vdot}` : '—'}
+                    label={<><Gauge size={11} className="text-brand-500" /> VDOT <HelpTip label="VDOT" text={VDOT_HELP} size={12} /></>}
+                />
+                <Stat value={`${records.length}`} label={<><Trophy size={11} className="text-amber-500" /> Records</>} />
+                <Stat value={`${stats.runs}`} label={<><Activity size={11} className="text-sky-500" /> Sorties</>} />
+                <Stat value={`${formatKilometers(stats.totalDistanceMeters)}`} label={<><Flag size={11} className="text-emerald-500" /> Km</>} />
+            </StatRow>
 
             {/* Projection — slim banner */}
             {projection && (
-                <div
-                    className="animate-fade-up mb-4 flex items-start gap-2.5 rounded-xl border border-violet-200 bg-violet-50/60 px-4 py-3"
-                    style={{ animationDelay: '90ms' }}
-                >
-                    <Sparkles size={17} className="mt-0.5 shrink-0 text-violet-500" />
-                    <p className="text-sm leading-relaxed text-neutral-700">
-                        <span className="inline-flex items-center gap-1 font-semibold text-neutral-900">
-                            Projection Riegel
-                            <HelpTip label="Projection Riegel" text={RIEGEL_HELP} size={13} />
-                        </span>{' '}
-                        : d'après ton <strong className="text-neutral-900">{projection.fromLabel}</strong>, un{' '}
-                        <strong className="text-neutral-900">{projection.toLabel}</strong> est estimé à{' '}
-                        <strong className="text-brand-600">{formatDuration(projection.predictedSeconds)}</strong>.{' '}
-                        {projection.beatsTarget ? (
-                            <span className="font-semibold text-emerald-600">L'objectif est à portée 🔥</span>
-                        ) : (
-                            <span className="text-neutral-500">Continue, tu t'en rapproches.</span>
-                        )}
-                    </p>
-                </div>
+                <Callout tone="violet" icon={Sparkles} className="animate-fade-up mb-6">
+                    <span className="inline-flex items-center gap-1 font-semibold text-neutral-900">
+                        Projection Riegel
+                        <HelpTip label="Projection Riegel" text={RIEGEL_HELP} size={13} />
+                    </span>{' '}
+                    : d'après ton <strong className="text-neutral-900">{projection.fromLabel}</strong>, un{' '}
+                    <strong className="text-neutral-900">{projection.toLabel}</strong> est estimé à{' '}
+                    <strong className="text-brand-600">{formatDuration(projection.predictedSeconds)}</strong>.{' '}
+                    {projection.beatsTarget ? (
+                        <span className="font-semibold text-emerald-600">L'objectif est à portée 🔥</span>
+                    ) : (
+                        <span className="text-neutral-500">Continue, tu t'en rapproches.</span>
+                    )}
+                </Callout>
             )}
 
             {/* Progression chart */}
             {chart && (
-                <div className="animate-fade-up mb-4" style={{ animationDelay: '120ms' }}>
-                    <Card
-                        title={
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                <span className="inline-flex items-center gap-1.5 normal-case">
-                                    Courbe de progression
-                                    <HelpTip label="Courbe de progression" text={CURVE_HELP} />
-                                </span>
-                                {series.length > 1 && (
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {series.map((s) => (
-                                            <button
-                                                key={s.distanceMeters}
-                                                onClick={() => setSelected(s.distanceMeters)}
-                                                className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
-                                                    s.distanceMeters === chart.distanceMeters
-                                                        ? 'bg-brand-500 text-white'
-                                                        : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
-                                                }`}
-                                            >
-                                                {s.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
+                <Section
+                    className="animate-fade-up mb-6"
+                    icon={TrendingUp}
+                    title={
+                        <span className="inline-flex items-center gap-1.5">
+                            Courbe de progression
+                            <HelpTip label="Courbe de progression" text={CURVE_HELP} />
+                        </span>
+                    }
+                    action={
+                        series.length > 1 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                                {series.map((s) => (
+                                    <button
+                                        key={s.distanceMeters}
+                                        onClick={() => setSelected(s.distanceMeters)}
+                                        className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
+                                            s.distanceMeters === chart.distanceMeters
+                                                ? 'bg-brand-500 text-white'
+                                                : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+                                        }`}
+                                    >
+                                        {s.label}
+                                    </button>
+                                ))}
                             </div>
-                        }
-                    >
-                        <ProgressionChart series={chart} />
-                        {chart.points.length < 2 && (
-                            <p className="mt-1 text-center text-xs text-neutral-400">
-                                Une seule mesure pour l'instant — la courbe se dessinera au fil de tes sorties.
-                            </p>
-                        )}
-                    </Card>
-                </div>
+                        ) : null
+                    }
+                >
+                    <ProgressionChart series={chart} />
+                    {chart.points.length < 2 && (
+                        <p className="mt-1 text-center text-xs text-neutral-400">
+                            Une seule mesure pour l'instant — la courbe se dessinera au fil de tes sorties.
+                        </p>
+                    )}
+                </Section>
             )}
 
             {/* Records */}
             {records.length > 0 && (
-                <div className="animate-fade-up" style={{ animationDelay: '150ms' }}>
-                    <Card
-                        title={
-                            <span className="inline-flex items-center gap-1.5">
-                                Records personnels
-                                <HelpTip label="Records personnels" text={RECORDS_HELP} />
-                            </span>
-                        }
-                    >
-                        <ul className="-my-2 divide-y divide-neutral-100">
-                            {records.map((r) => (
-                                <li key={r.distanceMeters}>
-                                    <Link
-                                        href={`/activities/${r.activityId}`}
-                                        className="group -mx-2 flex items-center gap-3.5 rounded-lg px-2 py-3 transition-colors hover:bg-neutral-50"
-                                    >
-                                        <span className="flex h-11 w-14 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-sm font-bold tabular-nums text-brand-700">
-                                            {r.label}
-                                        </span>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-xl font-black leading-none tabular-nums text-neutral-900">
-                                                {formatDuration(r.durationSeconds)}
-                                            </p>
-                                            <p className="mt-1 text-xs text-neutral-500">
-                                                <span className="tabular-nums">{formatPace(r.paceSecondsPerKm)}</span> /km
-                                                <span className="mx-1 text-neutral-300">·</span>
-                                                {shortDate(r.occurredAt)}
-                                            </p>
-                                        </div>
-                                        <ChevronRight size={18} className="shrink-0 text-neutral-300 transition-colors group-hover:text-brand-500" />
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </Card>
-                </div>
+                <Section
+                    className="animate-fade-up"
+                    icon={Trophy}
+                    title={
+                        <span className="inline-flex items-center gap-1.5">
+                            Records personnels
+                            <HelpTip label="Records personnels" text={RECORDS_HELP} />
+                        </span>
+                    }
+                >
+                    <ul className="divide-y divide-neutral-100">
+                        {records.map((r) => (
+                            <li key={r.distanceMeters}>
+                                <Link
+                                    href={`/activities/${r.activityId}`}
+                                    className="group -mx-2 flex items-center gap-3.5 rounded-lg px-2 py-3 transition-colors hover:bg-neutral-50"
+                                >
+                                    <span className="flex h-11 w-14 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-sm font-bold tabular-nums text-brand-700">
+                                        {r.label}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xl font-black leading-none tabular-nums text-neutral-900">
+                                            {formatDuration(r.durationSeconds)}
+                                        </p>
+                                        <p className="mt-1 text-xs text-neutral-500">
+                                            <span className="tabular-nums">{formatPace(r.paceSecondsPerKm)}</span> /km
+                                            <span className="mx-1 text-neutral-300">·</span>
+                                            {shortDate(r.occurredAt)}
+                                        </p>
+                                    </div>
+                                    <ChevronRight size={18} className="shrink-0 text-neutral-300 transition-colors group-hover:text-brand-500" />
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </Section>
             )}
         </>
     );
