@@ -79,7 +79,7 @@ function ProgressionRow({ p }: { p: Progression }) {
                     )}
                 </div>
                 <div className="shrink-0 text-right">
-                    <p className={`text-lg font-black leading-none tabular-nums ${isWeight ? 'text-brand-600' : 'text-emerald-600'}`}>
+                    <p className="text-lg font-black leading-none tabular-nums text-neutral-900">
                         {isWeight ? `+${fmtKg(p.weightDeltaKg)}` : `+${p.repsDelta}`}
                         <span className="text-xs font-semibold"> {isWeight ? 'kg' : 'reps'}</span>
                     </p>
